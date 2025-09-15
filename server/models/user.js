@@ -23,7 +23,14 @@ const User = sequelize.define('User',{
   password: {
     type:DataTypes.STRING,
     allowNull: false
+  },
+  puntaje: {
+    type:DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 0
   }
+
+
 }, {
   tableName: "users", //hace referencia a la tabla en al bd
   timestamps: true  // para que tenga cuando se creo y cuando se modifico

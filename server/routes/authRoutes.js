@@ -24,7 +24,7 @@
           const newUser = await User.create({
           name: usuario,
           email,
-          password: hashedPassword,
+          password: hashedPassword
       });
       const { password: _, ...userWithoutPassword } = newUser.toJSON();
       res.status(201).json(userWithoutPassword);
