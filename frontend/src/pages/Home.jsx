@@ -5,6 +5,7 @@ import { useState } from "react";
 const Home = () => {
   const [mostrarJugarOptions, setMostrarJugarOptions] = useState("");
 
+
   return (
     <div className="rounded-3xl text-center">
       <div className='w-90 h-110  rounded-4xl flex flex-col text-center items-center justify-center text-white'>
@@ -31,12 +32,16 @@ const Home = () => {
         <Link to='/perfil' className="w-70 h-15 hover:scale-105 transition-transform cursor-pointer bg-amber-600 rounded-4xl text-amber-200 flex items-center justify-center mb-1 mt-4 p-1">
           Ver Perfil
         </Link>
-      </div>
-      <div>
 
+        <Link to='/login' className="w-70 h-15 hover:scale-105 transition-transform cursor-pointer bg-amber-600 rounded-4xl text-amber-200 flex items-center justify-center mb-1 mt-4 p-1">
+          Logout
+        </Link>
+      </div>
+
+      <div className="mt-[40px]">
         <ListarUsuarios />
-
       </div>
+
     </div>
   )
 }
