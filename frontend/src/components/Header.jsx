@@ -5,7 +5,7 @@ import axios from "axios";
 
 export const Header = () => {
 
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(localStorage.getItem("user"));
 
   const navigate = useNavigate();
 
@@ -14,19 +14,19 @@ export const Header = () => {
     if (!token) {
       console.log('No hay token')
       navigate('/login');
-
       setUser(token);
       return;
     }
 
 
-    axios.get("http://localhost:3000/auth/me", {
+    axios.get("http://localhost:3006/auth/me", {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(res => setUser(res.data))
       .catch(() => {
         // Si el token es inválido o expiró
         localStorage.removeItem("token");
+        localStorage.removeItem('user');
         navigate("/login");
       });
   }, []);
@@ -34,16 +34,17 @@ export const Header = () => {
 
 
   const handleLogout = () => {
+    localStorage.removeItem('user');
     localStorage.removeItem("token");
     navigate("/login");
-
   };
+  
   return (
 <>
       {user ? (
         // Si hay sesión → Header completo
-        <header className="bg-orange-300 px-6 py-3 font-semibold shadow sticky top-0 w-full h-32">
-          <nav className="flex items-center justify-between h-full">
+        <header className="bg-orange-300 px-6 py-3 font-semibold shadow sticky top-0 w-full max-h-24 ">
+          <nav className="flex items-center justify-between max-h-20">
             <Link to="/" className="h-full flex items-center">
               <img
                 src="/logo.png"

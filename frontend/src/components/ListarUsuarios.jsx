@@ -1,14 +1,16 @@
 // src/components/ListaUsuarios.jsx
+
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+
 import Usuario from "./Usuario";
+import axios from "axios";
 
 const ListaUsuarios = () => {
   const [usuarios, setUsuarios] = useState([]);
 
   useEffect(() => {
     axios
-      .get("http://localhost:3000/users") // tu endpoint
+      .get("http://localhost:3006/users") // tu endpoint
       .then((res) => setUsuarios(res.data))
       .catch((err) => {
         console.error("Error al obtener usuarios:", err);

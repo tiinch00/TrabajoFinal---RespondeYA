@@ -26,16 +26,13 @@ const Home = () => {
             </div>
           )}
         </div>
-        <Link to='/chat' className="w-70 h-15  hover:scale-105 transition-transform cursor-pointer bg-amber-600 rounded-4xl text-amber-200 flex items-center justify-center mb-1 mt-4 p-1">
+        <Link to='/ChatGlobal' className="w-70 h-15  hover:scale-105 transition-transform cursor-pointer bg-amber-600 rounded-4xl text-amber-200 flex items-center justify-center mb-1 mt-4 p-1">
           Chat Global
         </Link>
         <Link to='/perfil' className="w-70 h-15 hover:scale-105 transition-transform cursor-pointer bg-amber-600 rounded-4xl text-amber-200 flex items-center justify-center mb-1 mt-4 p-1">
           Ver Perfil
         </Link>
 
-        <Link to='/login' className="w-70 h-15 hover:scale-105 transition-transform cursor-pointer bg-amber-600 rounded-4xl text-amber-200 flex items-center justify-center mb-1 mt-4 p-1">
-          Logout
-        </Link>
       </div>
 
       <div className="mt-[40px]">

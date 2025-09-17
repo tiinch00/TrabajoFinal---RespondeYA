@@ -42,7 +42,10 @@ router.post("/login", async (req, res) => {
     const { email, password } = req.body; // email puede ser email o username
     if (!email || !password) return res.status(400).json({ error: "Faltan datos" });
 
-    const exists = await User.findOne({ where: { [Op.or]: [{ email }, { name: email }] } });
+    const exists = await User.findOne({
+      where: { [Op.or]: [{ email }, { name: email }] },
+      attributes: ["id", "name", "email", "password"] // traemos solo lo necesario
+    }); 
     if (!exists) return res.status(404).json({ error: "Usuario inexistente" });
 
     const ok = await bcrypt.compare(password, exists.password);
@@ -52,7 +55,15 @@ router.post("/login", async (req, res) => {
     if (!JWT_SECRET) return res.status(500).json({ error: "JWT_KEY no configurada en el servidor" });
 
     const token = jwt.sign({ id: exists.id }, JWT_SECRET, { expiresIn: "3h" });
-    return res.status(200).json({ token });
+
+    // devuelve el name (y lo que quieras) junto al token
+    const { id, name, email: mail } = exists;
+    
+    return res.status(200).json({ 
+      token, 
+      user: { id, name, email: mail }
+    });
+
   } catch (err) {
     console.error("LOGIN ERR:", err);
     return res.status(500).json({ error: "Error interno" });

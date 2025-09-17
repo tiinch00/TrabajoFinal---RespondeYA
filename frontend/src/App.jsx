@@ -2,6 +2,7 @@
 
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 
+import ChatGlobal from './pages/ChatGlobal'
 import ComoJugar from "./pages/ComoJugar"
 import Contacto from './pages/Contacto'
 import { Footer } from './components/Footer'
@@ -30,7 +31,7 @@ function App() {
         <img
           src="/fondo.png"
           alt="logo responde ya"
-          className=" mb-15 w-3/4 max-w-xl rounded-2xl "
+          className=" mb-1 mt-4 w-3/4 max-w-xl rounded-2xl "
         />
 
         <Routes>
@@ -41,6 +42,7 @@ function App() {
           <Route path='/contacto' element={<Contacto />} />
           <Route path='/perfil' element={<Perfil />} />
           <Route path='/comojugar' element={<ComoJugar />} />
+          <Route path='/ChatGlobal' element={<ChatGlobal />} />
         </Routes>
       </div>
 
