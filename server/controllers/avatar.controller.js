@@ -1,10 +1,11 @@
-import Categoria from '../models/categoria.js'
+
+import Avatar from "../models/avatar.js";
 
 
 const index = async (req, res) => {
   try {
-    const categorias = await Categoria.findAll();
-    res.json(categorias);
+    const avatars = await Avatar.findAll();
+    res.json(avatars);
   } catch (error) {
     console.error(error);
     return res.status(500).send("Internal server error");
@@ -15,11 +16,11 @@ const index = async (req, res) => {
 const show = async (req, res) => {
   const { id } = req.params;
   try {
-    const categoria = await Categoria.findByPk(id);
-    if (!categoria) {
-      return res.status(404).send("User not found");
+    const avatar = await Avatar.findByPk(id);
+    if (!avatar) {
+      return res.status(404).send("avatar not found");
     }
-    res.json(categoria);
+    res.json(avatar);
   } catch (error) {
     console.error(error);
     return res.status(500).send("Internal server error");
@@ -28,10 +29,10 @@ const show = async (req, res) => {
 
 
 const store = async (req, res) => {
-  const { nombre, descripcion} = req.body;
+  const { name, division, precio_puntos, activo, preview_url} = req.body;
   try {
-    const categoria = await Categoria.create({ nombre, descripcion });
-    res.status(201).json(categoria);
+    const avatar = await Avatar.create({ name, division, precio_puntos, activo, preview_url});
+    res.status(201).json(avatar);
   } catch (error) {
     console.error(error);
     return res.status(500).send("Internal server error");
@@ -41,15 +42,15 @@ const store = async (req, res) => {
 
 const update = async (req, res) => {
   const { id } = req.params;
-  const { nombre , descripcion } = req.body;
+  const { name, division, precio_puntos, activo, preview_url} = req.body;
   try {
-    const categoria = await Categoria.findByPk(id);
-    if (!categoria) {
-      return res.status(404).send("Categoria not found");
+    const avatar = await Avatar.findByPk(id);
+    if (!avatar) {
+      return res.status(404).send("avatar not found");
     }
 
-    await categoria.update({ nombre, descripcion});
-    res.json(categoria);
+    await avatar.update({ name, division, precio_puntos, activo, preview_url});
+    res.json(avatar);
   } catch (error) {
     console.error(error);
     return res.status(500).send("Internal server error");
@@ -59,12 +60,12 @@ const update = async (req, res) => {
 const destroy = async (req, res) => {
   const { id } = req.params;
   try {
-    const categoria = await Categoria.findByPk(id);
-    if (!categoria) {
-      return res.status(404).send("Categoria not found");
+    const avatar = await Avatar.findByPk(id);
+    if (!avatar) {
+      return res.status(404).send("avatar not found");
     }
 
-    await categoria.destroy();
+    await avatar.destroy();
     res.status(204).send(); // No content
   } catch (error) {
     console.error(error);
