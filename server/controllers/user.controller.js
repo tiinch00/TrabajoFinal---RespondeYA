@@ -30,10 +30,17 @@ const show = async (req, res) => {
 
 const store = async (req, res) => {
   const { name, email, password } = req.body;
+  if (!name || !email || !password) {
+    return res.status(400).json({ error: "Name, email, and password are required" });
+  }
   try {
     const user = await User.create({ name, email, password });
+    
     res.status(201).json(user);
   } catch (error) {
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      return res.status(400).json({ error: "Email already exists" });
+    }
     console.error(error);
     return res.status(500).send("Internal server error");
   }
@@ -43,6 +50,9 @@ const store = async (req, res) => {
 const update = async (req, res) => {
   const { id } = req.params;
   const { name, email, password } = req.body;
+  if (!name || !email || !password) {
+    return res.status(400).json({ error: "Name, email, and password are required" });
+  }
   try {
     const user = await User.findByPk(id);
     if (!user) {
@@ -52,6 +62,9 @@ const update = async (req, res) => {
     await user.update({ name, email, password });
     res.json(user);
   } catch (error) {
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      return res.status(400).json({ error: "Email already exists" });
+    }
     console.error(error);
     return res.status(500).send("Internal server error");
   }
