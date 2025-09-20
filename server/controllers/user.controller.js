@@ -1,6 +1,4 @@
-
-import User from "../models/user.js";
-
+import {User} from '../models/associations.js';
 
 const index = async (req, res) => {
   try {

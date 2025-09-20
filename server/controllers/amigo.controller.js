@@ -1,5 +1,4 @@
-
-import Amigo from "../models/amigo.js";
+import {Amigo} from '../models/associations.js';
 
 
 const index = async (req, res) => {

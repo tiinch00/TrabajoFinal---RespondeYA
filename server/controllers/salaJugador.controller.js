@@ -1,4 +1,4 @@
-import SalaJugador from '../models/salaJugador';
+import {SalaJugador} from '../models/associations.js';
 
 const index = async (req, res) => {
   try {

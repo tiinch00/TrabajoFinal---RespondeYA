@@ -1,6 +1,5 @@
-import Sala from '../models/sala.js';
-import User from '../models/user.js'; 
-import Categoria from '../models/categoria.js'; 
+import {Sala,User,Categoria} from '../models/associations.js';
+
 
 const index = async (req, res) => {
   try {

@@ -1,5 +1,4 @@
-
-import Estadistica from "../models/estadistica.js";
+import {Estadistica} from '../models/associations.js';
 
 
 const index = async (req, res) => {

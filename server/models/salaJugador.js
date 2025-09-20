@@ -1,4 +1,4 @@
-import sequelize from "./sequelize";
+import sequelize from "./sequelize.js";
 import { DataTypes } from "sequelize";
 
 const SalaJugador = sequelize.define("SalaJugador", {
@@ -20,7 +20,7 @@ const SalaJugador = sequelize.define("SalaJugador", {
     allowNull: false,
   },
   joined_at:{
-    type: DataTypes.DATETIME,               
+    type: DataTypes.DATE,               
     allowNull: false,
     defaultValue: DataTypes.NOW,
   }

@@ -1,7 +1,4 @@
-import Partida from '../models/partida.js';
-import User from '../models/user.js';
-import Sala from '../models/sala.js';
-import Categoria from '../models/categoria.js';
+import { Partida,User,Sala,Categoria} from '../models/associations.js';
 
 const index = async (req, res) => {
   try {

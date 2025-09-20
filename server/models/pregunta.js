@@ -1,7 +1,5 @@
-import sequelize from "../config/sequelize.js";
+import sequelize from "./sequelize.js";
 import { DataTypes } from "sequelize";
-import Categoria from "./categoria.js"; 
-import Partida from './partida.js';
 
 const Pregunta = sequelize.define('Pregunta', {
   id: {
@@ -28,12 +26,4 @@ const Pregunta = sequelize.define('Pregunta', {
   updatedAt: "updated_at"        // mapea a la columna de la BD
 });
 
-
-Pregunta.belongsTo(Categoria, { foreignKey: 'categoria_id' });
-
-Pregunta.belongsToMany(Partida, {
-  through: 'partida_preguntas',  // solo el nombre de la tabla
-  foreignKey: 'pregunta_id',
-  otherKey: 'partida_id'
-});
 export default Pregunta;

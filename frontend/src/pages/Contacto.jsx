@@ -11,6 +11,8 @@ const Contacto = () => {
 
    const [status,setStatus] = useState("");
 
+   const [alerta,setAlerta] = useState("");
+
     const handleChange = (e) => {
     setForm({
       ...form,
@@ -21,6 +23,12 @@ const Contacto = () => {
 
    const handleOnSubmit = async (e) => {
     e.preventDefault();
+
+    if(!form.nombreUsuario || form.email || form.descripcion){
+      setAlerta('Falta Datos');
+      return
+    }
+    setAlerta("");
     setStatus("Enviando...");
 
     try {
@@ -59,8 +67,10 @@ const Contacto = () => {
             onChange={handleChange}
             placeholder="Ingrese Usuario"
             className="p-2 rounded-lg bg-white/20 placeholder-white focus:outline-nonefocus:ring-2 focus:ring-purple-400"
+            required
           />
         </div>
+        {alerta && <p className="text-red-600">{alerta}</p>}
 
         <div className="flex flex-col">
           <label htmlFor="email" className="mb-1 font-medium">
@@ -72,7 +82,8 @@ const Contacto = () => {
             value={form.email}
             onChange={handleChange}
             placeholder="Ingrese Email"
-            className="p-2 rounded-lg  bg-white/20 placeholder-white focus:outline-none focus:ring-2 focus:ring-purple-400"
+            className="p-2 rounded-lg  bg-white/20 placeholder-white focus:outline-none focus:ring-2 focus:ring-purple-400" 
+            required
           />
         </div>
 
@@ -88,6 +99,7 @@ const Contacto = () => {
             rows="4"
             placeholder="Escríbenos tu consulta..."
             className="p-2 rounded-lg bg-white resize-none focus:outline-none text-black focus:ring-2 focus:ring-purple-400"
+            required
           ></textarea>
         </div>
 

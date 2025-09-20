@@ -15,6 +15,10 @@ const transporter = nodemailer.createTransport({
 
 router.post("/", async (req, res) => {
   const { nombreUsuario, email, descripcion } = req.body;
+  if (!nombreUsuario || !email || !descripcion){
+    console.error("Faltan Datos");
+    return res.status(404)({ error : "Faltan Datos" });
+  }
 
   try {
     await transporter.sendMail({

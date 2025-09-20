@@ -1,6 +1,4 @@
-import Pregunta from '../models/pregunta.js';
-import Categoria from '../models/categoria.js';
-
+import { Pregunta, Categoria} from '../models/associations.js';
 const index = async (req, res) => {
   try {
     const preguntas = await Pregunta.findAll();

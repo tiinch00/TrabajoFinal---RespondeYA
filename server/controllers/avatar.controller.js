@@ -1,5 +1,4 @@
-
-import Avatar from "../models/avatar.js";
+import {Avatar} from '../models/associations.js';
 
 
 const index = async (req, res) => {

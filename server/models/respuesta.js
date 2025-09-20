@@ -1,11 +1,5 @@
 import sequelize from "./sequelize.js";
 import { DataTypes } from "sequelize";
-import User from "./user.js";
-import Partida from "./partida.js";
-import Pregunta from "./pregunta.js";
-import PartidaPregunta from "./partidaPregunta.js";
-import Opcion from "./opcion.js";
-import Estadistica from "./estadistica.js";
 
 const Respuesta = sequelize.define("Respuesta", {
   id: {
@@ -56,41 +50,5 @@ const Respuesta = sequelize.define("Respuesta", {
   ],
 });
 
-// Relaciones
-Respuesta.belongsTo(Partida, { 
-  foreignKey: "partida_id", 
-  onUpdate: "CASCADE", 
-  onDelete: "CASCADE" 
-});
-
-Respuesta.belongsTo(User, { 
-  foreignKey: "usuario_id", 
-  onUpdate: "CASCADE", 
-  onDelete: "CASCADE" 
-});
-
-Respuesta.belongsTo(Pregunta, { 
-  foreignKey: "pregunta_id", 
-  onUpdate: "CASCADE", 
-  onDelete: "RESTRICT" 
-});
-
-Respuesta.belongsTo(PartidaPregunta, { 
-  foreignKey: "partida_pregunta_id", 
-  onUpdate: "CASCADE", 
-  onDelete: "CASCADE" 
-});
-
-Respuesta.belongsTo(Opcion, { 
-  foreignKey: "opcion_elegida_id", 
-  onUpdate: "CASCADE", 
-  onDelete: "RESTRICT" 
-});
-
-Respuesta.belongsTo(Estadistica, { 
-  foreignKey: "estadistica_id", 
-  onUpdate: "CASCADE", 
-  onDelete: "CASCADE" 
-});
 
 export default Respuesta;

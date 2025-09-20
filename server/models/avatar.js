@@ -1,6 +1,5 @@
 import sequelize from "./sequelize.js";
 import { DataTypes } from "sequelize";
-import User from './user.js';
 
 const Avatar = sequelize.define('Avatar',{
     id:{type: DataTypes.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true},
@@ -14,11 +13,6 @@ const Avatar = sequelize.define('Avatar',{
     timestamps: false 
 })
 
-Avatar.belongsToMany(User, {
-  through: 'user_avatars',
-  foreignKey: "avatar_id",
-  otherKey: "usuario_id",
-});
 
 
 export default Avatar;

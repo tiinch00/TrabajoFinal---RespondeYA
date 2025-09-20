@@ -1,6 +1,7 @@
+import sequelize from './sequelize.js';
 import { DataTypes } from 'sequelize';
-import sequelize from '../config/sequelize.js';
-import User from './user.js';
+
+
 
 const Amigo = sequelize.define('Amigo', {
   id: { 
@@ -42,8 +43,5 @@ const Amigo = sequelize.define('Amigo', {
     }
   }
 });
-
-Amigo.belongsTo(User, { as: 'usuario', foreignKey: 'usuario_id' });
-Amigo.belongsTo(User, { as: 'amigo', foreignKey: 'amigo_id' });
 
 export default Amigo;

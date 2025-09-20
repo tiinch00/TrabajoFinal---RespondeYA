@@ -1,5 +1,5 @@
 
-import Respuesta from '../models/respuesta.js'
+import {Respuesta} from '../models/associations.js';
 
 
 const index = async (req, res) => {

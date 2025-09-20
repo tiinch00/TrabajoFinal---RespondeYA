@@ -1,7 +1,5 @@
 import sequelize from "./sequelize.js";
 import { DataTypes } from "sequelize";
-import User from "./user.js";
-import Partida from "./partida.js";
 
 const Estadistica = sequelize.define("Estadistica", {
   id: {
@@ -44,19 +42,6 @@ const Estadistica = sequelize.define("Estadistica", {
 }, {
   tableName: "estadisticas",
   timestamps: false,
-});
-
-
-Estadistica.belongsTo(User, { 
-  foreignKey: "usuario_id", 
-  onUpdate: "CASCADE", 
-  onDelete: "RESTRICT" 
-});
-
-Estadistica.belongsTo(Partida, { 
-  foreignKey: "partida_id", 
-  onUpdate: "CASCADE", 
-  onDelete: "RESTRICT" 
 });
 
 export default Estadistica;

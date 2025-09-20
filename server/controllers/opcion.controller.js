@@ -1,6 +1,5 @@
 
-import Opcion from "../models/opcion.js";
-import Pregunta from "../models/pregunta.js";
+import {Opcion, Pregunta} from '../models/associations.js';
 
 const index = async (req, res) => {
   try {

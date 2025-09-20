@@ -1,5 +1,4 @@
-import Pregunta from "./pregunta";
-import sequelize from "./sequelize";
+import sequelize from "./sequelize.js";
 import { DataTypes } from "sequelize";
 
 
@@ -27,7 +26,5 @@ const Opcion = sequelize.define('Opcion',{
   timestamps: false
  });
 
-
- Opcion.belongsTo(Pregunta, { foreignKey: 'pregunta_id' });
 
  export default Opcion;
