@@ -62,7 +62,7 @@ const Register = () => {
       className="w-90 h-130 bg-amber-600 rounded-3xl p-8 text-center items-center justify-center">
 
 
-      <h2 className='text-lg font-bold mb-4 text-center'>Registrase</h2>
+      <h2 className='text-lg font-bold mb-2 text-center'>Registrase</h2>
       <form onSubmit={handleSubmit}>
       <div className=' bg-amber-200  rounded-4xl flex flex-col text-center items-center justify-center text-black'>
         <div className='mb-4'>
