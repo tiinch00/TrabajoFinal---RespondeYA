@@ -11,7 +11,7 @@ const Contacto = () => {
 
    const [status,setStatus] = useState("");
 
-   const [alerta,setAlerta] = useState("");
+   const [alerta,setAlerta] = useState({});
 
     const handleChange = (e) => {
     setForm({
@@ -19,20 +19,31 @@ const Contacto = () => {
       [e.target.name]: e.target.value,
     });
   };
+  
 
 
    const handleOnSubmit = async (e) => {
     e.preventDefault();
 
-    if(!form.nombreUsuario || form.email || form.descripcion){
-      setAlerta('Falta Datos');
-      return
-    }
-    setAlerta("");
+    const cleanedValues = {
+      email: form.email.trim(),
+      nombreUsuario: form.nombreUsuario,
+      descripcion: form.descripcion
+    };
+    let newErrors = {};
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!cleanedValues.nombreUsuario) newErrors.nombreUsuario = "El Nombre es obligatorio";
+    if (!cleanedValues.email) newErrors.email = "El Email es obligatorio";
+    if (!cleanedValues.descripcion) newErrors.descripcion = "El Mensaje es obligatorio"
+    if (cleanedValues.email && !emailRegex.test(cleanedValues.email)) {
+    newErrors.emailValido = "Ingresar un email válido";}
+
+    setAlerta(newErrors);
+    if (Object.keys(newErrors).length > 0) return;  
     setStatus("Enviando...");
 
     try {
-      const res = await axios.post("http://localhost:3000/api/contactar", form);
+      const res = await axios.post("http://localhost:3006/api/contactar", cleanedValues);
       if (res.data.ok) {
         setStatus("✅ Correo enviado correctamente!");
         setForm({ nombreUsuario: "", email: "", descripcion: "" }); // limpiar form
@@ -58,7 +69,7 @@ const Contacto = () => {
 
         <div className="flex flex-col">
           <label htmlFor="nombreUsuario" className="mb-1 font-medium">
-            Nombre Usuario
+            Nombre 
           </label>
           <input
             type="text"
@@ -66,12 +77,10 @@ const Contacto = () => {
             value={form.nombreUsuario}
             onChange={handleChange}
             placeholder="Ingrese Usuario"
-            className="p-2 rounded-lg bg-white/20 placeholder-white focus:outline-nonefocus:ring-2 focus:ring-purple-400"
+            className="p-2 rounded-lg bg-white/20 placeholder-white focus:outline-none focus:ring-2 focus:ring-purple-400"
             required
           />
         </div>
-        {alerta && <p className="text-red-600">{alerta}</p>}
-
         <div className="flex flex-col">
           <label htmlFor="email" className="mb-1 font-medium">
             Correo Electrónico
@@ -86,7 +95,6 @@ const Contacto = () => {
             required
           />
         </div>
-
         <div className="flex flex-col">
           <label htmlFor="descripcion" className="mb-1 font-medium">
             Mensaje
@@ -109,6 +117,16 @@ const Contacto = () => {
         >
           Enviar Correo
         </button>
+        <div>
+           {alerta.nombreUsuario && <p className="text-red-600 mt-1">{alerta.nombre}</p>}
+           {alerta.email && <p className="text-red-600 mt-1">{alerta.email}</p>}
+           {alerta.emailValido &&  <p className="text-red-600 mt-1">{alerta.emailValido}</p> }
+           {alerta.descripcion && <p className="text-red-600 mt-1">{alerta.descripcion}</p>}
+           {status && (
+           <p className={`${status.startsWith("✅") ? "text-green-600" : "text-red-600"} mt-1`}>
+          {status}
+          </p>)}
+        </div>
       </form>
       </div>
     </div>

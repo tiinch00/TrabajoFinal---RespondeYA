@@ -83,7 +83,7 @@ io.on("connection", (socket) => {
 const bootstrap = async () => {
   try {
     await sequelize.authenticate();
-    await sequelize.sync({ alter: true });
+    //await sequelize.sync({ alter: true });
     console.log("✅ DB conectada y tablas sincronizadas");
     console.log("🔊 Levantando API en puerto:", PORT);
     server.listen(PORT, () =>

@@ -17,12 +17,16 @@ router.post("/", async (req, res) => {
   const { nombreUsuario, email, descripcion } = req.body;
   if (!nombreUsuario || !email || !descripcion){
     console.error("Faltan Datos");
-    return res.status(404)({ error : "Faltan Datos" });
+    return res.status(400).json({ ok: false, error: "Faltan datos" });
   }
+  if (!/\S+@\S+\.\S+/.test(email)) {
+  return res.status(400).json({ ok: false, error: "Email inválido" });
+ }
 
   try {
     await transporter.sendMail({
-      from: `"Contacto desde RespondeYa!" <${email}>`,
+      from: `"Contacto desde RespondeYa!" <${process.env.EMAIL_USER}>`,
+      replyTo: email,
       to: "mdep171@gmail.com", // dónde recibís el correo
       subject: `Nuevo mensaje de ${nombreUsuario}`,
       text: descripcion,
