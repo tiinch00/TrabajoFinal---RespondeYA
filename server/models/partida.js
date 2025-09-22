@@ -1,16 +1,12 @@
-import sequelize from './sequelize.js';
 import { DataTypes } from 'sequelize';
+import sequelize from './sequelize.js';
 
 const Partida = sequelize.define('Partida', {
   id: { 
     type: DataTypes.INTEGER.UNSIGNED, 
     autoIncrement: true, 
     primaryKey: true 
-  },
-  usuario_id: { 
-    type: DataTypes.INTEGER.UNSIGNED, 
-    allowNull: true 
-  },
+  },  
   sala_id: { 
     type: DataTypes.INTEGER.UNSIGNED, 
     allowNull: true,

@@ -1,5 +1,5 @@
-import sequelize from "./sequelize.js";
 import { DataTypes } from "sequelize";
+import sequelize from "./sequelize.js";
 
 const Respuesta = sequelize.define("Respuesta", {
   id: {
@@ -11,7 +11,7 @@ const Respuesta = sequelize.define("Respuesta", {
     type: DataTypes.INTEGER.UNSIGNED,
     allowNull: false,
   },
-  usuario_id: {
+  jugador_id: {
     type: DataTypes.INTEGER.UNSIGNED,
     allowNull: false,
   },

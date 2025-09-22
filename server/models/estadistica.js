@@ -1,5 +1,5 @@
-import sequelize from "./sequelize.js";
 import { DataTypes } from "sequelize";
+import sequelize from "./sequelize.js";
 
 const Estadistica = sequelize.define("Estadistica", {
   id: {
@@ -7,7 +7,7 @@ const Estadistica = sequelize.define("Estadistica", {
     autoIncrement: true,
     primaryKey: true,
   },
-  usuario_id: {
+  jugador_id: {
     type: DataTypes.INTEGER.UNSIGNED,
     allowNull: true,
   },

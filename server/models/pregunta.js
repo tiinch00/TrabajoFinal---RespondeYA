@@ -1,5 +1,5 @@
-import sequelize from "./sequelize.js";
 import { DataTypes } from "sequelize";
+import sequelize from "./sequelize.js";
 
 const Pregunta = sequelize.define('Pregunta', {
   id: {
@@ -11,12 +11,16 @@ const Pregunta = sequelize.define('Pregunta', {
     type: DataTypes.INTEGER.UNSIGNED,
     allowNull: false
   },
+  admin_id: {
+    type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: false,
+  },
   enunciado: {
     type: DataTypes.TEXT,
     allowNull: false
   },
   dificultad: {
-    type: DataTypes.ENUM('facil','normal','dificil'),
+    type: DataTypes.ENUM('facil', 'normal', 'dificil'),
     allowNull: true
   }
 }, {

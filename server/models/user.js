@@ -1,5 +1,5 @@
-import sequelize from "./sequelize.js"; 
 import { DataTypes } from "sequelize";
+import sequelize from "./sequelize.js";
 
 const User = sequelize.define('User',{
    id: { // si queremos, no declaramos id, sequelize lo crea automaticamente
@@ -23,16 +23,10 @@ const User = sequelize.define('User',{
     type:DataTypes.STRING(255),
     allowNull: false
   },
-  puntaje: {
-    type:DataTypes.INTEGER.UNSIGNED,
-    allowNull: false,
-    defaultValue: 0
-  }
-
-
 }, {
   tableName: "users",
-  timestamps: true  
+  timestamps: true,  
+  underscored: true
 });
 
 export default User;

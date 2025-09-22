@@ -65,8 +65,8 @@ export default function HeaderPrivate() {
                 <ul className="flex items-center gap-6 text-lg">                    
                     <li><Link to="/" className="hover:underline">Inicio</Link></li>
                     <li><Link to="/tienda" className="hover:underline">Tienda</Link></li>
-                    <li><Link to="/comojugar" className="hover:underline">Cómo jugar</Link></li>
-                    <li><Link to="/ChatGlobal" className="hover:underline">Chat</Link></li>
+                    <li><Link to="/comojugar" className="hover:underline">Cómo Jugar</Link></li>
+                    <li><Link to="/ChatGlobal" className="hover:underline">Chat Global</Link></li>
                     <li>
                         <button className="cursor-pointer">EN|ES</button>
                     </li>                    

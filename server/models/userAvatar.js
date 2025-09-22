@@ -1,6 +1,5 @@
-import sequelize from "./sequelize.js";
 import { DataTypes } from "sequelize";
-
+import sequelize from "./sequelize.js";
 
 const UserAvatar = sequelize.define("UserAvatar", {
   id: {
@@ -8,7 +7,7 @@ const UserAvatar = sequelize.define("UserAvatar", {
     autoIncrement: true,
     primaryKey: true,
   },
-  usuario_id: {
+  jugador_id: {
     type: DataTypes.INTEGER.UNSIGNED,
     allowNull: false,
   },
@@ -32,7 +31,7 @@ const UserAvatar = sequelize.define("UserAvatar", {
   indexes: [
     {
       unique: true,
-      fields: ["usuario_id", "avatar_id"], // evita duplicados
+      fields: ["jugador_id", "avatar_id"], // evita duplicados
     },
   ],
 });

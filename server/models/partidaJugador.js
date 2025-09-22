@@ -1,5 +1,5 @@
-import sequelize from "./sequelize.js";
 import { DataTypes } from "sequelize";
+import sequelize from "./sequelize.js";
 
 const PartidaJugador = sequelize.define("PartidaJugador", {
   id: {
@@ -11,7 +11,7 @@ const PartidaJugador = sequelize.define("PartidaJugador", {
     type: DataTypes.INTEGER.UNSIGNED,
     allowNull: false
   },
-    usuario_id: {
+  jugador_id: {
     type: DataTypes.INTEGER.UNSIGNED,
     allowNull: false
   }
@@ -21,7 +21,7 @@ const PartidaJugador = sequelize.define("PartidaJugador", {
   indexes: [
     {
       unique: true,
-      fields: ["partida_id", "usuario_id"],
+      fields: ["partida_id", "jugador_id"],
     },
   ]
 });

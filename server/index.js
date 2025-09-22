@@ -1,6 +1,7 @@
 // server/index.js
 
 import "dotenv/config";
+import "./models/associations.js";
 
 import { Server } from "socket.io";
 import authRoutes from "./routes/authRoutes.js";

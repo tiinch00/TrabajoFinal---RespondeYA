@@ -1,7 +1,5 @@
-import sequelize from './sequelize.js';
 import { DataTypes } from 'sequelize';
-
-
+import sequelize from './sequelize.js';
 
 const Amigo = sequelize.define('Amigo', {
   id: { 
@@ -9,7 +7,7 @@ const Amigo = sequelize.define('Amigo', {
     primaryKey: true, 
     autoIncrement: true
   },
-  usuario_id: {
+  jugador_id: {
     type: DataTypes.INTEGER.UNSIGNED,
     allowNull: false
   },
@@ -34,12 +32,12 @@ const Amigo = sequelize.define('Amigo', {
   createdAt: 'creado_en',
   updatedAt: false,
   indexes: [
-    { fields: ['usuario_id'] }, // idx_amigos_usuario
+    { fields: ['jugador_id'] }, // idx_amigos_usuario
     { fields: ['amigo_id'] }   // idx_amigos_amigo
   ],
   uniqueKeys: {
     uc_amigos_par: {
-      fields: ['usuario_id', 'amigo_id']
+      fields: ['jugador_id', 'amigo_id']
     }
   }
 });

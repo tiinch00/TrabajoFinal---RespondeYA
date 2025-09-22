@@ -1,7 +1,5 @@
-import sequelize from "./sequelize.js";
 import { DataTypes } from "sequelize";
-
-
+import sequelize from "./sequelize.js";
 
 const Sala = sequelize.define("Sala", {
   id: {
@@ -13,11 +11,7 @@ const Sala = sequelize.define("Sala", {
     type: DataTypes.STRING(12),         
     allowNull: true,
     unique: true,
-  },
-  creador_id: {
-    type: DataTypes.INTEGER.UNSIGNED,   
-    allowNull: false,
-  },
+  },  
   categoria_id: {
     type: DataTypes.INTEGER.UNSIGNED,   
     allowNull: true,

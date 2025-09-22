@@ -1,7 +1,7 @@
 import "dotenv/config";
 
-//import { Op } from "sequelize";
-import User from '../models/user.js'
+import Jugador from '../models/Jugador.js';
+import User from '../models/User.js';
 import { authMiddleware } from "../routes/authMiddleware.js";
 import bcrypt from 'bcrypt';
 import express from 'express';
@@ -15,19 +15,29 @@ router.post('/register', async (req, res) => {
     const { usuario, email, password } = req.body;
     // Validaciones mínimas
     if (!usuario) return res.status(400).json({ error: "El usuario es obligatorio" });
-   if (!email) return res.status(400).json({ error: "El email es obligatorio" });
-   if (!password) return res.status(400).json({ error: "La contraseña es obligatoria" }); 
+    if (!email) return res.status(400).json({ error: "El email es obligatorio" });
+    if (!password) return res.status(400).json({ error: "La contraseña es obligatoria" });
     const exists = await User.findOne({ where: { email } });
     if (exists) return res.status(409).json({ error: "Email ya registrado" });
-
+    
+    // crea el obj User
     const newUser = await User.create({
       name: usuario,
       email,
       password,
-      puntaje : 0
     });
+
+    // verifica si el user es un Jugador
+    if (newUser) {
+      // crea el registro para 1:1 en jugadores 
+      await Jugador.create(
+        { user_id: newUser.id }
+      );
+    }
+
     const { password: _, ...userWithoutPassword } = newUser.toJSON();
     res.status(201).json(userWithoutPassword);
+    
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -37,13 +47,13 @@ router.post('/register', async (req, res) => {
 
 router.post("/login", async (req, res) => {
   try {
-   const { email, password } = req.body;
-   if (!email) return res.status(400).json({ error: "El email es obligatorio" });
-   if (!password) return res.status(400).json({ error: "La contraseña es obligatoria" }); 
-   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-     return res.status(400).json({ error: "Email inválido" });
+    const { email, password } = req.body;
+    if (!email) return res.status(400).json({ error: "El email es obligatorio" });
+    if (!password) return res.status(400).json({ error: "La contraseña es obligatoria" });
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ error: "Email inválido" });
     }
-    
+
 
     const user = await User.findOne({ where: { email } });
     if (!user) {
