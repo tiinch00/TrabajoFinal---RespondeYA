@@ -1,21 +1,8 @@
-// src/pages/ChatGlobal.jsx
-
 import { useEffect, useRef, useState } from "react";
 
-import axios from "axios";
 import { io } from "socket.io-client";
 
 const SOCKET_URL = "http://localhost:3006";
-
-function decodeJwt(token) {
-    try {
-        const base64Url = token.split(".")[1];
-        const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-        return JSON.parse(atob(base64));
-    } catch {
-        return null;
-    }
-}
 
 const getStoredUserName = () => {
     const raw = localStorage.getItem("user");
@@ -32,20 +19,16 @@ const getStoredUserName = () => {
     }
 };
 
-const genId = () =>
-    crypto?.randomUUID?.() ||
-    Date.now().toString(36) + Math.random().toString(36).slice(2);
-
 export default function ChatGlobal() {
-    const socketRef = useRef(null); // ✅ ahora existe
-    const seenIdsRef = useRef(new Set()); // para deduplicar mensajes
 
+    const socketRef = useRef(null);
+    const seenIdsRef = useRef(new Set()); // para deduplicar mensajes
     const [messages, setMessages] = useState([]);
     const [text, setText] = useState("");
     const [username, setUsername] = useState(getStoredUserName);
     const listRef = useRef(null);
 
-    // helper de deduplicación
+    // array que tiene todos los mensajes
     const pushIfNew = (msg) => {
         const id = msg?.clientId || msg?.id;
         if (id && seenIdsRef.current.has(id)) return;
@@ -53,45 +36,7 @@ export default function ChatGlobal() {
         setMessages((prev) => [...prev, msg]);
     };
 
-    // Resolver username una sola vez
-    useEffect(() => {
-        (async () => {
-            if (username) return;
-
-            const token = localStorage.getItem("token");
-            if (token) {
-                const payload = decodeJwt(token);
-                const nameFromJwt =
-                    payload?.name ||
-                    payload?.username ||
-                    (payload?.email ? payload.email.split("@")[0] : "");
-                if (nameFromJwt) {
-                    setUsername(nameFromJwt);
-                    localStorage.setItem("username", nameFromJwt);
-                    return;
-                }
-            }
-
-            try {
-                const res = await axios.get("http://localhost:3006/auth/me", {
-                    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-                });
-                const name = res.data?.name || res.data?.username || "";
-                if (name) {
-                    setUsername(name);
-                    localStorage.setItem("user", JSON.stringify(res.data));
-                    localStorage.setItem("username", name);
-                    return;
-                }
-            } catch {
-                // ignorar
-            }
-
-            setUsername("anonymous");
-        })();
-    }, [username]);
-
-    // Conexión socket: init una vez, listeners por montaje (StrictMode-safe)
+    // Conexion socket.io
     useEffect(() => {
         // crear socket 1 sola vez
         if (!socketRef.current) {
@@ -105,30 +50,23 @@ export default function ChatGlobal() {
 
         const s = socketRef.current;
 
-        // 👉 registrás los listeners acá
+        // guarda los mensajes en el array messages (const)
         const onMessage = (msg) => {
-            console.log("📨 recibido en cliente:", msg);
-            pushIfNew(msg); // tu función de dedupe + setMessages
+            //console.log("📨 recibido en cliente:", msg);
+            pushIfNew(msg);
         };
 
         s.on("connect", () => console.log("🟢 socket connected", s.id));
         s.on("chat:message", onMessage);
 
-        // 👉 y los limpias en el cleanup
+        // limpias en el cleanup
         return () => {
             s.off("chat:message", onMessage);
             s.off("connect");
-            // NO cierres el socket en dev para evitar problemas con StrictMode
-            // s.close();
         };
-    }, []); // deps vacías
+    }, []);
 
-    // Auto-scroll
-    useEffect(() => {
-        if (listRef.current)
-            listRef.current.scrollTop = listRef.current.scrollHeight;
-    }, [messages]);
-
+    // funcion que envia el mensaje al sevidor para socket.io
     const handleSend = (e) => {
         e.preventDefault();
         const s = socketRef.current;
@@ -143,37 +81,36 @@ export default function ChatGlobal() {
             text: text.trim(),
             createdAt: new Date().toISOString(),
         };
-
-        // ❌ NO marcar como visto antes (esto rompe el optimista)
-        // seenIdsRef.current.add(clientId);
-
-        // ✅ Pintado optimista: pushIfNew agrega y marca como visto internamente
+        // pushIfNew agrega y marca como visto internamente
         pushIfNew({ ...payload, id: clientId });
 
-        // Emití; cuando llegue el eco, será ignorado por la dedupe
-        s.emit("chat:message", payload);
-
-        setText("");
+        s.emit("chat:message", payload);// Emitir
+        setText(""); // setea el input para eviar un mensaje
     };
+
+    // Auto-scroll
+    useEffect(() => {
+        if (listRef.current)
+            listRef.current.scrollTop = listRef.current.scrollHeight;
+    }, [messages]);
 
     const isMine = (from, me) =>
         String(from || "").trim().toLowerCase() === String(me || "").trim().toLowerCase();
 
-    // ✅ el return VA DENTRO del componente
     return (
         <div className="mt-1 w-full">
             <div className="flex flex-col h-[60vh] max-w-[900px] mx-auto border rounded-lg mt-4 mb-4 bg-white text-black">
                 {/* título */}
                 <div className="px-4 py-2 border-b flex items-center justify-between h-12">
-                    
+
                     <div className="font-semibold text-md">Chat Comunidad</div>
-                    
+
                     <div className="text-md">
                         <span className="px-2 py-1 rounded bg-gray-200">
                             👤 {username || "anonymous"}
                         </span>
                     </div>
-                    
+
                 </div>
 
                 {/* mensajes */}
