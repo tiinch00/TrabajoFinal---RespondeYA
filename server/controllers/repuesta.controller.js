@@ -1,5 +1,5 @@
 
-import {Respuesta} from '../models/associations.js';
+import {Respuesta,Partida,User,Pregunta} from '../models/associations.js';
 
 
 const index = async (req, res) => {
@@ -30,6 +30,21 @@ const show = async (req, res) => {
 
 const store = async (req, res) => {
   const { partida_id, usuario_id, pregunta_id, partida_pregunta_id, opcion_elegida_id, estadistica_id, es_correcta, tiempo_respuesta_ms } = req.body;
+  if (!partida_id || !usuario_id || !pregunta_id || !partida_pregunta_id || !opcion_elegida_id || !estadistica_id || !es_correcta || !tiempo_respuesta_ms){
+     return res.status(400).json({ error: "Data are required" });
+  }
+  const partida = await Partida.findByPk(partida_id);
+  if (!partida) {
+    return res.status(400).json({ error: "Invalid partida_id" });
+  }
+   const user = await User.findByPk(usuario_id);
+  if (!user) {
+    return res.status(400).json({ error: "Invalid usuario_id" });
+  }
+  const pregunta = await Pregunta.findByPk(pregunta_id);
+  if (!pregunta) {
+    return res.status(400).json({ error: "Invalid pregunta_id" });
+  }
   try {
     const respuesta = await Respuesta.create({ partida_id, usuario_id, pregunta_id, partida_pregunta_id, opcion_elegida_id, estadistica_id, es_correcta, tiempo_respuesta_ms });
     res.status(201).json(respuesta);
@@ -46,6 +61,21 @@ const store = async (req, res) => {
 const update = async (req, res) => {
   const { id } = req.params;
   const { partida_id, usuario_id, pregunta_id, partida_pregunta_id, opcion_elegida_id, estadistica_id, es_correcta, tiempo_respuesta_ms } = req.body;
+    if (!partida_id || !usuario_id || !pregunta_id || !partida_pregunta_id || !opcion_elegida_id || !estadistica_id || !es_correcta || !tiempo_respuesta_ms){
+     return res.status(400).json({ error: "Data are required" });
+  }
+  const partida = await Partida.findByPk(partida_id);
+  if (!partida) {
+    return res.status(400).json({ error: "Invalid partida_id" });
+  }
+   const user = await User.findByPk(usuario_id);
+  if (!user) {
+    return res.status(400).json({ error: "Invalid usuario_id" });
+  }
+  const pregunta = await Pregunta.findByPk(pregunta_id);
+  if (!pregunta) {
+    return res.status(400).json({ error: "Invalid pregunta_id" });
+  }
   try {
     const respuesta = await Respuesta.findByPk(id);
     if (!respuesta) {

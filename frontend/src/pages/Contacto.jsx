@@ -57,9 +57,46 @@ const Contacto = () => {
   };
 
   return (
-    <div className="w-full  flex items-center justify-center text-black ">
+     <>
+   <section className="bg-gradient-to-r from-purple-700 to-indigo-800 text-white py-12 px-6 text-center rounded-2xl">
+        <h1 className="text-4xl font-bold mb-4 drop-shadow">
+          ¿Quiénes somos?
+        </h1>
+        <p className="max-w-3xl mx-auto text-lg leading-relaxed">
+          Dєv²Plαy es una empresa creada por <b>Francisco Pandolfi</b> y{" "}
+          <b>Martin Paredes</b>, dos desarrolladores web fundadores del popular
+          juego en tiempo real <span className="italic">RespondeYa!</span>
+        </p>
 
-      <div  className="w-full max-w-md rounded-2xl shadow-lg flex flex-col bg-amber-600 p-5">
+        <div className="mt-10 grid gap-8 md:grid-cols-2 max-w-4xl mx-auto">
+          {/* Perfil Martin */}
+          <div className="flex flex-col items-center bg-white/10 p-6 rounded-2xl shadow-lg">
+            <img
+              src="/Martin.png"
+              className="w-40 h-40 rounded-full object-cover mb-4 border-4 border-white"
+              alt="Martin"
+            />
+            <h2 className="text-xl font-bold">Martin Paredes</h2>
+            <p className="text-sm text-gray-200">@Tiinch00</p>
+          </div>
+
+          {/* Perfil Francisco */}
+          <div className="flex flex-col items-center bg-white/10 p-6 rounded-2xl shadow-lg">
+            <img
+              src="/Francisco.png"
+              className="w-40 h-40 rounded-full object-cover mb-4 border-4 border-white"
+              alt="Francisco"
+            />
+            <h2 className="text-xl font-bold">Francisco Pandolfi</h2>
+            <p className="text-sm text-gray-200">@Fran</p>
+          </div>
+        </div>
+      </section>
+
+
+    <div className="w-full  flex items-center justify-center text-black m-5 p-5">
+
+      <div  className="w-full max-w-md rounded-2xl shadow-lg flex flex-col p-5 bg-gradient-to-r from-purple-700 to-indigo-800 text-white py-12 px-6">
 
       
       <form
@@ -77,7 +114,7 @@ const Contacto = () => {
             value={form.nombreUsuario}
             onChange={handleChange}
             placeholder="Ingrese Usuario"
-            className="p-2 rounded-lg bg-white/20 placeholder-white focus:outline-none focus:ring-2 focus:ring-purple-400"
+            className="p-2 rounded-lg bg-white/40 placeholder-white focus:outline-none focus:ring-2 focus:ring-purple-400"
             required
           />
         </div>
@@ -91,7 +128,7 @@ const Contacto = () => {
             value={form.email}
             onChange={handleChange}
             placeholder="Ingrese Email"
-            className="p-2 rounded-lg  bg-white/20 placeholder-white focus:outline-none focus:ring-2 focus:ring-purple-400" 
+            className="p-2 rounded-lg  bg-white/40 placeholder-white focus:outline-none focus:ring-2 focus:ring-purple-400" 
             required
           />
         </div>
@@ -106,7 +143,7 @@ const Contacto = () => {
             onChange={handleChange}
             rows="4"
             placeholder="Escríbenos tu consulta..."
-            className="p-2 rounded-lg bg-white resize-none focus:outline-none text-black focus:ring-2 focus:ring-purple-400"
+            className="p-2 rounded-lg bg-white/40 resize-none focus:outline-none text-black focus:ring-2 focus:ring-purple-400"
             required
           ></textarea>
         </div>
@@ -130,6 +167,7 @@ const Contacto = () => {
       </form>
       </div>
     </div>
+    </>
   );
 };
 

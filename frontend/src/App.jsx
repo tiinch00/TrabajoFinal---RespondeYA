@@ -1,34 +1,40 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 
 import ChatGlobal from './pages/ChatGlobal'
-import ComoJugar from "./pages/ComoJugar"
+import ComoJugar from './pages/ComoJugar'
 import Contacto from './pages/Contacto'
-import Home from "./pages/Home"
+import Home from './pages/Home'
 import Login from './pages/Login'
 import Perfil from './pages/Perfil'
-import PrivateLayout from "./layouts/PrivateLayout";
-import ProtectedRoute from "./routes/ProtectedRoute";
-import PublicLayout from "./layouts/PublicLayout";
-import PublicRoute from "./routes/PublicRoute";
+import PrivateLayout from './layouts/PrivateLayout'
+import ProtectedRoute from './routes/ProtectedRoute'
+import PublicLayout from './layouts/PublicLayout'
+import PublicRoute from './routes/PublicRoute'
 import Register from './pages/Register'
 import Tienda from './pages/Tienda'
+import CrearPartida from './pages/CrearPartida.jsx'
+import JugarIndividual from './pages/JugarIndividual.jsx'
 
 function App() {
-
   return (
     <BrowserRouter>
-      <Routes>                      
+      <Routes>
         {/* Publico (sin sesion) */}
         <Route element={<PublicRoute />}>
           <Route element={<PublicLayout />}>
-            <Route path='/login' element={<Login />} />  
-            <Route path='/register' element={<Register />} />                      
+            <Route path='/login' element={<Login />} />
+            <Route path='/register' element={<Register />} />
           </Route>
         </Route>
         {/* Privado (con sesion) */}
         <Route element={<ProtectedRoute />}>
           <Route element={<PrivateLayout />}>
             <Route index element={<Home />} /> {/* "/" */}
+            <Route path='/crearPartida' element={<CrearPartida />} />
+            <Route
+              path='/jugarIndividual/:categoria/:tiempo/:dificultad'
+              element={<JugarIndividual />}
+            />
             <Route path='/tienda' element={<Tienda />} />
             <Route path='/contacto' element={<Contacto />} />
             <Route path='/perfil' element={<Perfil />} />
@@ -36,8 +42,8 @@ function App() {
             <Route path='/chatGlobal' element={<ChatGlobal />} />
           </Route>
         </Route>
-         {/* Catch-all: mandá a "/" (el guard decide) */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        {/* Catch-all: mandá a "/" (el guard decide) */}
+        <Route path='*' element={<Navigate to='/' replace />} />
       </Routes>
     </BrowserRouter>
   )
