@@ -68,7 +68,7 @@ const Login = () => {
               type='text'
               required
               name='email'
-              placeholder='Ingrese email o usuario'
+              placeholder='Ingrese email'
               onChange={handleChanges}
               className='w-70 h-15  rounded-4xl text-center bg-amber-100 hover:bg-amber-200 placeholder-gray-500 text-black'
             />
