@@ -40,11 +40,9 @@ const Register = () => {
 
     try {
       const response = await axios.post('http://localhost:3006/auth/register',cleanedValues)
-      console.log(response);
+      //console.log(response);
       //alert("Usuario creado con éxito");
-
-      console.log(response);
-      console.log(values);
+      //console.log(values);
       if(response.status === 201){
           navigate('/login');
       }
