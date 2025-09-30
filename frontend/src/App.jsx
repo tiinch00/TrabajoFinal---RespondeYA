@@ -1,19 +1,20 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
-import ChatGlobal from './pages/ChatGlobal'
-import ComoJugar from './pages/ComoJugar'
-import Contacto from './pages/Contacto'
-import Home from './pages/Home'
-import Login from './pages/Login'
-import Perfil from './pages/Perfil'
-import PrivateLayout from './layouts/PrivateLayout'
-import ProtectedRoute from './routes/ProtectedRoute'
-import PublicLayout from './layouts/PublicLayout'
-import PublicRoute from './routes/PublicRoute'
-import Register from './pages/Register'
-import Tienda from './pages/Tienda'
-import CrearPartida from './pages/CrearPartida.jsx'
-import JugarIndividual from './pages/JugarIndividual.jsx'
+import ChatGlobal from './pages/ChatGlobal';
+import ComoJugar from './pages/ComoJugar';
+import Contacto from './pages/Contacto';
+import Home from './pages/Home';
+import Login from './pages/Login';
+import Perfil from './pages/Perfil';
+import PrivateLayout from './layouts/PrivateLayout';
+import ProtectedRoute from './routes/ProtectedRoute';
+import PublicLayout from './layouts/PublicLayout';
+import PublicRoute from './routes/PublicRoute';
+import Register from './pages/Register';
+import Tienda from './pages/Tienda';
+import CrearPartida from './pages/CrearPartida.jsx';
+import JugarIndividual from './pages/JugarIndividual.jsx';
+import Bienvenido from './pages/Bienvenido.jsx';
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<PrivateLayout />}>
             <Route index element={<Home />} /> {/* "/" */}
+            <Route path='/bienvenido' element={<Bienvenido />} />
             <Route path='/crearPartida' element={<CrearPartida />} />
             <Route
               path='/jugarIndividual/:categoria/:tiempo/:dificultad'
@@ -46,7 +48,7 @@ function App() {
         <Route path='*' element={<Navigate to='/' replace />} />
       </Routes>
     </BrowserRouter>
-  )
+  );
 }
 
-export default App
+export default App;
