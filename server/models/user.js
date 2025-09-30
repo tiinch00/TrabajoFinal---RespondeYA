@@ -7,6 +7,10 @@ const User = sequelize.define('User',{
     primaryKey: true,
     autoIncrement: true
   },
+  role: {
+    type: DataTypes.ENUM('jugador', 'administrador'),
+    allowNull: false
+  },
   name: {
     type: DataTypes.STRING(255),
     allowNull: false //requiere que el campo sea no null

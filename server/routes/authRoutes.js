@@ -13,6 +13,7 @@ const router = express.Router();
 router.post('/register', async (req, res) => {
   try {
     const { usuario, email, password } = req.body;
+    const role = 'jugador'; // default de registrar un usuario
     // Validaciones mínimas
     if (!usuario) return res.status(400).json({ error: "El usuario es obligatorio" });
     if (!email) return res.status(400).json({ error: "El email es obligatorio" });
@@ -22,6 +23,7 @@ router.post('/register', async (req, res) => {
     
     // crea el obj User
     const newUser = await User.create({
+      role,
       name: usuario,
       email,
       password,
@@ -71,7 +73,7 @@ router.post("/login", async (req, res) => {
 
     return res.status(200).json({
       token,
-      user: { id, name, email: mail },
+      user: { id, name, email: mail, role: user.role },
     });
   } catch (err) {
     console.error("LOGIN ERR:", err);

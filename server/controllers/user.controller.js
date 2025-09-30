@@ -48,8 +48,8 @@ const store = async (req, res) => {
 const update = async (req, res) => {
   const { id } = req.params;
   const { name, email, password } = req.body;
-  if (!name || !email || !password) {
-    return res.status(400).json({ error: "Name, email, and password are required" });
+  if (!name || !email) {
+    return res.status(400).json({ error: "Name y email son requeridos" });
   }
   try {
     const user = await User.findByPk(id);
@@ -57,8 +57,14 @@ const update = async (req, res) => {
       return res.status(404).send("User not found");
     }
 
-    await user.update({ name, email, password });
-    res.json(user);
+    const payload = { name, email };
+    if (typeof password === "string" && password.trim()) {
+      payload.password = password.trim();
+    }
+
+    await user.update(payload);
+    const { password: _pw, ...safe } = user.toJSON();
+    res.json(safe);
   } catch (error) {
     if (error.name === 'SequelizeUniqueConstraintError') {
       return res.status(400).json({ error: "Email already exists" });

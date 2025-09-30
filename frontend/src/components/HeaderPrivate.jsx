@@ -22,7 +22,7 @@ export default function HeaderPrivate() {
     const btnRef = useRef(null);
     const [user, setUser] = useState(getStoredUser);
 
-    console.log(user.name);
+    //console.log(user.name);
 
     const name = user.name || (user?.email?.split("@")[0]) || "Jugador";
 
