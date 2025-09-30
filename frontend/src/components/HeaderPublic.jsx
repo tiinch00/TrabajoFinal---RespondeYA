@@ -10,6 +10,7 @@ export default function HeaderPublic() {
                 <ul className="flex items-center gap-6 text-lg">
                     <li><Link to="/login" className="hover:underline">Ingresar</Link></li>
                     <li><Link to="/register" className="hover:underline">Registrarse</Link></li>
+                    <li><Link to="/comojugar" className="hover:underline">Cómo Jugar</Link></li>
                 </ul>
             </nav>
         </header>
