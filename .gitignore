@@ -1,0 +1,37 @@
+# ========== Node / server ==========
+/server/node_modules
+/server/.env
+/server/dist
+/server/build
+
+# Logs
+/server/npm-debug.log*
+/server/yarn-debug.log*
+/server/yarn-error.log*
+/server/pnpm-debug.log*
+
+# ========== React / frontend==========
+/frontend/node_modules
+/frontend/.env
+/frontend/.env.local
+/frontend/.env.development
+/frontend/.env.test
+/frontend/.env.production
+/frontend/build
+/frontend/dist
+
+
+
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+Thumbs.db   
+
