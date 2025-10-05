@@ -11,6 +11,7 @@ import cors from 'cors';
 import estadisticaRoutes from "./routes/estadisticaRoutes.js";
 import express from 'express';
 import http from 'http';
+import jugadorRoutes from "./routes/jugadorRoutes.js";
 import preguntasRoutes from './routes/preguntasRoutes.js';
 import sequelize from './models/sequelize.js';
 import userRoutes from './routes/userRoutes.js';
@@ -40,6 +41,7 @@ app.use(userRoutes);
 app.use(categoryRoutes);
 app.use(preguntasRoutes);
 app.use(estadisticaRoutes);
+app.use("/api", jugadorRoutes); 
 
 // (Opcional) raíz para verificar rápido
 app.get('/', (req, res) => res.status(200).json({ api: 'RespondeYA OK' }));

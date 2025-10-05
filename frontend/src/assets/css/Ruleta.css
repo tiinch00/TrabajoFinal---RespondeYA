@@ -1,0 +1,94 @@
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap");
+
+.tiradas{
+    margin-left: 80px;
+    width:fit-content;
+    display: flex;
+    column-gap: 10px;
+    align-items: center;
+}
+
+.tiradas img{
+    width: 40px;
+    height: 40px;
+}
+
+.tiradas p{
+    font-size: x-large;
+}
+
+.plafon {
+    position: relative;
+    margin: 10px auto 0;
+    text-align: center;
+    width: 720px;
+}
+
+.central {
+    width: 80px;
+    height: 100px;
+    position: absolute;
+    margin-left: 322px;
+    z-index: 2;
+}
+
+.ruleta {
+    width: 400px;
+    height: 400px;
+    background-size: cover;
+    background-position: center;
+    margin-top: 100px;
+    margin: 10px auto 45px;
+}
+
+.img {
+    width: 100%;
+}
+
+.barra1 {
+    background-color: #444444;
+    width: 200px;
+    height: 28px;
+    border-radius: 12px;
+    padding: 4px;
+    margin: 15px auto 10px;
+}
+
+.mi_barra {
+    border-radius: 8px;
+    width: 0%;
+    height: 20px;
+    background-color: orange;
+    animation-name: animacionBarra;
+    animation-duration: 0.8s;
+    animation-timing-function: ease-in-out;
+    /* velociad cuando arranca y termina */
+    animation-iteration-count: infinite;
+    animation-play-state: running;
+}
+
+.parate {
+    animation-play-state: paused;
+}
+
+@keyframes animacionBarra {
+    0% {
+        width: 0%;
+    }
+
+    50% {
+        width: 100%;
+    }
+
+    100% {
+        width: 0%;
+    }
+}
+
+/* boton de girar */
+.lanzar {
+    width: 200px;
+    border-radius: 10px;
+    margin-top: 20px;
+    margin-bottom: 40px;
+}

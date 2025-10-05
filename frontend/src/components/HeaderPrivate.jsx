@@ -57,7 +57,7 @@ export default function HeaderPrivate() {
 
 
     return (
-        <header className="bg-orange-300 px-6 py-3 font-semibold shadow sticky top-0 w-full">
+        <header className="bg-orange-300 px-6 py-3 font-semibold shadow sticky top-0 w-full z-10">
             <nav className="flex items-center justify-between">
                 <Link to="/" className="h-16 flex items-center">                    
                     <img src="/logo.png" alt="Logo" className="h-72 flex items-center" />

@@ -41,6 +41,9 @@ const Home = () => {
         >
           Chat Global
         </Link>
+        <Link to='/Ruleta' className="w-70 h-15  hover:scale-105 text-white transition-transform cursor-pointer bg-amber-600 rounded-4xl flex items-center justify-center mb-1 mt-4 p-1">
+          Ruleta
+        </Link> 
       </div>
     </div>
   )

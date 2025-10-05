@@ -14,6 +14,7 @@ import ProtectedRoute from './routes/ProtectedRoute';
 import PublicLayout from './layouts/PublicLayout';
 import PublicRoute from './routes/PublicRoute';
 import Register from './pages/Register';
+import Ruleta from './pages/Ruleta';
 import Tienda from './pages/Tienda';
 
 // Elige layout según sesión
@@ -58,6 +59,7 @@ function App() {
             <Route path='/tienda' element={<Tienda />} />            
             <Route path='/perfil' element={<Perfil />} />           
             <Route path='/chatGlobal' element={<ChatGlobal />} />
+            <Route path='/Ruleta' element={<Ruleta />} />
           </Route>
         </Route>
         {/* Catch-all: mandá a "/" (el guard decide) */}
