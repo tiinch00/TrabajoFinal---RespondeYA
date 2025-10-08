@@ -1,16 +1,18 @@
 import "../assets/css/Ruleta.css";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import axios from "axios";
 
 export default function Ruleta() {
     const barraRef = useRef(null);
+    const cooldownTimerRef = useRef(null);
     const [ancho, setAncho] = useState(1);
     const [tiradas, setTiradas] = useState(1);
     const [premio, setPremio] = useState("Haz click en girar");
     const [rotation, setRotation] = useState(0);
     const [puntos, setPuntos] = useState(0);
+    const [remainingMs, setRemainingMs] = useState(0);
 
     // usuario logueado desde localStorage (parseado)
     const [user] = useState(() => {
@@ -24,6 +26,85 @@ export default function Ruleta() {
 
     const userId = user?.id;
 
+    // logica de 24 hs
+    const COOLDOWN_MS = 24 * 60 * 60 * 1000;
+    const spinKey = `roulette:lastSpin:${userId ?? "anonymous"}`;
+
+    const formatHMS = (ms) => {
+        const total = Math.max(0, Math.floor(ms / 1000));
+        const h = String(Math.floor(total / 3600)).padStart(2, "0");
+        const m = String(Math.floor((total % 3600) / 60)).padStart(2, "0");
+        const s = String(total % 60).padStart(2, "0");
+        return `${h}:${m}:${s}`;
+    };
+
+    useEffect(() => {
+        // limpiar un timeout previo
+        if (cooldownTimerRef.current) {
+            clearTimeout(cooldownTimerRef.current);
+            cooldownTimerRef.current = null;
+        }
+
+        const last = Number(localStorage.getItem(spinKey) || 0);
+        const now = Date.now();
+
+        if (!last || now - last >= COOLDOWN_MS) {
+            setTiradas(1); // disponible
+            setRemainingMs(0);
+        } else {
+            setTiradas(0); // en cooldown
+            const remaining = COOLDOWN_MS - (now - last);
+            setRemainingMs(remaining);
+            cooldownTimerRef.current = setTimeout(() => {
+                setTiradas(1);
+                setRemainingMs(0);
+                cooldownTimerRef.current = null;
+            }, remaining);
+        }
+
+        // Sync entre pestañas/ventanas
+        const onStorage = (e) => {
+            if (e.key !== spinKey) return;
+            const updated = Number(e.newValue || 0);
+            const nnow = Date.now();
+            if (!updated || nnow - updated >= COOLDOWN_MS) {
+                setTiradas(1);
+                setRemainingMs(0);
+            } else {
+                setTiradas(0);
+                const rem = COOLDOWN_MS - (nnow - updated);
+                setRemainingMs(rem)
+                // reprogramar timeout con el nuevo valor
+                if (cooldownTimerRef.current) clearTimeout(cooldownTimerRef.current);
+                cooldownTimerRef.current = setTimeout(() => {
+                    setTiradas(1);
+                    setRemainingMs(0);
+                    cooldownTimerRef.current = null;
+                }, rem);
+            }
+        };
+        window.addEventListener("storage", onStorage);
+
+        return () => {
+            window.removeEventListener("storage", onStorage);
+            if (cooldownTimerRef.current) clearTimeout(cooldownTimerRef.current);
+        };
+    }, [spinKey]); // se recalcula si cambia el usuario
+
+    // nuevo: “tick” cada 1s para refrescar el contador en pantalla
+    useEffect(() => {
+        const tick = () => {
+            const last = Number(localStorage.getItem(spinKey) || 0);
+            const now = Date.now();
+            const rem = Math.max(0, COOLDOWN_MS - (now - last));
+            setRemainingMs(rem);
+        };
+        tick(); // primer cálculo inmediato
+        const id = setInterval(tick, 1000);
+        return () => clearInterval(id);
+    }, [spinKey]);
+
+
     const guardarPuntaje = async (userId, puntosGanados) => {
         try {
             await axios.put(`http://localhost:3006/api/jugadores/${userId}`, { puntaje: puntosGanados });
@@ -33,6 +114,21 @@ export default function Ruleta() {
     };
 
     const lanzar = () => {
+        // si no hay tiradas, no hace nada
+        if (tiradas === 0) return;
+
+        // si hay tirada consume la entrada y arrancar cooldown
+        setTiradas(0);
+        localStorage.setItem(spinKey, String(Date.now()));
+        setRemainingMs(COOLDOWN_MS);
+        // (re)programar el re-enable por si la SPA queda abierta
+        if (cooldownTimerRef.current) clearTimeout(cooldownTimerRef.current);
+        cooldownTimerRef.current = setTimeout(() => {
+            setTiradas(1);
+            setRemainingMs(0);
+            cooldownTimerRef.current = null;
+        }, COOLDOWN_MS);
+
         barraRef.current.classList.toggle('parate');
         const width2 = barraRef.current.getBoundingClientRect().width;
         setAncho(width2);
@@ -40,9 +136,9 @@ export default function Ruleta() {
     };
 
     const girar = () => {
-        const nuevaRotacion = 2 * (Math.floor(Math.random() * 210) + 340);
+        const nuevaRotacion = 6 * (Math.floor(Math.random() * 210) + 340);
         setRotation(rotation + ancho + nuevaRotacion);
-        setTiradas(0);
+        //setTiradas(0);
     }
 
     const final = () => {
@@ -89,7 +185,11 @@ export default function Ruleta() {
 
             <div className="tiradas">
                 <img src="./assets/ticket.png" alt="ticket" />
-                <p>: {tiradas} ticket restante.</p>
+                {tiradas === 1 ? (
+                    <p>1 ticket disponible — <b>{formatHMS(0)}</b></p>
+                ) : (
+                    <p>0 tickets — vuelve en <b>{formatHMS(remainingMs)}</b></p>
+                )}
             </div>
 
             {/* conteiner de ruleta */}
@@ -121,10 +221,25 @@ export default function Ruleta() {
                 </div>
 
                 {/* boton de girar ruleta */}
-                {tiradas != 0
-                    ? <button type="button" className="lanzar bg-sky-500 hover:bg-sky-600 cursor-pointer" onClick={lanzar}>Girar</button>
-                    : <button type="button" className="lanzar bg-gray-400 cursor-not-allowed" onClick={lanzar} disabled>Girar</button>
-                }
+                {tiradas !== 0 ? (
+                    <button
+                        type="button"
+                        className="lanzar bg-sky-500 hover:bg-sky-600 cursor-pointer"
+                        onClick={lanzar}
+                    >
+                        Girar
+                    </button>
+                ) : (
+                    <button
+                        type="button"
+                        className="lanzar bg-gray-400 cursor-not-allowed"
+                        onClick={lanzar}
+                        disabled
+                        title={`Vuelve en ${formatHMS(remainingMs)}`}
+                    >
+                        Girar ({formatHMS(remainingMs)})
+                    </button>
+                )}
 
 
             </div>
