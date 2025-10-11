@@ -1,6 +1,5 @@
 import {Avatar} from '../models/associations.js';
 
-
 const index = async (req, res) => {
   try {
     const avatars = await Avatar.findAll();

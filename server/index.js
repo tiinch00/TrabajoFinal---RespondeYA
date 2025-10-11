@@ -5,6 +5,7 @@ import './models/associations.js';
 
 import { Server } from 'socket.io';
 import authRoutes from './routes/authRoutes.js';
+import avataresRoutes from './routes/avataresRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
 import contactRoutes from './routes/contactRoutes.js';
 import cors from 'cors';
@@ -14,6 +15,7 @@ import http from 'http';
 import jugadorRoutes from "./routes/jugadorRoutes.js";
 import preguntasRoutes from './routes/preguntasRoutes.js';
 import sequelize from './models/sequelize.js';
+import userAvataresRoutes from './routes/userAvataresRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 
 const app = express();
@@ -41,7 +43,9 @@ app.use(userRoutes);
 app.use(categoryRoutes);
 app.use(preguntasRoutes);
 app.use(estadisticaRoutes);
-app.use("/api", jugadorRoutes); 
+app.use(jugadorRoutes);
+app.use(avataresRoutes);
+app.use(userAvataresRoutes) ;
 
 // (Opcional) raíz para verificar rápido
 app.get('/', (req, res) => res.status(200).json({ api: 'RespondeYA OK' }));

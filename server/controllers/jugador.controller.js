@@ -10,18 +10,15 @@ const index = async (req, res) => {
     }
 };
 
-
 const show = async (req, res) => {
-    const { jugador_id } = req.params;
     try {
+        const { jugador_id } = req.params;                 
         const jugador = await Jugador.findByPk(jugador_id);
-        if (!jugador) {
-            return res.status(404).send("Jugador not found");
-        }
+        if (!jugador) return res.status(404).json({ error: "Jugador not found" });
         res.json(jugador);
-    } catch (error) {
-        console.error(error);
-        return res.status(500).send("Internal server error findByPk(id)");
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Internal server error findByPk(id)");
     }
 };
 
@@ -73,7 +70,7 @@ const updateByUserId = async (req, res) => {
         //const usuario = await jugador.update({ puntaje });
 
         //console.log(usuario);
-        
+
         return res.json({
             ok: true,
             jugador: {
