@@ -1,28 +1,29 @@
-import { useEffect, useState } from 'react'
+import { AnimatePresence, motion } from "motion/react";
+import { useEffect, useRef, useState } from 'react'
 
 import axios from "axios";
-import { motion } from "motion/react";
 
 const Tienda = () => {
 
-  const numAvatares = 14;
   const [selected, setSelected] = useState(null); // indice o null 
   const [jugador, setJugador] = useState(null);
   const [avatares, setAvatares] = useState([]);
+  const [jugadorAvatares, setJugadorAvatares] = useState([]);
   const [confirmar, setConfirmar] = useState(false);
+  const [comprado, setComprado] = useState(false);
+  const compradoTimerRef = useRef(null);
 
-  // 1) usuario logueado desde localStorage (parseado)
+  // obitne el usuario logueado desde localStorage (parseado)
   const [user] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem("user") || "null");
     } catch {
       return null;
     }
-
   });
-  //const userId = user?.id;
   const jugador_id = user?.jugador_id;
 
+  // // obtiene el objeto jugador
   const infoJugador = async () => {
     if (!jugador_id) {
       console.log("jugador_id vacío");
@@ -38,6 +39,7 @@ const Tienda = () => {
     }
   };
 
+  // obtiene todos los objetos avatares
   const infoAvatares = async () => {
     try {
       const { data } = await axios.get(`http://localhost:3006/avatar`);
@@ -48,60 +50,118 @@ const Tienda = () => {
     }
   };
 
-  const pad = (n) => {
-    return String(n).padStart(2, "0");
-  };
+  // obtiene los avatares que tiene el jugador comprado
+  const infoJugadorIdAvatares = async () => {
 
-  const formatDateTimeLocal = () => {
-    const date = new Date();
-    //date.toLocaleString("sv-SE").replace("T", " ");
-    const parts = new Intl.DateTimeFormat("en-CA", {
+    // prepara todos los atributos de la lista de avatares de un jugador
+    const values = {
+      jugador_id: jugador_id
+    };
+
+    try {
+      const { data } = await axios.get(`http://localhost:3006/userAvatar`, values);
+      setJugadorAvatares(data);
+      //console.log("GET: jugadorId_avatares (data):", data);
+    } catch (error) {
+      console.log("@@@@ Error GET /jugadorId_avatares\n", error);
+    }
+  }
+
+  const formatDateTimeAR = (date = new Date()) => {
+    // restar 3 horas
+    const shifted = new Date(date.getTime() - 3 * 60 * 60 * 1000);
+
+    const fmt = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Argentina/Buenos_Aires",
       year: "numeric", month: "2-digit", day: "2-digit",
       hour: "2-digit", minute: "2-digit", second: "2-digit",
       hour12: false,
-      timeZone: "America/Argentina/Buenos_Aires"
-    }).formatToParts(date);
+    });
 
-    const get = (t) => parts.find(x => x.type === t)?.value;
+    const parts = fmt.formatToParts(shifted);
+    const get = (t) => parts.find(p => p.type === t)?.value;
+
     return `${get("year")}-${get("month")}-${get("day")} ${get("hour")}:${get("minute")}:${get("second")}`;
   };
 
-  const handleSubmit = async (idAvatar) => {
-    const date = new Date();
 
+  // hace que el mensaje de compra desaparezca en 2 segundos
+  const scheduleToastHide = () => {
+    if (compradoTimerRef.current) clearTimeout(compradoTimerRef.current);
+    compradoTimerRef.current = setTimeout(() => {
+      setComprado(false);
+      compradoTimerRef.current = null;
+    }, 2000);
+  };
+
+  // funcion que crea un user_avatar para un usuario
+  const handleSubmit = async (idAvatar) => {
+
+    const nuevoSaldo = jugador.puntaje - avatares[selected].precio_puntos;
+
+    // prepara todos los atributos del objeto user_avatar
     const values = {
       jugador_id: jugador.jugador_id,
       avatar_id: idAvatar,
       origen: "compra",
-      adquirido_at: formatDateTimeLocal()
+      adquirido_at: formatDateTimeAR(),
     };
 
+    //console.log("puntaje del jugador " + jugador.puntaje);
+    //console.log("costo del avatar " + avatares[selected].precio_puntos);
+    //console.log("puntaje del jugador actualizado " + values.puntaje);
+
+
     try {
-      const response = await axios.post('http://localhost:3006/userAvatar', values);
+      // compra un avatar y se guarda en user_avatares
+      const { data: ua } = await axios.post('http://localhost:3006/userAvatar', values);
+
+      // actualiza el puntaje
+      const { data: jUpdated } = await axios.put(`http://localhost:3006/jugadores/update/${jugador_id}`, { puntaje: nuevoSaldo })
+
+      // actualiza el puntaje del jugador
+      setJugador(jUpdated ?? { ...jugador, puntaje: nuevoSaldo });
+
+      setJugadorAvatares(prev => {
+        // si el POST devuelve el objeto, usalo; si no, añadí uno mínimo
+        const item = ua ?? { jugador_id, avatar_id: idAvatar };
+        return prev.some(a => a.avatar_id === idAvatar) ? prev : [...prev, item];
+      });
+
+      setConfirmar(false);
+      setComprado(true);
+      scheduleToastHide();
+
     } catch (error) {
       console.log("@@@@ Error Post /user_Avatar\n", error);
     }
 
   };
 
+
+  // actualiza los valores cuando se produce un nuevo evento
   useEffect(() => {
     infoJugador();
     infoAvatares();
+    infoJugadorIdAvatares();
   }, []);
-
-  // si querés ver el estado cuando realmente cambie:
-  // useEffect(() => {
-  //   console.log("jugador:", jugador);
-  //   console.log("confirmar compra:", confirmar);
-  // }, [jugador, confirmar]);
-
 
   // Cerrar con ESC
   useEffect(() => {
-    const onKey = (e) => e.key === "Escape" && setSelected(null);
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setSelected(null);
+        setConfirmar(false);   // cierra el div de confirmacion
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
+
+  const yaLoTiene =
+    Array.isArray(jugadorAvatares) &&
+    avatares[selected] &&
+    jugadorAvatares.some(a => a.avatar_id === avatares[selected].id);
 
   return (
     <div>
@@ -138,6 +198,7 @@ const Tienda = () => {
             className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
                       w-full max-w-8/12 h-fit rounded-2xl bg-indigo-900 text-white p-6 shadow-2xl"
           >
+
             {/* Boton X */}
             <button
               type="button"
@@ -149,6 +210,7 @@ const Tienda = () => {
               ✕
             </button>
 
+            {/* Imagen */}
             <img
               // src={`/assets/avatares/avatar${selected + 1}.png`}
               src={avatares[selected].preview_url}
@@ -158,62 +220,96 @@ const Tienda = () => {
 
             <hr className="my-8 border-1 border-sky-500" />
 
+            {/* Nombre */}
             <div className='text-6xl text-center mt-6'>
               {avatares[selected].nombre}
             </div>
 
+            {/* Division */}
             <div className='text-2xl text-center mt-4 mb-4'>
               {avatares[selected].division}
             </div>
 
-            <div className="mt-4 text-center">
-
-              <div className="text-4xl font-semibold mb-6">
-                Precio: ${avatares[selected].precio_puntos}
-              </div>
-
-              {/* boton de compra */}
-              {jugador.puntaje >= avatares[selected].precio_puntos ?
-                (
-                  <div>
-                    <button className="text-xl mt-3 px-4 py-2 rounded bg-sky-600 text-white hover:bg-sky-700 cursor-pointer"
-                      onClick={() => { setConfirmar(true) }}
-                    >
-                      Comprar
-                    </button>
-
-                    {confirmar && (
-                      <div className='mt-6 p-4'>
-                        <p className='text-4xl'>¿Estas seguro de comprar este avatar?</p>
-                        <div className='flex justify-center gap-3 mt-6 text-xl'>
-
-                          <button
-                            className="cursor-pointer w-24 rounded bg-green-600 hover:bg-green-700"
-                            onClick={() => handleSubmit(avatares[selected].id)}
-                            disabled={selected == null || !avatares[selected]}
-                          >
-                            Aceptar
-                          </button>
-
-                          <button className='cursor-pointer w-24 rounded bg-red-600 hover:bg-red-700' onClick={() => { setConfirmar(false) }}>Cancelar</button>
-
-                        </div>
-                      </div>
-                    )}
-
-                  </div>
-
-                ) : (
-                  <div>
-                    <p>Fondos Insuficiente</p>
-                    <button className="mt-3 px-4 py-2 rounded bg-gray-400 text-white hover:bg-gray-500 cursor-not-allowed">
-                      Comprar
-                    </button>
-                  </div>
-                )
-              }
-
+            {/* Precio */}
+            <div className="text-4xl text-center font-semibold">
+              Precio: {`$${avatares[selected].precio_puntos}`}
             </div>
+
+            {/* boton de compra */}
+            {jugador.puntaje >= avatares[selected].precio_puntos ?
+              (
+                <div className="text-center mt-4">
+                  {confirmar ? (
+                    <div>
+
+                      <p className='text-4xl'>¿Estas seguro de comprar este avatar?</p>
+
+                      <div className='flex justify-center gap-3 mt-6 text-xl'>
+
+                        <button
+                          className='cursor-pointer w-24 rounded bg-red-600 hover:bg-red-700'
+                          onClick={() => { setConfirmar(false) }}
+                        >
+                          Cancelar
+                        </button>
+
+                        <button
+                          className="cursor-pointer w-24 rounded bg-green-600 hover:bg-green-700"
+                          onClick={() => handleSubmit(avatares[selected].id)}
+                          disabled={selected == null || !avatares[selected]}
+                        >
+                          Aceptar
+                        </button>
+
+                      </div>
+
+                    </div>
+                  )
+                    :
+                    (
+                      yaLoTiene ? (
+                        <button
+                          className="text-xl mt-3 px-4 py-2 rounded bg-gray-500 hover:bg-gray-600  text-white cursor-not-allowed"
+                          disabled
+                        >
+                          Ya lo tienes
+                        </button>
+                      ) : (
+                        <button
+                          className="text-xl mt-3 px-4 py-2 rounded bg-sky-600 text-white hover:bg-sky-700 cursor-pointer"
+                          onClick={() => setConfirmar(true)}
+                        >
+                          Comprar
+                        </button>
+                      )
+                    )
+                  }
+
+                </div>
+
+              ) : (
+                <div className="text-center mt-4">
+                  <p>Fondos Insuficiente</p>
+                  <button className="mt-3 px-4 py-2 rounded bg-gray-500 text-white hover:bg-gray-600 cursor-not-allowed">
+                    Comprar
+                  </button>
+                </div>
+              )
+            }
+
+            <AnimatePresence>
+              {comprado && (
+                <motion.p
+                  key="toast"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0, transition: { duration: 0.25 } }}
+                  exit={{ opacity: 0, y: 8, transition: { duration: 0.8 } }}  // 👈 salida lenta
+                  className='fixed bottom-6 left-1/2 -translate-x-1/2
+                            bg-green-600 text-white px-4 py-2 rounded shadow-lg z-[100]'
+                >
+                  Su avatar ha sido agregado a su lista de avatares</motion.p>
+              )}
+            </AnimatePresence>
           </motion.div>
         </div>
       )}

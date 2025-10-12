@@ -1,13 +1,48 @@
 import { UserAvatar } from '../models/associations.js';
 
 const index = async (req, res) => {
-  try {
-    const userAvatars = await UserAvatar.findAll();
-    res.json(userAvatars);
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ error: "Internal server error" });
+
+  const { jugador_id } = req.params;
+
+  // verificacion de jugador_id (null o undefined)
+  if (jugador_id !== undefined && jugador_id !== null) {
+    
+    // busca a todos los avatares de un jugador
+    try {
+      const jugadorId = Number(jugador_id);
+
+      // si no es un numero entero, envia un error
+      if (!Number.isInteger(jugadorId)) {
+        return res.status(400).json({ error: "Numero incorrecto, jugador_id inválido." });
+      }
+
+      // obtiene todos los avatares del jugador
+      const rows = await UserAvatar.findAll({
+        where: { jugador_id: jugadorId },
+        order: [["adquirido_at", "DESC"]], // opcional, ordena por fecha
+      });
+
+      // devuelve una lista (vacía o con datos de los avatares)
+      return res.json(rows);
+      
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ error: "Internal server error, JUGADOR_ID" });
+    }
+
+  } else {
+    
+    // busca a todos los avatares de todos los jugadores
+    try {
+      const userAvatars = await UserAvatar.findAll();
+      res.json(userAvatars);
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ error: "Internal server error, SIN JUGADOR_ID" });
+    }
+
   }
+
 };
 
 const show = async (req, res) => {
