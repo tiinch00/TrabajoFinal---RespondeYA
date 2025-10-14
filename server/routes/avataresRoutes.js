@@ -4,5 +4,6 @@ import express from "express";
 const router = express.Router();
 
 router.get("/avatar", avatarController.index);
+router.get("/avatar/:id", avatarController.show);
 
 export default router;

@@ -14,12 +14,14 @@ const Perfil = () => {
     }
 
   });
-  const userId = user?.id; // puede ser undefined si no hay user guardado
+  const userId = user?.id;
   const jugador_id = user?.jugador_id;
 
-
-  // 2) estados
+  // hooks
+  const [selectedAvatar, setSelectedAvatar] = useState(false);
   const [selected, setSelected] = useState(null);
+  const [avatares, setAvatares] = useState([]); // avatares
+  const [jugadorAvatares, setJugadorAvatares] = useState([]); // userAvatar
   const [estadisticas, setEstadisticas] = useState([]);
   const [perfil, setPerfil] = useState(null);
   const [error, setError] = useState(null);
@@ -27,14 +29,93 @@ const Perfil = () => {
   const [loadingPerfil, setLoadingPerfil] = useState(true);
   const [eliminado, setEliminado] = useState(false);
   const eliminadoTimerRef = useRef(null);
+  const [amigos, setAmigos] = useState([]);
 
-  // 3) edición
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [formErrors, setFormErrors] = useState({});
 
+  // obtiene un objeto partida
+  const getPartdia = async (id) => {
 
+    try {
+      const { data } = await axios.get(`http://localhost:3006/partidas/${id}`);
+      //setEstadisticas(data);
+    } catch (error) {
+      console.log("@@@@ Error GET: estadisticas\n", error);
+    }
+
+  }
+
+  // obtiene un objeto categoria
+  const getCategoria = async (id) => {
+
+    try {
+      const { data } = await axios.get(`http://localhost:3006/categoria/${id}`);
+      //setEstadisticas(data);
+    } catch (error) {
+      console.log("@@@@ Error GET: estadisticas\n", error);
+    }
+
+  }
+
+  // obtiene un objeto pregunta
+  const getPregunta = async (id) => {
+
+    try {
+      const { data } = await axios.get(`http://localhost:3006/pregunta/${id}`);
+      //setEstadisticas(data);
+    } catch (error) {
+      console.log("@@@@ Error GET: estadisticas\n", error);
+    }
+
+  }
+
+  // obtiene un objeto opcion
+  const getOpcion = async (id) => {
+
+    try {
+      const { data } = await axios.get(`http://localhost:3006/opcion/${id}`);
+      //setEstadisticas(data);
+    } catch (error) {
+      console.log("@@@@ Error GET: estadisticas\n", error);
+    }
+
+  }
+
+  // obtiene un objeto partida_pregunta
+  const getPartidaPregunta = async (id) => {
+
+    try {
+      const { data } = await axios.get(`http://localhost:3006/partida_pregunta/${id}`);
+      //setEstadisticas(data);
+    } catch (error) {
+      console.log("@@@@ Error GET: estadisticas\n", error);
+    }
+
+  }
+
+
+  // obtiene un objeto respuesta
+  const getRespuesta = async (id) => {
+
+    try {
+      const { data } = await axios.get(`http://localhost:3006/respuesta/${id}`);
+      //setEstadisticas(data);
+    } catch (error) {
+      console.log("@@@@ Error GET: estadisticas\n", error);
+    }
+
+  }
+
+
+
+
+
+
+
+  // obtiene un array de todas las estadisticas del jugador
   const getEstadisticas = async () => {
 
     const values = {
@@ -141,8 +222,6 @@ const Perfil = () => {
     }
   };
 
-  const [amigos, setAmigos] = useState([]);
-
   // obtiene todos los amigos del jugador_id
   const getAmigos = async () => {
 
@@ -179,10 +258,42 @@ const Perfil = () => {
     }
   }
 
+  // obtiene los avatares que tiene el jugador comprado user_avatares
+  const infoJugadorIdAvatares = async () => {
+
+    // prepara todos los atributos de la lista de avatares de un jugador
+    const values = {
+      jugador_id: jugador_id
+    };
+
+    try {
+      const { data } = await axios.get(`http://localhost:3006/userAvatar`, values);
+      setJugadorAvatares(data);
+      //console.log("GET: jugadorId_avatares (data):", data);
+    } catch (error) {
+      console.log("@@@@ Error GET /jugadorId_avatares\n", error);
+    }
+  }
+
+  // obtiene todos los objetos avatares
+  const infoAvatares = async () => {
+    try {
+      const { data } = await axios.get(`http://localhost:3006/avatar`);
+      setAvatares(data);
+      //console.log("avatares (data):", data);
+    } catch (error) {
+      console.log("@@@@ Error GET /avatar\n", error);
+    }
+  };
+
   useEffect(() => {
     getAmigos();
     getEstadisticas();
   }, []);
+
+  const handleSearch = () => {
+    console.log("Buscar…");
+  };
 
   if (!userId) return <p>No hay usuario en sesión.</p>;
   if (error) return <p className="text-red-600">Error: {error}</p>;
@@ -194,9 +305,42 @@ const Perfil = () => {
 
       {/* avatar */}
       <div className="flex flex-col items-center h-fit w-full cursor-pointer">
-        <div className="h-30 w-30 bg-gray-200/80 rounded-full text-black text-6xl text-center flex items-center justify-center">
+        <motion.div
+          className="h-30 w-30 bg-gray-200/80 rounded-full text-black text-6xl text-center flex items-center justify-center"
+          whileTap={{ scale: 1.2 }}
+          onClick={() => setSelectedAvatar(true)}
+        >
           <p>👤</p>
-        </div>
+        </motion.div>
+
+        {/* lista de avatares del jugador */}
+        {/*jugadorAvatares.length === 0 && !selectedAvatar ? (
+          <p>No hay Avatares en la lista.</p>
+        ) : (
+          <ul>
+            {avataresJugador.map((e) => (
+              <motion.li
+                key={e.id}
+                //flex justify-between items-center
+                className="border rounded-xl p-4 bg-white/10 hover:bg-white/20 
+                  mb-2 cursor-pointer"
+                whileTap={{ scale: 1.02 }}
+                onClick={() => {
+                  setSelectedAvatar(true);
+                  // usa el id correcto del avatar: e.avatar_id o e.id según tu API
+                  getUnAvatar(e.avatar_id ?? e.id);
+                }}
+              >
+                {console.log(e)}
+                <span>ID: {e.id}</span>
+                <br />
+                <span>AvatarID: {e.avatar_id ?? e.id}</span>
+                <span>{e.avatar_id}</span>
+              </motion.li>
+            ))}
+          </ul>
+        )*/}
+
         <p className="mt-2 text-4xl">{perfil.name}</p>
       </div>
 
@@ -204,12 +348,12 @@ const Perfil = () => {
       <div className="mt-4 space-y-4">
         <h2 className="text-xl font-semibold">Datos personales</h2>
         {!editMode ? (
-          <div className="space-y-2 bg-white/10 p-4 text-xl">
+          <div className="space-y-2 bg-white/10 p-4 text-xl rounded-xl">
             <p><b>Nombre:</b> {perfil.name}</p>
             <p><b>Email:</b> {perfil.email}</p>
             <p><b>Contraseña:</b> ••••••••</p>
             <button
-              className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 cursor-pointer"
+              className="px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 cursor-pointer"
               onClick={() => {
                 setEditMode(true);
                 setForm({ name: perfil.name || "", email: perfil.email || "", password: "" });
@@ -220,14 +364,14 @@ const Perfil = () => {
             </button>
           </div>
         ) : (
-          <form onSubmit={handleSave} className="space-y-3 bg-white/10 p-4 rounded">
+          <form onSubmit={handleSave} className="space-y-3 bg-white/10 p-4 rounded-xl">
             <div>
               <label className="block text-sm mb-1">Nombre</label>
               <input
                 name="name"
                 value={form.name}
                 onChange={handleChange}
-                className="w-full px-3 py-2 rounded text-black bg-white"
+                className="w-full px-3 py-2 rounded text-black bg-white/90 hover:bg-white"
                 placeholder="Tu nombre"
               />
               {formErrors.name && <p className="text-red-500 text-sm">{formErrors.name}</p>}
@@ -239,7 +383,7 @@ const Perfil = () => {
                 name="email"
                 value={form.email}
                 onChange={handleChange}
-                className="w-full px-3 py-2 rounded text-black bg-white"
+                className="w-full px-3 py-2 rounded text-black bg-white/90 hover:bg-white"
                 placeholder="tu@email.com"
               />
               {formErrors.email && <p className="text-red-500 text-sm">{formErrors.email}</p>}
@@ -252,7 +396,7 @@ const Perfil = () => {
                 name="password"
                 value={form.password}
                 onChange={handleChange}
-                className="w-full px-3 py-2 rounded text-black bg-white"
+                className="w-full px-3 py-2 rounded text-black bg-white/90 hover:bg-white"
                 placeholder="Nueva contraseña"
               />
               {formErrors.password && <p className="text-red-500 text-sm">{formErrors.password}</p>}
@@ -280,10 +424,37 @@ const Perfil = () => {
 
       {/* Estadísticas */}
       <div className="flex flex-row gap-2 mt-4">
-        <h2 className="text-xl font-semibold mb-3 mt-3 cursor-pointer hover:text-white/90">Partidas</h2>
+        <h2 className="text-xl font-semibold mb-3 mt-3 cursor-pointer hover:text-white/90">Resultados de partidas</h2>
         <h2 className="text-xl flex items-center justify-center">|</h2>
-        <h2 className="text-xl font-semibold mb-3 mt-3 cursor-pointer hover:text-white/90">Gráfico de estadísticas</h2>
+        <h2 className="text-xl font-semibold mb-3 mt-3 cursor-pointer hover:text-white/90">Estadísticas general</h2>
       </div>
+
+      {/* buscador de estadísticas */}
+      <div className="relative mb-4">
+        <input
+          className="bg-white/95 w-[75%] indent-2 border rounded-xl px-1 py-2 text-black placeholder-black/70 hover:bg-white"
+          placeholder="Buscar una partida…"
+        />
+
+        <button
+          type="button"
+          onClick={handleSearch}
+          className="absolute h-full w-fit top-0 right-66.5 flex items-center rounded-r-xl 
+          bg-slate-800 px-2 border border-transparent text-sm 
+          transition-all 
+          shadow-sm hover:shadow focus:bg-slate-700 active:bg-slate-700 
+          disabled:pointer-events-none disabled:opacity-50 cursor-pointer"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+            fill="currentColor" className="w-4 h-4">
+            <path
+              fillRule="evenodd" clipRule="evenodd"
+              d="M10.5 3.75a6.75 6.75 0 1 0 0 13.5 6.75 6.75 0 0 0 0-13.5ZM2.25 10.5a8.25 8.25 0 1 1 14.59 5.28l4.69 4.69a.75.75 0 1 1-1.06 1.06l-4.69-4.69A8.25 8.25 0 0 1 2.25 10.5Z"
+            />
+          </svg>
+        </button>
+      </div>
+
       {estadisticas.length === 0 ? (
         <p>No hay estadísticas de partidas para mostrar.</p>
       ) : (
@@ -291,19 +462,19 @@ const Perfil = () => {
           {estadisticas.map((e, index) => (
             <motion.li
               key={e.id}
-              className="border rounded p-4 bg-white/10 hover:bg-white/20 
+              className="border rounded-xl p-4 bg-white/10 hover:bg-white/20 
                 flex space-x-4 mb-2 cursor-pointer"
               whileTap={{ scale: 1.2 }}
               onClick={() => setSelected(index)}
             >
               {e.posicion > 0 ? (
                 <div>
-                  <p>Ganaste la Partida</p>
+                  <p className="text-green-500">Ganaste!</p>
                   <p>Fecha: </p>
                 </div>
               ) : (
                 <div>
-                  <p>Perdiste la Partida</p>
+                  <p className="text-red-500">Perdiste!</p>
                   <p>Fecha: </p>
                 </div>
               )}
@@ -342,20 +513,26 @@ const Perfil = () => {
             {/* Informacion detallada */}
             <div className="text-4xl">
 
-              <div className="flex flex-row gap-2 mb-2">
+              <div className="flex flex-row gap-2 mb-2 w-fit">
                 <button type="button" className="bg-black/80 rounded w-48 p-2 cursor-pointer hover:text-white/90">Resumen</button>
                 <div className="flex items-center justify-center">|</div>
                 <button type="button" className="rounded w-48 p-2 cursor-pointer hover:text-white/90">Respuestas</button>
                 <div className="flex items-center justify-center">|</div>
-                <button type="button" className="p-2 cursor-pointer hover:text-white/90">Gráfico de respuestas</button>
+                <button type="button" className="p-2 cursor-pointer hover:text-white/90">Estadísticas de respuestas</button>
               </div>
 
               <div className="bg-indigo-800/90 p-1.5 mt-1">
-
+                {estadisticas[selected].posicion > 0 ? (
+                  <p className="p-1"><strong>Posición:</strong> Ganador</p>
+                ) : (
+                  <p className="p-1"><strong>Posición:</strong> Perdedor</p>
+                )}
+                <p className="p-1"><strong>Categoría:</strong> ...</p>
+                <p className="p-1"><strong>Dificultad:</strong> ...</p>
                 <p className="p-1"><strong>Puntaje total:</strong> {estadisticas[selected].puntaje_total}</p>
                 <p className="p-1"><strong>Respuestas correctas:</strong> {estadisticas[selected].total_correctas}</p>
                 <p className="p-1"><strong>Respuestas incorrectas:</strong> {estadisticas[selected].total_incorrectas}</p>
-                <p className="p-1"><strong>Tiempo:</strong> {estadisticas[selected].tiempo_total_ms} milisegundos</p>
+                <p className="p-1"><strong>Tiempo de partida:</strong> {estadisticas[selected].tiempo_total_ms} milisegundos</p>
               </div>
             </div>
 
@@ -365,8 +542,8 @@ const Perfil = () => {
       )}
 
       {/* Mis amigos */}
-      <div className="mb-6 mt-4">
-        <h2 className="text-xl font-semibold mb-3 mt-3">Amigos</h2>
+      <div className="mb-6 mt-8 bg-white/10 rounded-xl p-1">
+        <h2 className="text-xl font-semibold mb-3 mt-2">Amigos</h2>
 
         <div>
           {/* Mensaje de amigo eliminado */}
@@ -386,9 +563,37 @@ const Perfil = () => {
           {/* divs de cada amigo */}
           {amigos.length > 0 ? (
             // lista de amigos
-            <div className='mb-6'>
+            <div className='mb-2 p-0.5'>
+
+              {/* buscador de amigos */}
+              <div className="relative mb-4">
+                <input
+                  className="bg-white/90 hover:bg-white w-[75%] indent-2 border rounded-xl px-1 py-2 text-black placeholder-black/70"
+                  placeholder="Buscar un amigo…"
+                />
+
+                <button
+                  type="button"
+                  onClick={handleSearch}
+                  className="absolute h-full w-fit top-0 right-65.5 flex items-center rounded-r-xl 
+          bg-slate-800 px-2 border border-transparent text-sm 
+          transition-all 
+          shadow-sm hover:shadow focus:bg-slate-700 active:bg-slate-700 
+          disabled:pointer-events-none disabled:opacity-50 cursor-pointer"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                    fill="currentColor" className="w-4 h-4">
+                    <path
+                      fillRule="evenodd" clipRule="evenodd"
+                      d="M10.5 3.75a6.75 6.75 0 1 0 0 13.5 6.75 6.75 0 0 0 0-13.5ZM2.25 10.5a8.25 8.25 0 1 1 14.59 5.28l4.69 4.69a.75.75 0 1 1-1.06 1.06l-4.69-4.69A8.25 8.25 0 0 1 2.25 10.5Z"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+
               {amigos.map((e) => (
-                <div key={e.id} className="border rounded p-4 bg-white/10 hover:bg-white/20 mb-2 grid grid-cols-2">
+                <div key={e.id} className="border rounded-xl p-4 bg-white/10 hover:bg-white/20 mb-2 grid grid-cols-2">
                   <p><strong>Amigo_id:</strong> {e.amigo_id}</p>
 
                   <motion.button
