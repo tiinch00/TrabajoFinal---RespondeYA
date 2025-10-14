@@ -67,26 +67,30 @@ const Register = () => {
   };
 
   return (
-    <div className='w-90 h-145 bg-amber-600 rounded-3xl p-4 text-center items-center justify-center '>
+    <div className='w-90 h-fit bg-gradient-to-r from-purple-700 to-indigo-800 rounded-3xl mt-4  p-4 mb-12 text-center items-center justify-center '>
       <h2 className='text-lg font-bold mb-2 text-center'>Completar Registro</h2>
-      <form onSubmit={handleSubmit}>
-        <div className=' bg-amber-200  rounded-4xl flex flex-col text-center text-black'>
-          <div className='mb-4'>
-            <label htmlFor='nombreusuario' className='block text-gray-700'>
-              Ingrese Usuario
+      <form onSubmit={handleSubmit} className='p-2'>
+        
+        <div className='bg-gradient-to-r from-indigo-700 to-purple-800 rounded-4xl flex flex-col text-center text-black'>
+          
+          <div className='mb-4 mt-4'>
+            <label htmlFor='nombreusuario' className='block text-white mb-1'>
+              <strong>Ingrese Usuario</strong>
             </label>
+
             <input
               name='usuario'
               required
               onChange={handleChanges}
               type='text'
               placeholder='Nombre de Usuario'
-              className='w-70 h-15  rounded-4xl text-center rounded-4x1 bg-amber-100 placeholder-gray-400 text-black'
+              className='w-70 h-15  rounded-4xl text-center rounded-4x1 bg-amber-50 hover:bg-amber-100 placeholder-gray-400 text-black'
             />
+
           </div>
           <div className='mb-4'>
-            <label htmlFor='email' className='block text-gray-700'>
-              Ingrese Email
+            <label htmlFor='email' className='block text-white mb-1'>
+              <strong>Ingrese Email</strong>
             </label>
             <input
               name='email'
@@ -94,12 +98,12 @@ const Register = () => {
               type='text'
               onChange={handleChanges}
               placeholder='Correo electronico'
-              className='w-70 h-15  rounded-4xl text-center rounded-4x1 bg-amber-100 placeholder-gray-400 text-black'
+              className='w-70 h-15  rounded-4xl text-center rounded-4x1 bg-amber-50 hover:bg-amber-100 placeholder-gray-400 text-black'
             />
           </div>
           <div className='mb-4'>
-            <label htmlFor='contraseña' className='block text-gray-700'>
-              Ingrese Contraseña
+            <label htmlFor='contraseña' className='block text-white mb-1'>
+              <strong>Ingrese Contraseña</strong>
             </label>
             <input
               type='password'
@@ -107,12 +111,12 @@ const Register = () => {
               name='password'
               onChange={handleChanges}
               placeholder='Contraseña'
-              className='w-70 h-15  rounded-4xl text-center rounded-4x1 bg-amber-100 placeholder-gray-400 text-black'
+              className='w-70 h-15  rounded-4xl text-center rounded-4x1 bg-amber-50 hover:bg-amber-100 placeholder-gray-400 text-black'
             />
           </div>
           <div className='mb-4'>
-            <label htmlFor='contraseña' className='block text-gray-700'>
-              Confirmar Contraseña
+            <label htmlFor='contraseña' className='block text-white mb-1'>
+              <strong>Confirmar Contraseña</strong>
             </label>
             <input
               type='password'
@@ -120,11 +124,11 @@ const Register = () => {
               name='repassword'
               onChange={handleChanges}
               placeholder='Contraseña'
-              className='w-70 h-15  rounded-4xl text-center rounded-4x1 bg-amber-100 placeholder-gray-400 text-black'
+              className='w-70 h-15  rounded-4xl text-center rounded-4x1 bg-amber-50 hover:bg-amber-100 placeholder-gray-400 text-black'
             />
           </div>
           <div>
-            <button className='w-50 h-10 bg-green-600 text-white py-2 cursor-pointer rounded-4xl '>
+            <button className='w-50 h-10 bg-green-600 hover:bg-green-700 text-white py-2 cursor-pointer rounded-4xl mt-3'>
               Registrarse
             </button>
           </div>
@@ -140,11 +144,13 @@ const Register = () => {
 
         <div className='text-center p-2'>
           <span>Ya tienes usuario?</span>
-          <Link to='/login' className='m-1 text-blue-600'>
+          <Link to='/login' className='m-1 text-blue-500 hover:text-blue-400'>
             Iniciar Sesion
           </Link>
         </div>
+
       </form>
+      
     </div>
   );
 };

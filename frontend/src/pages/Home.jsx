@@ -24,7 +24,7 @@ const Home = () => {
                 to='/crearPartida'
                 className='bg-amber-500 w-60 h-12 rounded-2xl cursor-pointer hover:scale-105 transition-transform flex items-center justify-center'
               >
-                Modo Individual
+                Individual
               </Link>
               <Link
                 to='*'
@@ -34,13 +34,7 @@ const Home = () => {
               </Link>
             </div>
           )}
-        </div>
-        <Link
-          to='/ChatGlobal'
-          className='w-70 h-15  hover:scale-105 transition-transform cursor-pointer bg-amber-600 rounded-4xl text-amber-200 flex items-center justify-center mb-1 mt-4 p-1'
-        >
-          Chat Global
-        </Link>
+        </div>        
         <Link to='/Ruleta' className="w-70 h-15  hover:scale-105 text-white transition-transform cursor-pointer bg-amber-600 rounded-4xl flex items-center justify-center mb-1 mt-4 p-1">
           Ruleta
         </Link> 

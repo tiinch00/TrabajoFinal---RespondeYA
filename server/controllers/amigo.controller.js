@@ -1,10 +1,31 @@
-import {Amigo} from '../models/associations.js';
-
+import { Amigo } from '../models/associations.js';
 
 const index = async (req, res) => {
+
+  const { jugador_id } = req.params;
+
   try {
-    const amigos = await Amigo.findAll();
-    res.json(amigos);
+    if (jugador_id !== undefined && jugador_id !== null) {
+      const jugadorId = Number(jugador_id);
+
+      // si no es un numero entero, envia un error
+      if (!Number.isInteger(jugadorId)) {
+        return res.status(400).json({ error: "Numero incorrecto, jugador_id inválido." });
+      }
+
+      // obtiene todos los avatares del jugador
+      const rows = await Amigo.findAll({
+        where: { jugador_id: jugadorId },
+        order: [["aceptado_at", "DESC"]], // opcional, ordena por fecha
+      });
+
+      // devuelve una lista (vacía o con datos de los avatares)
+      return res.json(rows);
+
+    } else {
+      const amigos = await Amigo.findAll();
+      res.json(amigos);
+    }
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: "Internal server error" });
@@ -28,8 +49,8 @@ const show = async (req, res) => {
 
 
 const store = async (req, res) => {
-  const { usuario_id, amigo_id,aceptado_en} = req.body;
-   if (!usuario_id || !amigo_id) {
+  const { usuario_id, amigo_id, aceptado_en } = req.body;
+  if (!usuario_id || !amigo_id) {
     return res.status(400).json({ error: "Usuario_id and amigo_id are required" });
   }
   if (usuario_id === amigo_id) {

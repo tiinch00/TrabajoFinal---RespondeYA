@@ -4,6 +4,8 @@ import 'dotenv/config';
 import './models/associations.js';
 
 import { Server } from 'socket.io';
+import adminRoutes from './routes/adminRoutes.js';
+import amigoRoutes from './routes/amigoRoutes.js'
 import authRoutes from './routes/authRoutes.js';
 import avataresRoutes from './routes/avataresRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
@@ -17,7 +19,6 @@ import preguntasRoutes from './routes/preguntasRoutes.js';
 import sequelize from './models/sequelize.js';
 import userAvataresRoutes from './routes/userAvataresRoutes.js';
 import userRoutes from './routes/userRoutes.js';
-import adminRoutes from './routes/adminRoutes.js';
 
 const app = express();
 
@@ -47,7 +48,8 @@ app.use(preguntasRoutes);
 app.use(estadisticaRoutes);
 app.use(jugadorRoutes);
 app.use(avataresRoutes);
-app.use(userAvataresRoutes) ;
+app.use(userAvataresRoutes);
+app.use(amigoRoutes);
 
 // (Opcional) raíz para verificar rápido
 app.get('/', (req, res) => res.status(200).json({ api: 'RespondeYA OK' }));

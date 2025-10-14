@@ -84,7 +84,6 @@ const Tienda = () => {
     return `${get("year")}-${get("month")}-${get("day")} ${get("hour")}:${get("minute")}:${get("second")}`;
   };
 
-
   // hace que el mensaje de compra desaparezca en 2 segundos
   const scheduleToastHide = () => {
     if (compradoTimerRef.current) clearTimeout(compradoTimerRef.current);
@@ -110,7 +109,6 @@ const Tienda = () => {
     //console.log("puntaje del jugador " + jugador.puntaje);
     //console.log("costo del avatar " + avatares[selected].precio_puntos);
     //console.log("puntaje del jugador actualizado " + values.puntaje);
-
 
     try {
       // compra un avatar y se guarda en user_avatares
@@ -138,7 +136,6 @@ const Tienda = () => {
 
   };
 
-
   // actualiza los valores cuando se produce un nuevo evento
   useEffect(() => {
     infoJugador();
@@ -151,7 +148,7 @@ const Tienda = () => {
     const onKeyDown = (e) => {
       if (e.key === "Escape") {
         setSelected(null);
-        setConfirmar(false);   // cierra el div de confirmacion
+        setConfirmar(false); // cierra el div de confirmacion
       }
     };
     window.addEventListener("keydown", onKeyDown);
@@ -188,7 +185,7 @@ const Tienda = () => {
       {selected !== null && (
         <div
           className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
-          onClick={() => setSelected(null)} // click fuera cierra
+          onClick={() => setSelected(null)}
         >
           <motion.div
             onClick={(e) => e.stopPropagation()} // evita que el click burbujee al overlay
@@ -212,7 +209,6 @@ const Tienda = () => {
 
             {/* Imagen */}
             <img
-              // src={`/assets/avatares/avatar${selected + 1}.png`}
               src={avatares[selected].preview_url}
               alt={`Avatar ${selected + 1}`}
               className="w-60 h-80 object-cover rounded-full mx-auto"
@@ -303,7 +299,7 @@ const Tienda = () => {
                   key="toast"
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0, transition: { duration: 0.25 } }}
-                  exit={{ opacity: 0, y: 8, transition: { duration: 0.8 } }}  // 👈 salida lenta
+                  exit={{ opacity: 0, y: 8, transition: { duration: 0.8 } }}  // salida lenta
                   className='fixed bottom-6 left-1/2 -translate-x-1/2
                             bg-green-600 text-white px-4 py-2 rounded shadow-lg z-[100]'
                 >
