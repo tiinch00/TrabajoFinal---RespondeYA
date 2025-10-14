@@ -1,8 +1,26 @@
 import { Pregunta, Categoria, Opcion } from '../models/associations.js';
 import sequelize from '../models/sequelize.js';
+
 const index = async (req, res) => {
+  const { id } = req.params;
   try {
-    const preguntas = await Pregunta.findAll();
+    const preguntas = await Pregunta.findAll({
+      where: { categoria_id: id },
+    });
+    res.json(preguntas);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+const indexWithOptions = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const preguntas = await Pregunta.findAll({
+      where: { categoriaId: id },
+      include: [{ model: Opcion, as: 'opciones' }],
+    });
     res.json(preguntas);
   } catch (error) {
     console.error(error);
@@ -62,7 +80,7 @@ const preguntasByCategoria = async (req, res) => {
 };
 
 const store = async (req, res) => {
-  const { categoria_id, enunciado, dificultad } = req.body;
+  const { admin_id, categoria_id, enunciado, dificultad } = req.body;
   //validar
   if (!categoria_id || !enunciado) {
     return res.status(400).json({ error: 'categoria_id and enunciado are required' });
@@ -77,7 +95,7 @@ const store = async (req, res) => {
     return res.status(400).json({ error: 'Invalid dificultad value' });
   }
   try {
-    const pregunta = await Pregunta.create({ categoria_id, enunciado, dificultad });
+    const pregunta = await Pregunta.create({ admin_id, categoria_id, enunciado, dificultad });
     res.status(201).json(pregunta);
   } catch (error) {
     if (error.name === 'SequelizeForeignKeyConstraintError') {
@@ -89,8 +107,8 @@ const store = async (req, res) => {
 };
 
 const update = async (req, res) => {
-  const { id } = req.params;
-  const { categoria_id, enunciado, dificultad } = req.body;
+  const { pregunta_id, categoria_id } = req.params;
+  const { admin_id, enunciado, dificultad } = req.body;
   if (!categoria_id || !enunciado) {
     return res.status(400).json({ error: 'categoria_id and enunciado are required' });
   }
@@ -103,11 +121,11 @@ const update = async (req, res) => {
     return res.status(400).json({ error: 'Invalid dificultad value' });
   }
   try {
-    const pregunta = await Pregunta.findByPk(id);
+    const pregunta = await Pregunta.findByPk(pregunta_id);
     if (!pregunta) {
       return res.status(404).json({ error: 'Pregunta not found' });
     }
-    await pregunta.update({ categoria_id, enunciado, dificultad });
+    await pregunta.update({ admin_id, categoria_id, enunciado, dificultad });
     res.json(pregunta);
   } catch (error) {
     if (error.name === 'SequelizeForeignKeyConstraintError') {
@@ -119,14 +137,16 @@ const update = async (req, res) => {
 };
 
 const destroy = async (req, res) => {
-  const { id } = req.params;
+  const { pregunta_id } = req.params;
   try {
-    const pregunta = await Pregunta.findByPk(id);
+    const pregunta = await Pregunta.findByPk(pregunta_id);
     if (!pregunta) {
       return res.status(404).json({ error: 'Pregunta not found' });
     }
+
     await pregunta.destroy();
-    res.status(204).send();
+
+    return res.status(200).json({ ok: true, id: pregunta_id });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: 'Internal server error' });
@@ -134,6 +154,7 @@ const destroy = async (req, res) => {
 };
 
 export default {
+  indexWithOptions,
   index,
   show,
   preguntasByCategoria,

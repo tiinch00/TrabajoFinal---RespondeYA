@@ -9,7 +9,7 @@ import avataresRoutes from './routes/avataresRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
 import contactRoutes from './routes/contactRoutes.js';
 import cors from 'cors';
-import estadisticaRoutes from "./routes/estadisticaRoutes.js";
+import estadisticaRoutes from './routes/estadisticaRoutes.js';
 import express from 'express';
 import http from 'http';
 import jugadorRoutes from "./routes/jugadorRoutes.js";
@@ -17,6 +17,7 @@ import preguntasRoutes from './routes/preguntasRoutes.js';
 import sequelize from './models/sequelize.js';
 import userAvataresRoutes from './routes/userAvataresRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
 
 const app = express();
 
@@ -39,6 +40,7 @@ app.get('/env-check', (_req, res) => {
 // Rutas de la API
 app.use('/auth', authRoutes);
 app.use('/api/contactar', contactRoutes);
+app.use('/admin', adminRoutes);
 app.use(userRoutes);
 app.use(categoryRoutes);
 app.use(preguntasRoutes);
@@ -88,7 +90,7 @@ io.on('connection', (socket) => {
     };
 
     // se emite y todos los usuario puedes ver el mensaje de un usario y incluye al emisor
-    io.emit('chat:message', payload); 
+    io.emit('chat:message', payload);
     if (typeof ack === 'function') ack({ ok: true });
   });
 });

@@ -1,8 +1,8 @@
-import { Link } from 'react-router-dom'
-import { useState } from 'react'
+import { Link } from 'react-router-dom';
+import { useState } from 'react';
 
 const Home = () => {
-  const [mostrarJugarOptions, setMostrarJugarOptions] = useState('')
+  const [mostrarJugarOptions, setMostrarJugarOptions] = useState('');
 
   return (
     <div className='rounded-3xl text-center'>
@@ -24,13 +24,13 @@ const Home = () => {
                 to='/crearPartida'
                 className='bg-amber-500 w-60 h-12 rounded-2xl cursor-pointer hover:scale-105 transition-transform flex items-center justify-center'
               >
-                Contra la máquina
+                Modo Individual
               </Link>
               <Link
                 to='*'
                 className='bg-amber-500 w-60 h-12 rounded-2xl cursor-pointer hover:scale-105 transition-transform flex items-center justify-center'
               >
-                Contra la máquina
+                Multijugador
               </Link>
             </div>
           )}
@@ -46,7 +46,7 @@ const Home = () => {
         </Link> 
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Home
+export default Home;

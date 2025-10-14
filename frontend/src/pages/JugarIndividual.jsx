@@ -40,8 +40,6 @@ const JugarIndividual = () => {
         const res = await axios.get(
           `http://localhost:3006/preguntas/categoria/${categoria.toLowerCase()}/${dificultad.toLowerCase()}`
         );
-        console.log('Respuesta completa de la API:', res);
-        console.log('Datos recibidos:', res.data);
         setPreguntas(res.data);
         if (res.data && res.data.length > 0) {
           setPreguntaActual(res.data[0]);

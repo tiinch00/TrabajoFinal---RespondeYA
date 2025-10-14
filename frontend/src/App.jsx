@@ -16,12 +16,17 @@ import PublicRoute from './routes/PublicRoute';
 import Register from './pages/Register';
 import Ruleta from './pages/Ruleta';
 import Tienda from './pages/Tienda';
+import AbmCategorias from './pages/Admin/AbmCategorias.jsx';
+import AbmPreguntas from './pages/Admin/AbmPreguntas.jsx';
 
 // Elige layout según sesión
 function LayoutSwitch() {
   const user = (() => {
-    try { return JSON.parse(localStorage.getItem('user') || 'null'); }
-    catch { return null; }
+    try {
+      return JSON.parse(localStorage.getItem('user') || 'null');
+    } catch {
+      return null;
+    }
   })();
 
   // Tus layouts ya deberían renderizar <Outlet /> adentro
@@ -32,11 +37,10 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-
-         {/* Rutas compartidas en ambos layouts */}
+        {/* Rutas compartidas en ambos layouts */}
         <Route element={<LayoutSwitch />}>
-          <Route path="/contacto" element={<Contacto />} />
-          <Route path="/comojugar" element={<ComoJugar />} />
+          <Route path='/contacto' element={<Contacto />} />
+          <Route path='/comojugar' element={<ComoJugar />} />
         </Route>
 
         {/* Publico (sin sesion) */}
@@ -56,10 +60,12 @@ function App() {
               path='/jugarIndividual/:categoria/:tiempo/:dificultad'
               element={<JugarIndividual />}
             />
-            <Route path='/tienda' element={<Tienda />} />            
-            <Route path='/perfil' element={<Perfil />} />           
+            <Route path='/admin/categorias' element={<AbmCategorias />} />
+            <Route path='/tienda' element={<Tienda />} />
+            <Route path='/perfil' element={<Perfil />} />
             <Route path='/chatGlobal' element={<ChatGlobal />} />
             <Route path='/Ruleta' element={<Ruleta />} />
+            <Route path='/categoria/:nombre/:id/preguntas' element={<AbmPreguntas />} />
           </Route>
         </Route>
         {/* Catch-all: mandá a "/" (el guard decide) */}

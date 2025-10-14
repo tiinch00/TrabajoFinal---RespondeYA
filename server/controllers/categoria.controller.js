@@ -43,15 +43,15 @@ const showByName = async (req, res) => {
 };
 
 const store = async (req, res) => {
-  const { nombre, descripcion } = req.body;
-  if (!nombre || !descripcion) {
+  const { admin_id, nombre, descripcion } = req.body;
+  if (!admin_id || !nombre || !descripcion) {
     return res.status(400).json({ error: 'Nombre and descripcion are required' });
   }
   if (nombre.length > 100 || descripcion.length > 255) {
     return res.status(400).json({ error: 'Nombre or descripcion too long' });
   }
   try {
-    const categoria = await Categoria.create({ nombre, descripcion });
+    const categoria = await Categoria.create({ admin_id, nombre, descripcion });
     res.status(201).json(categoria);
   } catch (error) {
     if (error.name === 'SequelizeUniqueConstraintError') {
@@ -95,7 +95,7 @@ const destroy = async (req, res) => {
       return res.status(404).json({ error: 'Categoria not found' });
     }
     await categoria.destroy();
-    res.status(204).send();
+    return res.status(200).json(categoria);
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: 'Internal server error' });
