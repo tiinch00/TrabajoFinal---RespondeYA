@@ -362,7 +362,7 @@ const PreguntasListar = ({
 
           {/* Modal crear opciones */}
           {mostrarModal && (
-            <div className='fixed inset-0 bg-black bg-opacity-10 flex justify-center items-center z-50'>
+            <div className='fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50'>
               <div className='bg-white rounded-2xl p-6 shadow-lg w-96 relative text-gray-600'>
                 <h2 className='text-lg font-semibold mb-4'>Agregar opciones</h2>
                 {alerta.error && <div className='text-red-600 text-sm mt-2'>{alerta.error}</div>}
@@ -414,7 +414,7 @@ const PreguntasListar = ({
 
           {/* modal editar pregunta */}
           {mostrarEditar && (
-            <div className='fixed inset-0 bg-black bg-opacity-10 flex justify-center items-center z-50'>
+            <div className='fixed inset-0  bg-black/60 backdrop-blur-sm flex justify-center items-center z-50'>
               <div className='bg-white rounded-2xl p-6 shadow-lg w-96 relative text-gray-600'>
                 <h2 className='text-lg font-semibold mb-4'>Editar Pregunta</h2>
                 {alerta.error && <div className='text-red-600 text-sm mt-2'>{alerta.error}</div>}
@@ -487,7 +487,7 @@ const PreguntasListar = ({
 
           {/* modal editar opciones */}
           {mostrarEditarOpciones && preguntaActiva && (
-            <div className='fixed inset-0 bg-black bg-opacity-10 flex justify-center items-center z-50'>
+            <div className='fixed inset-0  bg-black/60 backdrop-blur-sm flex justify-center items-center z-50'>
               <div className='bg-white rounded-2xl p-6 shadow-lg w-96 relative text-gray-600'>
                 <h2 className='text-lg font-semibold mb-4'>Editar opciones</h2>
                 {alerta.error && <div className='text-red-600 text-sm mt-2'>{alerta.error}</div>}
