@@ -40,6 +40,13 @@ const PreguntasListar = ({
     es_correcta: '',
   });
 
+  // useEffect(() => {
+  //   setPreguntaActiva(null);
+  //   setOpciones([]);
+  //   setMostrarModal(false);
+  //   setMostrarEditarOpciones(false);
+  // }, [preguntas]);
+
   useEffect(() => {
     if (preguntaEditar) {
       setFormEditar({
@@ -123,11 +130,18 @@ const PreguntasListar = ({
 
     try {
       const res = await axios.post(
-        `http://localhost:3006/admin/categoria/${categoria}/${preguntaActiva.categoria_id}/pregunta/${preguntaActiva.id}/opciones/crear`,
+        `http://localhost:3006/admin/pregunta/${preguntaActiva.id}/opciones/crear`,
         form
       );
       if (res.data.ok) {
-        setForm({ opcion1: '', opcion2: '', opcion3: '', opcion4: '', es_correcta: '' });
+        setForm({
+          admin_id: 1,
+          opcion1: '',
+          opcion2: '',
+          opcion3: '',
+          opcion4: '',
+          es_correcta: '',
+        });
         setMostrarModal(false);
         await obtenerOpciones(preguntaActiva);
       }

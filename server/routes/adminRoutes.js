@@ -24,11 +24,12 @@ router.delete(
 );
 
 //opciones
-router.get('/categoria/:nombre/:id/pregunta/:id/opciones', opcionController.index);
-router.post(
-  '/categoria/:nombre/:categoria_id/pregunta/:pregunta_id/opciones/crear',
-  opcionController.store
+router.get(
+  '/categoria/:nombre/:categoria_id/pregunta/:pregunta_id/opciones',
+  opcionController.index
 );
+// en routes/admin.js
+router.post('/pregunta/:pregunta_id/opciones/crear', opcionController.store);
 
 router.put(
   '/categoria/:nombre/:categoria_id/pregunta/:pregunta_id/opciones/edit',

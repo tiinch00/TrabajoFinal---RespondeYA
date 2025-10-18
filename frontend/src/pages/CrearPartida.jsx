@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useGame } from '../context/ContextJuego.jsx';
 
 const CrearPartida = () => {
+  const { categorias, fetchCategorias, loading } = useGame();
+
   const [categoria, setCategoria] = useState('');
   const [tiempo, setTiempo] = useState('');
   const [dificultad, setDificultad] = useState('');
@@ -18,50 +21,43 @@ const CrearPartida = () => {
   };
 
   const handleAlAzar = () => {
-    const db = {
-      categorias: [
-        { id: 1, nombre: 'geografia' },
-        { id: 2, nombre: 'literatura' },
-        { id: 3, nombre: 'cine' },
-        { id: 4, nombre: 'informatica' },
-        { id: 5, nombre: 'deportes' },
-      ],
-    };
-
-    const categoriasdb = db.categorias;
-    const categoriaAzar = categoriasdb[Math.floor(Math.random() * categoriasdb.length)];
-    setCategoria(categoriaAzar.nombre.toLowerCase());
+    if (categorias.length === 0) return;
+    const categoriaAzar = categorias[Math.floor(Math.random() * categorias.length)];
+    console.log(categoriaAzar);
+    return setCategoria(categoriaAzar.nombre);
   };
+
+  if (loading) return <p className='text-center text-white'>Cargando categorías...</p>;
 
   return (
     <div className='bg-[#1a0042] m-8 flex items-center justify-center'>
       <div className='bg-[#1a0042] p-2 rounded-3xl text-center text-white space-y-6 w-[500px]'>
-        {/* Tipo de Categoría */}
         <div className='space-y-5 '>
           <p className='bg-violet-500 py-2  rounded-2xl font-bold text-lg'>Tipo de Categoría</p>
           <div className='flex justify-center gap-4 '>
             <button
               value={categoria}
               onClick={handleAlAzar}
-              className={`bg-sky-600  px-4 py-2 rounded-xl text-center cursor-pointer text-white ${categoria} ? border-white : " " `}
+              className={`bg-sky-600 px-4 py-2 rounded-xl text-center cursor-pointer text-white 
+              `}
             >
               Elegir Categoria al Azar
             </button>
             <select
               value={categoria}
               onChange={(e) => setCategoria(e.target.value)}
-              className={`bg-sky-600 px-4 py-2 rounded-xl text-center cursor-pointer text-white 
-    appearance-none focus:outline-none
-    ${categoria ? 'border-4 border-white' : 'border-0'}`}
+              className={`bg-sky-600 px-4 w-full py-2 rounded-xl text-center cursor-pointer text-white 
+              appearance-none focus:outline-none ${
+                categoria ? 'border-4 border-white' : 'border-0'
+              }`}
             >
               <option value=''>Elige una categoría</option>
-              <option value='Geografía'>Geografía</option>
-              <option value='Literatura'>Literatura</option>
-              <option value='Cine'>Cine</option>
-              <option value='Informatica'>Informática</option>
-              <option value='Deportes'>Deportes</option>
+              {categorias.map((cat) => (
+                <option key={cat.id} value={cat.nombre}>
+                  {cat.nombre}
+                </option>
+              ))}
             </select>
-
             <button className='bg-sky-600 px-6 py-2 rounded-xl hover:scale-105 transition-transform cursor-pointer'>
               Varias Categorías
             </button>

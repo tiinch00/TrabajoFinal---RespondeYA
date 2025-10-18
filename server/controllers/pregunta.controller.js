@@ -96,7 +96,7 @@ const store = async (req, res) => {
   }
   try {
     const pregunta = await Pregunta.create({ admin_id, categoria_id, enunciado, dificultad });
-    res.status(201).json(pregunta);
+    res.json(pregunta);
   } catch (error) {
     if (error.name === 'SequelizeForeignKeyConstraintError') {
       return res.status(400).json({ error: 'Invalid categoria_id' });

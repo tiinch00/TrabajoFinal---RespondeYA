@@ -59,7 +59,12 @@ const AbmPreguntas = () => {
         </div>
       )}
       <div className='flex justify-center place-items-start'>
-        <PreguntasCrear categoriaID={id} setPreguntas={setPreguntas} />
+        <PreguntasCrear
+          categoriaID={id}
+          onCreate={(preguntaCreada) => {
+            setPreguntas((prev) => [...prev, preguntaCreada]);
+          }}
+        />
         <PreguntasListar
           preguntas={preguntas}
           categoria={nombre}

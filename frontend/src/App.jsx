@@ -35,43 +35,41 @@ function LayoutSwitch() {
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Rutas compartidas en ambos layouts */}
-        <Route element={<LayoutSwitch />}>
-          <Route path='/contacto' element={<Contacto />} />
-          <Route path='/comojugar' element={<ComoJugar />} />
-        </Route>
+    <Routes>
+      {/* Rutas compartidas en ambos layouts */}
+      <Route element={<LayoutSwitch />}>
+        <Route path='/contacto' element={<Contacto />} />
+        <Route path='/comojugar' element={<ComoJugar />} />
+      </Route>
 
-        {/* Publico (sin sesion) */}
-        <Route element={<PublicRoute />}>
-          <Route element={<PublicLayout />}>
-            <Route path='/login' element={<Login />} />
-            <Route path='/register' element={<Register />} />
-          </Route>
+      {/* Publico (sin sesion) */}
+      <Route element={<PublicRoute />}>
+        <Route element={<PublicLayout />}>
+          <Route path='/login' element={<Login />} />
+          <Route path='/register' element={<Register />} />
         </Route>
-        {/* Privado (con sesion) */}
-        <Route element={<ProtectedRoute />}>
-          <Route element={<PrivateLayout />}>
-            <Route index element={<Home />} /> {/* "/" */}
-            <Route path='/bienvenido' element={<Bienvenido />} />
-            <Route path='/crearPartida' element={<CrearPartida />} />
-            <Route
-              path='/jugarIndividual/:categoria/:tiempo/:dificultad'
-              element={<JugarIndividual />}
-            />
-            <Route path='/admin/categorias' element={<AbmCategorias />} />
-            <Route path='/tienda' element={<Tienda />} />
-            <Route path='/perfil' element={<Perfil />} />
-            <Route path='/chatGlobal' element={<ChatGlobal />} />
-            <Route path='/Ruleta' element={<Ruleta />} />
-            <Route path='/categoria/:nombre/:id/preguntas' element={<AbmPreguntas />} />
-          </Route>
+      </Route>
+      {/* Privado (con sesion) */}
+      <Route element={<ProtectedRoute />}>
+        <Route element={<PrivateLayout />}>
+          <Route index element={<Home />} /> {/* "/" */}
+          <Route path='/bienvenido' element={<Bienvenido />} />
+          <Route path='/crearPartida' element={<CrearPartida />} />
+          <Route
+            path='/jugarIndividual/:categoria/:tiempo/:dificultad'
+            element={<JugarIndividual />}
+          />
+          <Route path='/admin/categorias' element={<AbmCategorias />} />
+          <Route path='/tienda' element={<Tienda />} />
+          <Route path='/perfil' element={<Perfil />} />
+          <Route path='/chatGlobal' element={<ChatGlobal />} />
+          <Route path='/Ruleta' element={<Ruleta />} />
+          <Route path='/categoria/:nombre/:id/preguntas' element={<AbmPreguntas />} />
         </Route>
-        {/* Catch-all: mandá a "/" (el guard decide) */}
-        <Route path='*' element={<Navigate to='/' replace />} />
-      </Routes>
-    </BrowserRouter>
+      </Route>
+      {/* Catch-all: mandá a "/" (el guard decide) */}
+      <Route path='*' element={<Navigate to='/' replace />} />
+    </Routes>
   );
 }
 

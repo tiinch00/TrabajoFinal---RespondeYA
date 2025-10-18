@@ -1,10 +1,11 @@
 import { Opcion, Pregunta } from '../models/associations.js';
 
 const index = async (req, res) => {
-  const { id } = req.params;
+  const { pregunta_id } = req.params;
+
   try {
     const opciones = await Opcion.findAll({
-      where: { pregunta_id: id },
+      where: { pregunta_id: pregunta_id },
     });
     res.json(opciones);
   } catch (error) {

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 
-const PreguntasCrear = ({ categoriaID, setPreguntas }) => {
+const PreguntasCrear = ({ categoriaID, onCreate }) => {
   const [values, setValues] = useState({
     admin_id: 1,
     categoria_id: categoriaID,
@@ -31,8 +31,9 @@ const PreguntasCrear = ({ categoriaID, setPreguntas }) => {
         `http://localhost:3006/admin/categoria/${categoriaID}/preguntas/create`,
         values
       );
-      setPreguntas((prev) => [...prev, data]);
-      setPregunta(data);
+
+      onCreate(data);
+      //setPregunta(data);
       setValues({ admin_id: 1, categoria_id: categoriaID, enunciado: '', dificultad: '' });
     } catch (error) {
       console.error(error);

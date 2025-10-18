@@ -20,14 +20,34 @@ const JugarIndividual = () => {
   const [opciones, setOpciones] = useState([]);
   const [loading, setLoading] = useState(false);
   const [alerta, setAlerta] = useState('');
+  const [respuestaSeleccionada, setRespuestaSeleccionada] = useState('');
+  const [respuestas, setRespuestas] = useState([]);
 
   const user = getStoredUser();
+
+  // const cambioPregunta = () => {
+  //   const nuevoIndice = preguntaActual + 1;
+  //   setPreguntaActual(nuevoIndice);
+  //   setPreguntaSeleccionada(quiz[nuevoIndice]);
+  //   partida();
+  //   setEstadoCambio(false);
+  // };
 
   const pasarTiempo = (tiempo) => {
     if (tiempo === 'facil') return '15';
     if (tiempo === 'normal') return '10';
     if (tiempo === 'dificil') return '5';
     return '';
+  };
+
+  const handleGuardarRespuesta = (opcion, indiceActual) => {
+    setRespuestaSeleccionada(opcion);
+    setRespuestas((prev) => [...prev, opcion]);
+    setPreguntaActual(preguntas[indiceActual + 1]);
+    setOpciones(preguntas[indiceActual + 1].Opciones);
+
+    console.log(indiceActual);
+    console.log(opcion);
   };
 
   useEffect(() => {
@@ -41,6 +61,7 @@ const JugarIndividual = () => {
           `http://localhost:3006/preguntas/categoria/${categoria.toLowerCase()}/${dificultad.toLowerCase()}`
         );
         setPreguntas(res.data);
+        console.log(res.data);
         if (res.data && res.data.length > 0) {
           setPreguntaActual(res.data[0]);
           setOpciones(res.data[0].Opciones || []);
@@ -58,7 +79,7 @@ const JugarIndividual = () => {
     };
     categoriaDB();
   }, [categoria, dificultad]);
-  console.log(preguntas);
+
   return (
     <div className='flex w-full h-screen bg-indigo-950 text-white p-4'>
       <div className='flex flex-col items-center justify-center w-1/5'>
@@ -68,7 +89,7 @@ const JugarIndividual = () => {
 
       <div className='flex flex-col items-center justify-start w-3/5'>
         <div className='bg-purple-500 rounded-lg px-6 py-2 mb-4 text-xl font-bold'>
-          Categoría: {categoria || 'Nombre de la categoría'}
+          Categoría: {categoria.toLocaleUpperCase() || 'Nombre de la categoría'}
         </div>
 
         {loading ? (
@@ -83,6 +104,7 @@ const JugarIndividual = () => {
                 <button
                   key={index}
                   className='bg-gray-300 rounded-lg py-2 text-black cursor-pointer'
+                  onClick={() => handleGuardarRespuesta(opcion)}
                 >
                   {opcion.texto}
                 </button>
