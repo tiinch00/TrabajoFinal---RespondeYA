@@ -15,7 +15,14 @@ import estadisticaRoutes from './routes/estadisticaRoutes.js';
 import express from 'express';
 import http from 'http';
 import jugadorRoutes from "./routes/jugadorRoutes.js";
+import opcionesRoutes from './routes/opcionesRoutes.js';
+import partidaJugadoresRoutes from './routes/partida_jugadoresRoutes.js';
+import partidaPreguntasRoutes from './routes/partida_preguntasRoutes.js';
+import partidasRoutes from './routes/partidasRoutes.js';
 import preguntasRoutes from './routes/preguntasRoutes.js';
+import respuestasRoutes from './routes/respuestasRoutes.js';
+import salaJugadoresRoutes from './routes/sala_jugadoresRoutes.js'
+import salasRoutes from './routes/salasRoutes.js';
 import sequelize from './models/sequelize.js';
 import userAvataresRoutes from './routes/userAvataresRoutes.js';
 import userRoutes from './routes/userRoutes.js';
@@ -43,13 +50,20 @@ app.use('/auth', authRoutes);
 app.use('/api/contactar', contactRoutes);
 app.use('/admin', adminRoutes);
 app.use(userRoutes);
-app.use(categoryRoutes);
-app.use(preguntasRoutes);
-app.use(estadisticaRoutes);
 app.use(jugadorRoutes);
 app.use(avataresRoutes);
 app.use(userAvataresRoutes);
 app.use(amigoRoutes);
+app.use(categoryRoutes);
+app.use(preguntasRoutes);
+app.use(opcionesRoutes);
+app.use(estadisticaRoutes);
+app.use(partidasRoutes);
+app.use(salasRoutes);
+app.use(partidaJugadoresRoutes);
+app.use(salaJugadoresRoutes);
+app.use(partidaPreguntasRoutes);
+app.use(respuestasRoutes);
 
 // (Opcional) raíz para verificar rápido
 app.get('/', (req, res) => res.status(200).json({ api: 'RespondeYA OK' }));

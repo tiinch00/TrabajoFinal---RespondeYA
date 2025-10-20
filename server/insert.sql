@@ -198,11 +198,31 @@ INSERT INTO `partida_jugadores`
 (3, 1);
 
 
--- preguntas
-
-
-
-
+-- partida_preguntas
+-- partida 1 - geografia
+INSERT INTO `partida_preguntas`
+(`partida_id`, `pregunta_id`, `orden`, `question_text_copy`, `correct_option_id_copy`, `correct_option_text_copy`) 
+VALUES 
+-- partida_pregunta 1
+(1, 3, 1,'¿Cuál es la capital de Argentina?', 11,'Buenos Aires'),
+-- partida_pregunta 2
+(1, 4, 2,'¿En qué región está la Patagonia?', 15,'Sur'),
+-- partida_pregunta 3
+(1, 5, 3,'¿Cuál es el pico más alto del país?', 19,'Aconcagua'),
+-- partida_pregunta 4
+(1, 6, 4,'¿Qué río marca gran parte de la frontera con Uruguay?', 22,'Río Uruguay'),
+-- partida_pregunta 5
+(1, 7, 5,'¿En qué provincia se encuentran las Cataratas del Iguazú?', 28,'Misiones'),
+-- partida_pregunta 6
+(1, 8, 6,'¿Cuál es el mayor lago argentino en superficie total (compartido con Chile)?', 30,'Lago Argentino'),
+-- partida_pregunta 7
+(1, 9, 7,'¿Qué provincia es famosa por su “Quebrada de Humahuaca”?', 34,'Jujuy'),
+-- partida_pregunta 8
+(1, 10, 8,'¿Cuál es la ciudad más austral del país?', 38,'Ushuaia'),
+-- partida_pregunta 9
+(1, 11, 9,'¿Qué sierras atraviesan gran parte de Córdoba?', 43,'Sierras de Córdoba (Comechingones/Sierras Chicas)'),
+-- partida_pregunta 10
+(1, 12, 10,'¿Cuál es el principal río que cruza la ciudad de Buenos Aires?', 46,'Río de la Plata');
 
 -- estadisticas
 INSERT INTO `estadisticas`
@@ -212,3 +232,29 @@ INSERT INTO `estadisticas`
 (1, 1, 1, 1000, 10, 0, 600000),
 (1, 2, 1, 500, 5, 5, 600000),
 (1, 3, 1, 1000, 10, 0, 600000);
+
+-- respuestas
+INSERT INTO `respuestas`
+(`partida_id`, `jugador_id`, `pregunta_id`, `partida_pregunta_id`, `opcion_elegida_id`, `estadistica_id`, `es_correcta`, `tiempo_respuesta_ms`) 
+VALUES 
+-- geografia
+-- respuesta 1
+(1, 1, 3, 11, 11, 4, 1, 15000),
+-- respuesta 2
+(1, 1, 4, 12, 13, 4, 0, 20000),
+-- respuesta 3
+(1, 1, 5, 13, 19, 4, 1, 30000),
+-- respuesta 4
+(1, 1, 6, 14, 22, 4, 1, 20000),
+-- respuesta 5
+(1, 1, 7, 15, 25, 4, 0, 50000),
+-- respuesta 6
+(1, 1, 8, 16, 30, 4, 1, 20000),
+-- respuesta 7
+(1, 1, 9, 17, 34, 4, 1, 15000),
+-- respuesta 8
+(1, 1, 10, 18, 37, 4, 0, 55000),
+-- respuesta 9
+(1, 1, 11, 19, 42, 4, 0, 45000),
+-- respuesta 10
+(1, 1, 12, 20, 45, 4, 0, 52000);
