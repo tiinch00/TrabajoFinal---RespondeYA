@@ -34,10 +34,19 @@ const Home = () => {
               </Link>
             </div>
           )}
-        </div>        
-        <Link to='/Ruleta' className="w-70 h-15  hover:scale-105 text-white transition-transform cursor-pointer bg-amber-600 rounded-4xl flex items-center justify-center mb-1 mt-4 p-1">
+        </div>
+        <Link
+          to='/Ruleta'
+          className='w-70 h-15  hover:scale-105 text-white transition-transform cursor-pointer bg-amber-600 rounded-4xl flex items-center justify-center mb-1 mt-4 p-1'
+        >
           Ruleta
-        </Link> 
+        </Link>
+        <Link
+          to='/Ranking'
+          className='w-70 h-15  hover:scale-105 text-white transition-transform cursor-pointer bg-amber-600 rounded-4xl flex items-center justify-center mb-1 mt-4 p-1'
+        >
+          Ranking Mundial
+        </Link>
       </div>
     </div>
   );
