@@ -1,13 +1,19 @@
-import { Pregunta, Categoria, Opcion } from '../models/associations.js';
+import { Categoria, Opcion, Pregunta } from '../models/associations.js';
+
 import sequelize from '../models/sequelize.js';
 
 const index = async (req, res) => {
   const { id } = req.params;
   try {
-    const preguntas = await Pregunta.findAll({
-      where: { categoria_id: id },
-    });
-    res.json(preguntas);
+    if (id !== undefined && id !== null) {
+      const preguntas = await Pregunta.findAll({
+        where: { categoria_id: id },
+      });
+      res.json(preguntas);
+    } else {
+      const preguntasAll = await Pregunta.findAll();
+      res.json(preguntasAll);
+    }
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: 'Internal server error' });

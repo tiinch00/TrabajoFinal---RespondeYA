@@ -48,7 +48,7 @@ const Perfil = () => {
   const [partidas, setPartidas] = useState([]);
   const [partida_preguntas, setPartida_preguntas] = useState([]);
   const [respuestas, setRespuestas] = useState([]);
-  
+
   const [estadisticas, setEstadisticas] = useState([]); // array estadisticas
 
   // errores o inicializaciones
@@ -227,97 +227,84 @@ const Perfil = () => {
     }
   };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   // obtiene un objeto categoria
   const getCategorias = async (id) => {
     try {
-      const { data } = await axios.get(`http://localhost:3006/categorias/${id}`);
+      const { data } = await axios.get(`http://localhost:3006/categorias`);
       setCategorias(data);
     } catch (error) {
-      console.log("@@@@ Error GET: estadisticas\n", error);
+      console.log("@@@@ Error GET: categorias\n", error);
     }
   };
 
   // obtiene un objeto pregunta
   const getPreguntas = async (id) => {
     try {
-      const { data } = await axios.get(`http://localhost:3006/preguntas/${id}`);
+      // /${id}
+      const { data } = await axios.get(`http://localhost:3006/preguntas`);
       setPreguntas(data);
     } catch (error) {
-      console.log("@@@@ Error GET: estadisticas\n", error);
+      console.log("@@@@ Error GET: preguntas\n", error);
     }
   };
 
+
+
+
+
+
+
+  
   // obtiene un objeto opcion
   const getOpciones = async (id) => {
     try {
-      const { data } = await axios.get(`http://localhost:3006/opcion/${id}`);
+      const { data } = await axios.get(`http://localhost:3006/opciones`);
       setOpciones(data);
     } catch (error) {
-      console.log("@@@@ Error GET: estadisticas\n", error);
+      console.log("@@@@ Error GET: opciones\n", error);
     }
   };
+
+
+
+
+
+
+
+
+
+
+
 
   // obtiene un objeto partida
   const getPartdias = async (id) => {
     try {
-      const { data } = await axios.get(`http://localhost:3006/partidas/${id}`);
+      const { data } = await axios.get(`http://localhost:3006/partidas`);
       setPartidas(data);
     } catch (error) {
-      console.log("@@@@ Error GET: estadisticas\n", error);
+      console.log("@@@@ Error GET: partidas\n", error);
     }
   };
 
   // obtiene un objeto partida_pregunta
   const getPartidaPreguntas = async (id) => {
     try {
-      const { data } = await axios.get(`http://localhost:3006/partida_pregunta/${id}`);
+      const { data } = await axios.get(`http://localhost:3006/partida_preguntas`);
       setPartida_preguntas(data);
     } catch (error) {
-      console.log("@@@@ Error GET: estadisticas\n", error);
+      console.log("@@@@ Error GET: partida_preguntas\n", error);
     }
   };
 
   // obtiene un objeto respuesta
   const getRespuestas = async (id) => {
     try {
-      const { data } = await axios.get(`http://localhost:3006/respuesta/${id}`);
+      const { data } = await axios.get(`http://localhost:3006/respuestas`);
       setRespuestas(data);
     } catch (error) {
-      console.log("@@@@ Error GET: estadisticas\n", error);
+      console.log("@@@@ Error GET: respuestas\n", error);
     }
   };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   // obtiene un array de todas las estadisticas del jugador
   const getEstadisticas = async () => {
@@ -342,6 +329,12 @@ const Perfil = () => {
     getEstadisticas();
     infoJugadorIdAvatares();
     infoAvatares();
+    getCategorias();
+    getPreguntas();
+    getOpciones();
+    getPartdias();
+    getPartidaPreguntas();
+    getRespuestas();
   }, []);
 
   // hace desaparecer el scroll
@@ -357,7 +350,30 @@ const Perfil = () => {
   if (!userId) return <p>No hay usuario en sesión.</p>;
   if (error) return <p className="text-red-600">Error: {error}</p>;
   if (loadingPerfil) return <p>Cargando perfil…</p>;
-  if (!perfil) return <p>No se pudo cargar el perfil.</p>; 
+  if (!perfil) return <p>No se pudo cargar el perfil.</p>;
+
+  /* 
+    getCategorias();
+    getPreguntas();
+    getOpciones();
+    getPartdias();
+    getPartidaPreguntas();
+    getRespuestas();
+  
+
+    console.log("\ncategorias");
+    console.log(categorias);
+    console.log("\npreguntas");
+    console.log(preguntas);
+    console.log("\nopciones");
+    console.log(opciones);
+    console.log("\npartidas");
+    console.log(partidas);
+    console.log("\npartida_preguntas");
+    console.log(partida_preguntas);
+    console.log("\nrespuestas");
+    console.log(respuestas);
+    */
 
   return (
     <div className="w-[70%] mb-6">

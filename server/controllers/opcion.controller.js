@@ -4,10 +4,15 @@ const index = async (req, res) => {
   const { pregunta_id } = req.params;
 
   try {
-    const opciones = await Opcion.findAll({
-      where: { pregunta_id: pregunta_id },
-    });
-    res.json(opciones);
+    if (pregunta_id !== undefined && pregunta_id !== null) {
+      const opciones = await Opcion.findAll({
+        where: { pregunta_id: pregunta_id },
+      });
+      res.json(opciones);
+    } else {
+      const opcionesAll = await Opcion.findAll();
+      res.json(opcionesAll);
+    }
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: 'Internal server error' });
@@ -80,11 +85,11 @@ const store = async (req, res) => {
       opciones.map((texto, i) =>
         texto
           ? Opcion.create({
-              admin_id,
-              pregunta_id,
-              texto,
-              es_correcta: nombres[i] === es_correcta,
-            })
+            admin_id,
+            pregunta_id,
+            texto,
+            es_correcta: nombres[i] === es_correcta,
+          })
           : null
       )
     );
@@ -135,11 +140,11 @@ const update = async (req, res) => {
         opciones.map((texto, i) =>
           texto
             ? Opcion.create({
-                admin_id,
-                pregunta_id,
-                texto,
-                es_correcta: nombres[i] === es_correcta,
-              })
+              admin_id,
+              pregunta_id,
+              texto,
+              es_correcta: nombres[i] === es_correcta,
+            })
             : null
         )
       );
