@@ -1,5 +1,6 @@
 import 'dotenv/config';
 
+import Administrador from '../models/Administrador.js';
 import Jugador from '../models/Jugador.js';
 import User from '../models/user.js';
 import { authMiddleware } from '../routes/authMiddleware.js';
@@ -55,9 +56,6 @@ router.post('/login', async (req, res) => {
       return res.status(404).json({ error: 'Usuario inexistente' });
     }
 
-    const user_id = user.id;
-    const jugador = await Jugador.findOne({ where: { user_id } });
-
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) return res.status(401).json({ error: 'Password no coincide' });
 
@@ -68,15 +66,33 @@ router.post('/login', async (req, res) => {
     const token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: '3h' });
     const { id, name, email: mail } = user;
 
-    const { jugador_id } = jugador.dataValues;
-
-    if (!jugador) {
-      return res.status(404).json({ error: 'Jugador inexistente' });
+    const user_id = user.id;
+    // validacion de role jugador
+    if (user.role == "jugador") {
+      const jugador = await Jugador.findOne({ where: { user_id } });
+      const { jugador_id } = jugador.dataValues;
+      if (!jugador) {
+        return res.status(404).json({ error: 'Jugador inexistente' });
+      } else {
+        return res.status(200).json({
+          token,
+          user: { id, name, email: mail, role: user.role, jugador_id: jugador_id },
+        });
+      }
     } else {
-      return res.status(200).json({
-        token,
-        user: { id, name, email: mail, role: user.role, jugador_id: jugador_id },
-      });
+      // validacion de role administrador
+      if (user.role == "administrador") {
+        const administrador = await Administrador.findOne({ where: { user_id } });
+        const { admin_id } = administrador.dataValues;
+        if (!administrador) {
+          return res.status(404).json({ error: 'administrador inexistente' });
+        } else {
+          return res.status(200).json({
+            token,
+            user: { id, name, email: mail, role: user.role, admin_id: admin_id },
+          });
+        }
+      }
     }
   } catch (err) {
     console.error('LOGIN ERR:', err);

@@ -78,7 +78,7 @@ const Tienda = () => {
   const administrador = user?.role;
 
   // // obtiene el objeto jugador
-  const infoallJugadores = async () => {    
+  const infoallJugadores = async () => {
     try {
       const { data } = await axios.get(`http://localhost:3006/jugadores`);
       setJugadores(data);
@@ -88,7 +88,7 @@ const Tienda = () => {
   };
 
   // // obtiene el objeto jugador
-  const infoJugador = async () => {    
+  const infoJugador = async () => {
     try {
       const { data } = await axios.get(`http://localhost:3006/jugadores/${jugador_id}`);
       setJugador(data);
@@ -109,13 +109,11 @@ const Tienda = () => {
 
   // obtiene los avatares que tiene el jugador comprado
   const infoJugadorIdAvatares = async () => {
-    // prepara todos los atributos de la lista de avatares de un jugador
-    const values = {
-      jugador_id: jugador_id,
-    };
-
     try {
-      const { data } = await axios.get(`http://localhost:3006/userAvatar`, values);
+      const { data } = await axios.get(
+        `http://localhost:3006/userAvatar`,
+        { params: { jugador_id } } // <-- params
+      );
       setJugadorAvatares(data);
       //console.log("GET: jugadorId_avatares (data):", data);
     } catch (error) {
@@ -201,7 +199,9 @@ const Tienda = () => {
   // actualiza los valores cuando se produce un nuevo evento
   useEffect(() => {
     infoallJugadores();
-    infoJugador();
+    if (user.role !== "administrador") {
+      infoJugador();
+    }
     infoAvatares();
     infoJugadorIdAvatares();
   }, []);
@@ -218,12 +218,7 @@ const Tienda = () => {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
-  //console.log(jugadores[0]);
-
-  const yaLoTiene =
-    Array.isArray(jugadorAvatares) &&
-    avatares[selected] &&
-    jugadorAvatares.some((a) => a.avatar_id === avatares[selected].id);
+  const yaLoTiene = Array.isArray(jugadorAvatares) && avatares[selected] && jugadorAvatares.some((a) => a.avatar_id === avatares[selected].id);
 
   return (
     <div>
@@ -358,7 +353,7 @@ const Tienda = () => {
 
             {/* Precio */}
             <div className='text-4xl text-center font-semibold'>
-              Precio: {`$${avatares[selected].precio_puntos}`}
+              Precio: {`${avatares[selected].precio_puntos} puntos`}
             </div>
 
             {/* boton de compra */}
@@ -405,10 +400,21 @@ const Tienda = () => {
               </div>
             ) : (
               <div className='text-center mt-4'>
-                <p>Fondos Insuficiente</p>
-                <button className='mt-3 px-4 py-2 rounded bg-gray-500 text-white hover:bg-gray-600 cursor-not-allowed'>
-                  Comprar
-                </button>
+                {yaLoTiene ? (
+                  <button
+                    className='text-xl mt-3 px-4 py-2 rounded bg-gray-500 hover:bg-gray-600  text-white cursor-not-allowed'
+                    disabled
+                  >
+                    Ya lo tienes
+                  </button>
+                ) : (
+                  <div>
+                    <p>Fondos Insuficiente</p>
+                    <button className='mt-3 px-4 py-2 rounded bg-gray-500 text-white hover:bg-gray-600 cursor-not-allowed'>
+                      Comprar
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -419,7 +425,7 @@ const Tienda = () => {
                   className='px-4 py-2 bg-red-500 hover:bg-amber-700 text-white rounded cursor-pointer'
                 >
                   Eliminar Skin
-                  {console.log(avatares[selected].id)}
+                  {/*console.log(avatares[selected].id)*/}
                 </button>
               </div>
             )}
@@ -464,10 +470,11 @@ const Tienda = () => {
             </AnimatePresence>
           </motion.div>
         </div>
-      )}
+      )
+      }
 
       <hr className='my-12 border-1 border-sky-500' />
-    </div>
+    </div >
   );
 };
 
