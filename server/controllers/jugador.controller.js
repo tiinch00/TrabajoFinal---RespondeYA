@@ -47,39 +47,6 @@ const store = async (req, res) => {
   }
 };
 
-const updateByUserId = async (req, res) => {
-  try {
-    const user_id = Number(req.params.user_id);
-    const puntaje = Number(req.body?.puntaje ?? NaN);
-
-    const jugador = await Jugador.findOne({ where: { user_id } });
-    if (!jugador) {
-      return res.status(404).json({ error: 'Jugador no encontrado para ese user_id' });
-    }
-
-    // Estrategia A: ACUMULAR
-    await jugador.increment({ puntaje });
-    await jugador.reload();
-
-    // (Si quisieras reemplazar, usa:  ...)
-    //const usuario = await jugador.update({ puntaje });
-
-    //console.log(usuario);
-
-    return res.json({
-      ok: true,
-      jugador: {
-        jugador_id: jugador.jugador_id,
-        user_id: jugador.user_id,
-        puntaje: jugador.puntaje,
-      },
-    });
-  } catch (err) {
-    console.error('PUT /jugadores/:user_id', err);
-    res.status(500).json({ error: 'Error interno' });
-  }
-};
-
 const update = async (req, res) => {
   try {
     // parseo seguro
