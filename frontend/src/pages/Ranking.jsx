@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { Search } from 'lucide-react'; // icono de lupa
 
 const Ranking = () => {
   const [ranking, setRanking] = useState([]);
+  const [buscador, setBuscador] = useState('');
+  const [mostrarInput, setMostrarInput] = useState(false);
 
   const getData = async () => {
     try {
@@ -25,10 +28,13 @@ const Ranking = () => {
             puntaje: jugador.puntaje || 0,
           };
         })
-        .filter(Boolean) // quita los nulls
+        .filter(Boolean)
         .sort((a, b) => b.puntaje - a.puntaje);
-
-      setRanking(combinados);
+      const rankingConPosicion = combinados.map((jugador, index) => ({
+        ...jugador,
+        posicion: index + 1,
+      }));
+      setRanking(rankingConPosicion);
     } catch (err) {
       console.error('Error al obtener ranking:', err);
     }
@@ -38,28 +44,54 @@ const Ranking = () => {
     getData();
   }, []);
 
+  const handleBuscador = (e) => setBuscador(e.target.value);
+
+  const jugadoresFiltrados = !buscador.trim()
+    ? ranking
+    : ranking.filter((dato) => dato.name.toLowerCase().includes(buscador.toLowerCase()));
+
   return (
     <div className='max-w-lg mx-auto mt-6'>
       <h2 className='text-2xl font-bold text-center text-yellow-400 mb-6'>
         🏆 Ranking de Jugadores
       </h2>
 
-      {ranking.length > 0 ? (
-        ranking.map((jugador, index) => (
+      <div className='flex flex-col justify-center items-center mb-4'>
+        <button
+          onClick={() => setMostrarInput((prev) => !prev)}
+          className='bg-yellow-400 text-gray-900 p-2 rounded-full hover:bg-yellow-500 transition-colors cursor-pointer mb-1'
+        >
+          <Search size={20} />
+        </button>
+
+        <input
+          type='text'
+          name='buscador'
+          value={buscador}
+          onChange={handleBuscador}
+          placeholder='Buscar jugador...'
+          className={`ml-2 px-3 py-2 rounded-lg bg-white/80 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all duration-300 ${
+            mostrarInput ? 'w-48 opacity-100' : 'w-0 opacity-0'
+          }`}
+        />
+      </div>
+
+      {jugadoresFiltrados.length > 0 ? (
+        jugadoresFiltrados.map((jugador) => (
           <div
             key={jugador.id}
-            className='p-4 bg-gray-800 text-amber-300 border border-yellow-500 rounded-lg shadow mb-3 flex justify-between items-center'
+            className='p-4 bg-gray-800 text-amber-300 border border-yellow-500 rounded-lg shadow mb-3 flex justify-between items-center mt-2'
           >
             <div>
               <p className='font-bold text-lg'>
-                {index + 1}. {jugador.name}
+                {jugador.posicion}. {jugador.name}
               </p>
             </div>
             <p className='text-xl font-semibold text-yellow-400'>{jugador.puntaje} pts</p>
           </div>
         ))
       ) : (
-        <p className='text-center text-gray-400'>Cargando ranking...</p>
+        <p className='text-center text-gray-400'>No se encontraron jugadores</p>
       )}
     </div>
   );
