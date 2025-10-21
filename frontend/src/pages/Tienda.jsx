@@ -5,7 +5,8 @@ import axios from 'axios';
 
 const Tienda = () => {
   const [selected, setSelected] = useState(null); // indice o null
-  const [jugador, setJugador] = useState(null);
+  const [jugadores, setJugadores] = useState([]);
+  const [jugador, setJugador] = useState([]);
   const [avatares, setAvatares] = useState([]);
   const [jugadorAvatares, setJugadorAvatares] = useState([]);
   const [confirmar, setConfirmar] = useState(false);
@@ -77,17 +78,22 @@ const Tienda = () => {
   const administrador = user?.role;
 
   // // obtiene el objeto jugador
-  const infoJugador = async () => {
-    if (!jugador_id) {
-      console.log('jugador_id vacío');
-      setJugador(null);
-      return;
+  const infoallJugadores = async () => {    
+    try {
+      const { data } = await axios.get(`http://localhost:3006/jugadores`);
+      setJugadores(data);
+    } catch (error) {
+      console.log('@@@@ Error GET /jugadores/:id\n', error);
     }
+  };
+
+  // // obtiene el objeto jugador
+  const infoJugador = async () => {    
     try {
       const { data } = await axios.get(`http://localhost:3006/jugadores/${jugador_id}`);
       setJugador(data);
     } catch (error) {
-      console.log('@@@@ Error GET /jugadores/:jugador_id\n', error);
+      console.log('@@@@ Error GET /jugadores/:id\n', error);
     }
   };
 
@@ -194,6 +200,7 @@ const Tienda = () => {
 
   // actualiza los valores cuando se produce un nuevo evento
   useEffect(() => {
+    infoallJugadores();
     infoJugador();
     infoAvatares();
     infoJugadorIdAvatares();
@@ -210,6 +217,8 @@ const Tienda = () => {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
+
+  //console.log(jugadores[0]);
 
   const yaLoTiene =
     Array.isArray(jugadorAvatares) &&

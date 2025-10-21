@@ -56,10 +56,7 @@ router.post('/login', async (req, res) => {
     }
 
     const user_id = user.id;
-    const jugador = Jugador.findOne({ where: {user_id}});
-    if (!jugador) {
-      return res.status(404).json({ error: 'Jugador inexistente' });
-    }
+    const jugador = await Jugador.findOne({ where: { user_id } });
 
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) return res.status(401).json({ error: 'Password no coincide' });
@@ -71,10 +68,16 @@ router.post('/login', async (req, res) => {
     const token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: '3h' });
     const { id, name, email: mail } = user;
 
-    return res.status(200).json({
-      token,
-      user: { id, name, email: mail, role: user.role, jugador_id: user_id },
-    });
+    const { jugador_id } = jugador.dataValues;
+
+    if (!jugador) {
+      return res.status(404).json({ error: 'Jugador inexistente' });
+    } else {
+      return res.status(200).json({
+        token,
+        user: { id, name, email: mail, role: user.role, jugador_id: jugador_id },
+      });
+    }
   } catch (err) {
     console.error('LOGIN ERR:', err);
     return res.status(500).json({ error: 'Error interno' });

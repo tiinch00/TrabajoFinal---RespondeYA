@@ -11,10 +11,13 @@ const index = async (req, res) => {
 };
 
 const show = async (req, res) => {
+  const { jugador_id } = req.params;
+  //console.log(jugador_id);
   try {
-    const { jugador_id } = req.params;
     const jugador = await Jugador.findByPk(jugador_id);
+
     if (!jugador) return res.status(404).json({ error: 'Jugador not found' });
+
     res.json(jugador);
   } catch (err) {
     console.error(err);
@@ -49,13 +52,6 @@ const updateByUserId = async (req, res) => {
     const user_id = Number(req.params.user_id);
     const puntaje = Number(req.body?.puntaje ?? NaN);
 
-    if (!Number.isInteger(user_id)) {
-      return res.status(400).json({ error: 'user_id inválido' });
-    }
-    if (!Number.isFinite(puntaje) || puntaje < 0) {
-      return res.status(400).json({ error: 'puntaje inválido' });
-    }
-
     const jugador = await Jugador.findOne({ where: { user_id } });
     if (!jugador) {
       return res.status(404).json({ error: 'Jugador no encontrado para ese user_id' });
@@ -85,19 +81,31 @@ const updateByUserId = async (req, res) => {
 };
 
 const update = async (req, res) => {
-  const { jugador_id } = req.params;
-  const { puntaje } = req.body;
-  if (!puntaje) {
-    return res.status(400).json({ error: 'Puntaje is required' });
-  }
   try {
-    const jugador = await Jugador.findByPk(jugador_id);
+    // parseo seguro
+    const jugador_id = Number(req.params.jugador_id);
+    const puntaje = Number(req.body?.puntaje);
+
+    // Debug opcional para ver tipos/valores
+    // console.log({ jugador_id, puntaje, t1: typeof req.params.jugador_id, t2: typeof req.body?.puntaje });
+
+    // validaciones
+    if (!Number.isInteger(jugador_id) || jugador_id <= 0) {
+      return res.status(400).json({ error: 'jugador_id inválido' });
+    }
+
+    if (!Number.isFinite(puntaje) || puntaje < 0) {
+      return res.status(400).json({ error: 'puntaje inválido' });
+    }
+
+    const jugador = await Jugador.findByPk(jugador_id);    
     if (!jugador) {
       return res.status(404).send('Jugador not found');
     }
 
     await jugador.update({ puntaje });
     res.json(jugador);
+
   } catch (error) {
     if (error.name === 'SequelizeUniqueConstraintError') {
       return res.status(400).json({ error: 'jugador_id already exists' });
@@ -127,7 +135,6 @@ export default {
   index,
   show,
   store,
-  updateByUserId,
   update,
   destroy,
 };

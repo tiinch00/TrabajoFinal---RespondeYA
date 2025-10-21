@@ -19,16 +19,15 @@ const Perfil = () => {
 
   // botones hooks
   const [selectedPerfil, setSelectedPerfil] = useState(false); // boton de perfil 👤
-
-  // estoy haciendo este
   const [selectedPefilEditar, setSelectedPefilEditar] = useState(false); // abrir el modal del boton "editar" foto de perfil
-
   const [selectedAvatar, setSelectedAvatar] = useState(false); // boton mis avatares
 
   // no lo uso aun=======================================
   // aun no se usa (para cambiar la foto del avatar del perfil)
   const [avatarIdSeleccionado, setAvatarIdSeleccionado] = useState(null); // cuando elige un avatar dentro del listado
   // =======================================================
+
+  const [partidaIdSeleccionada, setPartidaIdSeleccionada] = useState(null);
 
   const [editMode, setEditMode] = useState(false); // boton editar datos de perfil
   const [saving, setSaving] = useState(false); // boton de guardar los datos de formulario de editar perfil
@@ -180,17 +179,29 @@ const Perfil = () => {
   }
 
   // Une el array jugadorAvatares (avatar_id) con el array avatares (id)
+  // Usa el jugador_id del contexto (ya lo tenés como const jugador_id = user?.jugador_id)
   const inventarioAvataresDos = () => {
-    let arreglo = [];
-    if (Array.isArray(avatares) && Array.isArray(jugadorAvatares)) {
-      // armamos un set con los avatar_id del jugador
-      const idsDelJugador = new Set(jugadorAvatares.map(ja => ja.avatar_id));
-      // filtramos avatares cuyo id esté en ese set
-      const outArreglo = avatares.filter(avatar => idsDelJugador.has(avatar.id));
-      arreglo = outArreglo;
-      // console.log(outArreglo);
+    if (!Array.isArray(avatares) || !Array.isArray(jugadorAvatares)) return [];
+
+    const jid = Number(jugador_id);
+    if (!Number.isFinite(jid)) {
+      console.warn("jugador_id inválido:", jugador_id);
+      return [];
     }
-    return arreglo;
+
+    // 1) quedate solo con los registros del jugador actual
+    const jAsDelJugador = jugadorAvatares.filter(ja => Number(ja.jugador_id) === jid);
+
+    // 2) armá el set de avatar_id (normalizado a número)
+    const idsDelJugador = new Set(jAsDelJugador.map(ja => Number(ja.avatar_id)));
+
+    // 3) filtrá avatares por ese set (normalizando id)
+    const out = avatares.filter(avatar => idsDelJugador.has(Number(avatar.id)));
+
+    // debug útil
+    console.log("inventarioAvataresDos →", { jid, idsDelJugador: [...idsDelJugador], out });
+
+    return out;
   };
 
   // obtiene todos los amigos del jugador_id
@@ -248,13 +259,6 @@ const Perfil = () => {
     }
   };
 
-
-
-
-
-
-
-  
   // obtiene un objeto opcion
   const getOpciones = async (id) => {
     try {
@@ -264,17 +268,6 @@ const Perfil = () => {
       console.log("@@@@ Error GET: opciones\n", error);
     }
   };
-
-
-
-
-
-
-
-
-
-
-
 
   // obtiene un objeto partida
   const getPartdias = async (id) => {
@@ -317,6 +310,28 @@ const Perfil = () => {
     } catch (error) {
       console.log("@@@@ Error GET: estadisticas\n", error);
     }
+  };
+
+  // Une el array jugadorAvatares (avatar_id) con el array avatares (id)
+  const inventarioIdPartidaSeleccionado = () => {
+
+    // id de partida seleccionada
+    const idPartida = partidaIdSeleccionada;
+    let arreglo = [];
+
+    // modificar aca......................
+    if (Array.isArray(avatares) && Array.isArray(jugadorAvatares)) {
+
+      // armamos un set con los avatar_id del jugador
+      const idsDelJugador = new Set(jugadorAvatares.map(ja => ja.avatar_id));
+
+      // filtramos avatares cuyo id esté en ese set
+      const outArreglo = avatares.filter(avatar => idsDelJugador.has(avatar.id));
+
+      arreglo = outArreglo;
+      // console.log(outArreglo);
+    }
+    return arreglo;
   };
 
   // funcion de buscador entre estadisticas y amigos - (tengo que hacer 2 diferetes o uno para ambas)
@@ -374,6 +389,8 @@ const Perfil = () => {
     console.log("\nrespuestas");
     console.log(respuestas);
     */
+
+  //console.log(partidaIdSeleccionada);
 
   return (
     <div className="w-[70%] mb-6">
@@ -476,13 +493,9 @@ const Perfil = () => {
         <motion.button
           className="bg-violet-500 rounded-xl w-32 h-8 mb-4 cursor-pointer"
           whileTap={{ scale: 1.2 }}
-          onClick={() =>
-            setSelectedAvatar(prev => {
-              const next = !prev;
-              if (!next) setAvatarIdSeleccionado(null);
-              return next;
-            })
-          }
+          onClick={() => {
+            setSelectedAvatar(true);
+          }}
           type="button"
         //aria-pressed={selectedAvatar}
         >
@@ -509,6 +522,9 @@ const Perfil = () => {
                   className="absolute top-2 right-2 rounded-full w-9 h-9 
                               grid place-items-center hover:bg-black/5 active:scale-95 
                               cursor-pointer text-2xl"
+                  onClick={() => {
+                    setSelectedAvatar(false);
+                  }}
                 >
                   ✕
                 </button>
@@ -713,7 +729,10 @@ const Perfil = () => {
               className="border rounded-xl p-4 bg-white/10 hover:bg-white/20 
                 flex space-x-4 mb-2 cursor-pointer"
               whileTap={{ scale: 1.05 }}
-              onClick={() => setSelectedEstadisticas(index)}
+              onClick={() => {
+                setSelectedEstadisticas(index);
+                setPartidaIdSeleccionada(e.partida_id)
+              }}
             >
               {e.posicion > 0 ? (
                 <div>
@@ -726,7 +745,6 @@ const Perfil = () => {
                   <p>Fecha: </p>
                 </div>
               )}
-
             </motion.li>
           ))}
         </ul>
