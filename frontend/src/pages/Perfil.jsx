@@ -45,6 +45,7 @@ const Perfil = () => {
   const [preguntas, setPreguntas] = useState([]);
   const [opciones, setOpciones] = useState([]);
   const [partidas, setPartidas] = useState([]);
+  const [partida_jugadores, setPartida_jugadores] = useState([]);
   const [partida_preguntas, setPartida_preguntas] = useState([]);
   const [respuestas, setRespuestas] = useState([]);
 
@@ -199,7 +200,7 @@ const Perfil = () => {
     const out = avatares.filter(avatar => idsDelJugador.has(Number(avatar.id)));
 
     // debug útil
-    console.log("inventarioAvataresDos →", { jid, idsDelJugador: [...idsDelJugador], out });
+    //console.log("inventarioAvataresDos →", { jid, idsDelJugador: [...idsDelJugador], out });
 
     return out;
   };
@@ -312,26 +313,94 @@ const Perfil = () => {
     }
   };
 
+  // obtiene un array de PartidaJugadores (saber que jugadores jugaron en una partida)
+  const getPartidaJugadores = async () => {
+    try {
+      const { data } = await axios.get("http://localhost:3006/partida_jugadores");
+      setPartida_jugadores(data);
+    } catch (error) {
+      console.log("@@@@ Error GET: partida_jugadores\n", error);
+    }
+  };
+
   // Une el array jugadorAvatares (avatar_id) con el array avatares (id)
   const inventarioIdPartidaSeleccionado = () => {
 
-    // id de partida seleccionada
-    const idPartida = partidaIdSeleccionada;
-    let arreglo = [];
+    if (Array.isArray(partidas) && Array.isArray(preguntas) && Array.isArray(partida_jugadores) && Array.isArray(partida_preguntas) && Array.isArray(opciones) && Array.isArray(respuestas)) {
 
-    // modificar aca......................
-    if (Array.isArray(avatares) && Array.isArray(jugadorAvatares)) {
+      // id de partida seleccionada
+      let idPartida = Number(partidaIdSeleccionada); // convierte el string a int
+      //if (typeof idPartida === "string") console.log("Es string");   // true si es string
+      //if (typeof idPartida === "number") console.log("Es numero");    // true si es número (NaN incluido)
+      //console.log("idPartida", idPartida);
 
-      // armamos un set con los avatar_id del jugador
-      const idsDelJugador = new Set(jugadorAvatares.map(ja => ja.avatar_id));
+      if (!Number.isFinite(idPartida)) {
+        console.log("partidaIdSeleccionada no es numérico:", partidaIdSeleccionada);
+        return [];
+      } else {
+        // 1) obtiene un objeto de partidas con todos sus atributos segun el id de la partida seleccionada en la lista.     
+        const partidaDelJugador = partidas.filter(e => Number(e.id) === idPartida);
+        //console.log("array partidaDelJugador:", partidaDelJugador);
 
-      // filtramos avatares cuyo id esté en ese set
-      const outArreglo = avatares.filter(avatar => idsDelJugador.has(avatar.id));
+        // verifica si la partida existe
+        if (partidaDelJugador.length !== 0) {
+          // 2) obtiene el id de categoria.
+          const categoriaIds = partidaDelJugador[0].categoria_id;
+          //console.log("array categoriaIds:", categoriaIds);          
 
-      arreglo = outArreglo;
-      // console.log(outArreglo);
+          // 3) filtra el array preguntas segun el id de categoria y obtiene un array de 10 objetos de preguntas          
+          const result = preguntas.find(pregunta => pregunta.categoria_id == categoriaIds);
+          //console.log("array result:", result);
+
+          // 4) obtiene el valor string de la dificultad del objeto pregunta
+          const dificultadPregunta = result.dificultad;
+          //console.log("dificultadPregunta:", dificultadPregunta);
+
+          // 5) obtiene el objeto partida_jugadores asi se puede ver los id/s de los jugador/es de la partida
+          const jugadoresDeUnaPartdia = partida_jugadores.find(e => Number(e.partida_id) === idPartida);
+          //console.log("jugadoresDeUnaPartdia:", jugadoresDeUnaPartdia);
+
+          // 6) obtiene un array donde se verifica las preguntas que se eligieron al azar el orden de la partida
+          const preguntasDeLaPartida = partida_preguntas.filter(e => Number(e.partida_id) === idPartida);
+          //console.log("preguntasDeLaPartida:", preguntasDeLaPartida);
+
+          // 7) obtiene un array de las respuestas que el jugador selecciono en la partida
+          const respuestasDeLaPartida = respuestas.filter(e => Number(e.partida_id) === idPartida);
+          //console.log("respuestasDeLaPartida:", respuestasDeLaPartida);
+
+          // 8) se crea un array indexado donde los elementos son  id de opciones de respuesta del array respuestasDeLaPartida
+          const arrayPreguntasIdsDeLaPartida = respuestasDeLaPartida.map(opcion => ({
+            opcionId: opcion.opcion_elegida_id,
+            pregunta_id: opcion.pregunta_id,
+            es_correcta: opcion.es_correcta,
+          })); // es_correcta se puede eliminar
+          //console.log("arrayPreguntasIdsDeLaPartida:", arrayPreguntasIdsDeLaPartida);
+
+          // 9) obtiene un array de opciones de respuestas segun la preguntas. como hay 10 preguntas, va haber 40 opciones de respuestas
+          // 9.1) Normalizá y armá un Set con los preguntaId de la partida
+          const preguntaIdsSet = new Set(
+            (arrayPreguntasIdsDeLaPartida ?? []).map(x => Number(x.pregunta_id))
+          );
+          // array con los ids de preguntas
+          //console.log(preguntaIdsSet);
+
+          // 9.2) Filtrá opciones por partida y por pertenencia de pregunta_id al Set          
+          const opcionesDeLaPartida = (opciones ?? []).filter(o =>
+            Number(o.pregunta_id) && preguntaIdsSet.has(Number(o.pregunta_id))
+          );
+          //console.log("opcionesDeLaPartida:", opcionesDeLaPartida);
+
+          // debug, muestra un objeto
+          //console.log("inventarioIdPartidaSeleccionado →", { idPartida, categoriaIds: categoriaIds, dificultad: dificultadPregunta, partida: partidaDelJugador, jugadores: jugadoresDeUnaPartdia });
+        } else {
+          return [];
+        }
+      }
+    } else {
+      console.log("Alguno de los arrays no es un array:", { partidas, preguntas, partida_jugadores });
+      return [];
     }
-    return arreglo;
+    return [];
   };
 
   // funcion de buscador entre estadisticas y amigos - (tengo que hacer 2 diferetes o uno para ambas)
@@ -341,14 +410,15 @@ const Perfil = () => {
 
   useEffect(() => {
     getAmigos();
-    getEstadisticas();
-    infoJugadorIdAvatares();
     infoAvatares();
+    infoJugadorIdAvatares();
     getCategorias();
     getPreguntas();
     getOpciones();
+    getPartidaJugadores();
     getPartdias();
     getPartidaPreguntas();
+    getEstadisticas();
     getRespuestas();
   }, []);
 
@@ -366,29 +436,6 @@ const Perfil = () => {
   if (error) return <p className="text-red-600">Error: {error}</p>;
   if (loadingPerfil) return <p>Cargando perfil…</p>;
   if (!perfil) return <p>No se pudo cargar el perfil.</p>;
-
-  /* 
-    getCategorias();
-    getPreguntas();
-    getOpciones();
-    getPartdias();
-    getPartidaPreguntas();
-    getRespuestas();
-  
-
-    console.log("\ncategorias");
-    console.log(categorias);
-    console.log("\npreguntas");
-    console.log(preguntas);
-    console.log("\nopciones");
-    console.log(opciones);
-    console.log("\npartidas");
-    console.log(partidas);
-    console.log("\npartida_preguntas");
-    console.log(partida_preguntas);
-    console.log("\nrespuestas");
-    console.log(respuestas);
-    */
 
   //console.log(partidaIdSeleccionada);
 
@@ -775,6 +822,8 @@ const Perfil = () => {
             >
               ✕
             </button>
+
+            {inventarioIdPartidaSeleccionado()}
 
             {/* Informacion detallada */}
             <div className="text-2xl">
