@@ -17,6 +17,9 @@ const Perfil = () => {
   const userId = user?.id;
   const jugador_id = user?.jugador_id;
 
+  // scroll respuestas
+  const listRef = useRef(null);
+
   // botones hooks
   const [selectedPerfil, setSelectedPerfil] = useState(false); // boton de perfil 👤
   const [selectedPefilEditar, setSelectedPefilEditar] = useState(false); // abrir el modal del boton "editar" foto de perfil
@@ -31,7 +34,23 @@ const Perfil = () => {
 
   const [editMode, setEditMode] = useState(false); // boton editar datos de perfil
   const [saving, setSaving] = useState(false); // boton de guardar los datos de formulario de editar perfil
-  const [selectedEstadisticas, setSelectedEstadisticas] = useState(null); // boton estadisticas
+
+  // tener en cuenta que hago fecth de todas las estadisticas y no lo filtro por jugador_id
+
+  const [selectedEstadisticasResultadosDePartidas, setSelectedEstadisticasResultadosDePartidas] = useState(true); // boton "resultados de partidas"
+  //const [selectedEstadisticasGeneral, setSelectedEstadisticasGeneral] = useState(null); // boton "Estadísticas general"
+  const [selectedEstadisticas, setSelectedEstadisticas] = useState(null); // boton abrir modal detalle completo de la partida
+  const [selectedEstResumen, setSelectedEstResumen] = useState(true);
+  const [selectedEstRespuestas, setSelectedEstRespuestas] = useState(null); // boton del modal "Respuestas"
+
+  // creo que no se usa mas...
+  const [openPreguntaId, setOpenPreguntaId] = useState(null);
+  // estado (al tope del componente)
+  const [openPreguntaIds, setOpenPreguntaIds] = useState(() => new Set());
+
+
+  const [selectedEstGraficaDeRespuestas, setSelectedEstGraficaDeRespuestas] = useState(null); //   
+
   const [eliminado, setEliminado] = useState(false); // boton de eliminar amigo
   const eliminadoTimerRef = useRef(null); // tiempo del msg de eliminar amigo
 
@@ -48,6 +67,8 @@ const Perfil = () => {
   const [partida_jugadores, setPartida_jugadores] = useState([]);
   const [partida_preguntas, setPartida_preguntas] = useState([]);
   const [respuestas, setRespuestas] = useState([]);
+
+  const [objetoPartidaCompleto, setObjetoPartidaCompleto] = useState(null);
 
   const [estadisticas, setEstadisticas] = useState([]); // array estadisticas
 
@@ -325,8 +346,8 @@ const Perfil = () => {
 
   // Une el array jugadorAvatares (avatar_id) con el array avatares (id)
   const inventarioIdPartidaSeleccionado = () => {
-
-    if (Array.isArray(partidas) && Array.isArray(preguntas) && Array.isArray(partida_jugadores) && Array.isArray(partida_preguntas) && Array.isArray(opciones) && Array.isArray(respuestas)) {
+    if (Array.isArray(partidas) && Array.isArray(preguntas) && Array.isArray(partida_jugadores)
+      && Array.isArray(partida_preguntas) && Array.isArray(opciones) && Array.isArray(respuestas)) {
 
       // id de partida seleccionada
       let idPartida = Number(partidaIdSeleccionada); // convierte el string a int
@@ -335,8 +356,7 @@ const Perfil = () => {
       //console.log("idPartida", idPartida);
 
       if (!Number.isFinite(idPartida)) {
-        console.log("partidaIdSeleccionada no es numérico:", partidaIdSeleccionada);
-        return [];
+        console.log("partidaIdSeleccionada no es numérico:", idPartida);
       } else {
         // 1) obtiene un objeto de partidas con todos sus atributos segun el id de la partida seleccionada en la lista.     
         const partidaDelJugador = partidas.filter(e => Number(e.id) === idPartida);
@@ -346,29 +366,33 @@ const Perfil = () => {
         if (partidaDelJugador.length !== 0) {
           // 2) obtiene el id de categoria.
           const categoriaIds = partidaDelJugador[0].categoria_id;
-          //console.log("array categoriaIds:", categoriaIds);          
+          //console.log("array categoriaIds:", categoriaIds); 
 
-          // 3) filtra el array preguntas segun el id de categoria y obtiene un array de 10 objetos de preguntas          
-          const result = preguntas.find(pregunta => pregunta.categoria_id == categoriaIds);
-          //console.log("array result:", result);
+          // 3) obtiene el string categoria
+          const objCategoria = categorias.find(category => category.id == categoriaIds);
+          //console.log("objCategoria:", objCategoria);
 
-          // 4) obtiene el valor string de la dificultad del objeto pregunta
-          const dificultadPregunta = result.dificultad;
+          // 4) filtra el array preguntas segun el id de categoria y obtiene un array de 10 objetos de preguntas          
+          const resultDificultad = preguntas.find(pregunta => pregunta.categoria_id == categoriaIds);
+          //console.log("array resultDificultad:", resultDificultad);
+
+          // 5) obtiene el valor string de la dificultad del objeto pregunta (categoria_id)
+          const dificultadPregunta = resultDificultad.dificultad;
           //console.log("dificultadPregunta:", dificultadPregunta);
 
-          // 5) obtiene el objeto partida_jugadores asi se puede ver los id/s de los jugador/es de la partida
+          // 6) obtiene el objeto partida_jugadores asi se puede ver los id/s de los jugador/es de la partida
           const jugadoresDeUnaPartdia = partida_jugadores.find(e => Number(e.partida_id) === idPartida);
           //console.log("jugadoresDeUnaPartdia:", jugadoresDeUnaPartdia);
 
-          // 6) obtiene un array donde se verifica las preguntas que se eligieron al azar el orden de la partida
+          // 7) obtiene un array donde se verifica las preguntas que se eligieron al azar el orden de la partida (partida_preguntas)
           const preguntasDeLaPartida = partida_preguntas.filter(e => Number(e.partida_id) === idPartida);
           //console.log("preguntasDeLaPartida:", preguntasDeLaPartida);
 
-          // 7) obtiene un array de las respuestas que el jugador selecciono en la partida
+          // 8) obtiene un array de las respuestas que el jugador selecciono en la partida (respuestas)
           const respuestasDeLaPartida = respuestas.filter(e => Number(e.partida_id) === idPartida);
           //console.log("respuestasDeLaPartida:", respuestasDeLaPartida);
 
-          // 8) se crea un array indexado donde los elementos son  id de opciones de respuesta del array respuestasDeLaPartida
+          // 9) se crea un array indexado donde los elementos son  id de opciones de respuesta del array respuestasDeLaPartida
           const arrayPreguntasIdsDeLaPartida = respuestasDeLaPartida.map(opcion => ({
             opcionId: opcion.opcion_elegida_id,
             pregunta_id: opcion.pregunta_id,
@@ -376,31 +400,51 @@ const Perfil = () => {
           })); // es_correcta se puede eliminar
           //console.log("arrayPreguntasIdsDeLaPartida:", arrayPreguntasIdsDeLaPartida);
 
-          // 9) obtiene un array de opciones de respuestas segun la preguntas. como hay 10 preguntas, va haber 40 opciones de respuestas
-          // 9.1) Normalizá y armá un Set con los preguntaId de la partida
+          // 10) obtiene un array de opciones de respuestas segun la preguntas. como hay 10 preguntas, va haber 40 opciones de respuestas
+          // 10.1) Normalizá y armá un Set con los preguntaId de la partida
           const preguntaIdsSet = new Set(
             (arrayPreguntasIdsDeLaPartida ?? []).map(x => Number(x.pregunta_id))
           );
           // array con los ids de preguntas
           //console.log(preguntaIdsSet);
 
-          // 9.2) Filtrá opciones por partida y por pertenencia de pregunta_id al Set          
+          // 10.2) Filtrá opciones por partida y por pertenencia de pregunta_id al Set          
           const opcionesDeLaPartida = (opciones ?? []).filter(o =>
             Number(o.pregunta_id) && preguntaIdsSet.has(Number(o.pregunta_id))
           );
           //console.log("opcionesDeLaPartida:", opcionesDeLaPartida);
 
-          // debug, muestra un objeto
-          //console.log("inventarioIdPartidaSeleccionado →", { idPartida, categoriaIds: categoriaIds, dificultad: dificultadPregunta, partida: partidaDelJugador, jugadores: jugadoresDeUnaPartdia });
+          return {
+            idPartida,
+            categoriaIds: categoriaIds,
+            objCategoria: objCategoria,
+            dificultadDePreguntas: dificultadPregunta,
+            partida: partidaDelJugador,
+            jugadores: jugadoresDeUnaPartdia,
+            preguntasDeLaPartida: preguntasDeLaPartida,
+            respuestasDeLaPartida: respuestasDeLaPartida,
+            preguntasIdsDeLaPartida: arrayPreguntasIdsDeLaPartida,
+            opcionesDeRespuestas: opcionesDeLaPartida,
+          };
         } else {
-          return [];
+          //console.log("No hay un objeto");
+          return null;
         }
       }
     } else {
-      console.log("Alguno de los arrays no es un array:", { partidas, preguntas, partida_jugadores });
-      return [];
+      console.log("Alguno de los arrays no es un array:",
+        { partidas, preguntas, partida_jugadores, partida_preguntas, opciones, respuestas });
+      return null;
     }
-    return [];
+  };
+
+  // toggle para abri una o mas preguntas en el detalle completo de una partida
+  const togglePregunta = (id) => {
+    setOpenPreguntaIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
   };
 
   // funcion de buscador entre estadisticas y amigos - (tengo que hacer 2 diferetes o uno para ambas)
@@ -408,28 +452,92 @@ const Perfil = () => {
     console.log("Buscar…");
   };
 
+  // const formatMs = (ms) => {
+  //   if (ms == null || Number.isNaN(Number(ms))) return "—";
+  //   const s = Number(ms) / 1000;
+  //   //  mm:ss.mmm
+  //   const mm = Math.floor(s / 60).toString().padStart(2, "0");
+  //   const ss = Math.floor(s % 60).toString().padStart(2, "0");
+  //   const mmm = Math.floor((s - Math.floor(s)) * 1000).toString().padStart(3, "0");
+  //   return `${mm}:${ss}.${mmm}`;
+  // };
+
+  // ej: fmtCrono(600000);  // "10:00.000"
+  const fmtCrono = (ms) => {
+    const n = Number(ms);
+    if (!Number.isFinite(n) || n < 0) return "—";
+
+    const m = Math.floor(n / 60000).toString().padStart(2, "0");
+    const s = Math.floor((n % 60000) / 1000).toString().padStart(2, "0");
+    const x = Math.floor(n % 1000).toString().padStart(3, "0");
+
+    return `${m}:${s}.${x}`;
+  };
+
+  // ej: fmtMsDetallado(600000);   // "10 minutos, 0 segundos, 0 milisegundos"
+  const fmtMsDetallado = (ms) => {
+    const n = Number(ms);
+    if (!Number.isFinite(n) || n < 0) return "—";
+
+    const minutos = Math.floor(n / 60000);
+    const segundos = Math.floor((n % 60000) / 1000);
+    const milis = Math.floor(n % 1000);
+
+    return `${minutos} minutos, ${segundos} segundos, ${milis} milisegundos`;
+  };
+
+  const fmtMs = (ms) => (Number(ms) / 1000).toFixed(1) + ' segundos';
+
+  // arriba del JSX (dentro del componente, antes del return)
+  const respuestasEspecificas = objetoPartidaCompleto?.respuestasDeLaPartida ?? [];
+  const elegidaPorPregunta = new Map(respuestasEspecificas.map(r => [Number(r.pregunta_id), Number(r.opcion_elegida_id)]));
+  const correctaPorPregunta = new Map(respuestasEspecificas.map(r => [Number(r.pregunta_id), Number(r.es_correcta) > 0]));
+  const tiempoPorPregunta = new Map(respuestasEspecificas.map(r => [Number(r.pregunta_id), Number(r.tiempo_respuesta_ms)]));
+
   useEffect(() => {
-    getAmigos();
-    infoAvatares();
-    infoJugadorIdAvatares();
-    getCategorias();
-    getPreguntas();
-    getOpciones();
-    getPartidaJugadores();
-    getPartdias();
-    getPartidaPreguntas();
-    getEstadisticas();
-    getRespuestas();
+    let alive = true;
+    (async () => {
+      try {
+        await Promise.all([
+          getAmigos(),
+          infoAvatares(),
+          infoJugadorIdAvatares(),
+          getCategorias(),
+          getPreguntas(),
+          getOpciones(),
+          getPartidaJugadores(),
+          getPartdias(),
+          getPartidaPreguntas(),
+          getEstadisticas(),
+          getRespuestas(),
+        ]);
+      } finally {
+        if (!alive) return;
+      }
+    })();
+    return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // hace desaparecer el scroll
+  // recalcular el objeto cuando haya datos suficientes
   useEffect(() => {
-    if (selectedPerfil) {
-      const prev = document.body.style.overflow;
-      document.body.style.overflow = "hidden";
-      return () => { document.body.style.overflow = prev; };
-    }
-  }, [selectedPerfil]);
+    const obj = inventarioIdPartidaSeleccionado(); // debe ser una funcion pura (sin setState adentro)
+    //setObjetoPartidaCompleto(obj);
+    setObjetoPartidaCompleto(prev =>
+      JSON.stringify(prev) === JSON.stringify(obj) ? prev : obj
+    );
+  }, [
+    partidas, preguntas, categorias, partida_jugadores, partida_preguntas,
+    opciones, respuestas, partidaIdSeleccionada
+  ]);
+
+  const algunModalAbierto = selectedPerfil || selectedEstadisticas !== null;
+  useEffect(() => {
+    if (!algunModalAbierto) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, [algunModalAbierto]);
 
   // verifica datos para correr perfil o envia mensaje de errores visual en la interfaz
   if (!userId) return <p>No hay usuario en sesión.</p>;
@@ -437,7 +545,7 @@ const Perfil = () => {
   if (loadingPerfil) return <p>Cargando perfil…</p>;
   if (!perfil) return <p>No se pudo cargar el perfil.</p>;
 
-  //console.log(partidaIdSeleccionada);
+  // console.log(partidaIdSeleccionada);  
 
   return (
     <div className="w-[70%] mb-6">
@@ -733,129 +841,377 @@ const Perfil = () => {
 
       {/* ====================================================================================== */}
 
-      {/* Estadísticas */}
-      <div className="flex flex-row gap-2 mt-4">
-        <h2 className="text-xl font-semibold mb-3 mt-3 cursor-pointer hover:text-white/90">Resultados de partidas</h2>
-        <h2 className="text-xl flex items-center justify-center">|</h2>
-        <h2 className="text-xl font-semibold mb-3 mt-3 cursor-pointer hover:text-white/90">Estadísticas general</h2>
-      </div>
+      {selectedEstadisticasResultadosDePartidas ? (
+        <div>
+          {/* Estadísticas */}
+          <div className="flex flex-row gap-2 mt-4">
+            <button><h2 className="text-xl font-semibold mb-3 mt-3 cursor-pointer hover:text-white/90 bg-black/50 rounded p-1">Resultados de partidas</h2></button>
+            <h2 className="text-xl flex items-center justify-center p-1">|</h2>
+            <button type="button" onClick={() => { setSelectedEstadisticasResultadosDePartidas(false); }}><h2 className="text-xl font-semibold mb-3 mt-3 cursor-pointer hover:text-white/90 p-1">Estadísticas general</h2></button>
+          </div>
 
-      {/* buscador de estadísticas */}
-      <div className="relative inline-block mb-4">
-        <input
-          className="bg-white/95 w-96 indent-2 border rounded-xl px-1 py-2 text-black placeholder-black/70 hover:bg-white"
-          placeholder="Buscar una partida…"
-        />
+          {estadisticas.length === 0 ? (
+            <p>No hay estadísticas de partidas para mostrar.</p>
+          ) : (
+            <div>
+              {/* buscador de estadísticas */}
+              <div className="relative inline-block mb-4">
+                <input
+                  className="bg-white/95 w-96 indent-2 border rounded-xl px-1 py-2 text-black placeholder-black/70 hover:bg-white"
+                  placeholder="Buscar una partida…"
+                />
 
-        <button
-          type="button"
-          onClick={handleSearch}
-          className="absolute h-full w-fit top-0 right-0 flex items-center rounded-r-xl 
-          bg-slate-800 px-2 border border-transparent text-sm 
-          transition-all 
-          shadow-sm hover:shadow focus:bg-slate-700 active:bg-slate-700 
-          disabled:pointer-events-none disabled:opacity-50 cursor-pointer"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-            fill="currentColor" className="w-4 h-4">
-            <path
-              fillRule="evenodd" clipRule="evenodd"
-              d="M10.5 3.75a6.75 6.75 0 1 0 0 13.5 6.75 6.75 0 0 0 0-13.5ZM2.25 10.5a8.25 8.25 0 1 1 14.59 5.28l4.69 4.69a.75.75 0 1 1-1.06 1.06l-4.69-4.69A8.25 8.25 0 0 1 2.25 10.5Z"
-            />
-          </svg>
-        </button>
-      </div>
+                <button
+                  type="button"
+                  onClick={handleSearch}
+                  className="absolute h-full w-fit top-0 right-0 flex items-center rounded-r-xl 
+                  bg-slate-800 px-2 border border-transparent text-sm transition-all 
+                    shadow-sm hover:shadow focus:bg-slate-700 active:bg-slate-700 
+                    disabled:pointer-events-none disabled:opacity-50 cursor-pointer"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                    fill="currentColor" className="w-4 h-4">
+                    <path
+                      fillRule="evenodd" clipRule="evenodd"
+                      d="M10.5 3.75a6.75 6.75 0 1 0 0 13.5 6.75 6.75 0 0 0 0-13.5ZM2.25 10.5a8.25 8.25 0 1 1 14.59 5.28l4.69 4.69a.75.75 0 1 1-1.06 1.06l-4.69-4.69A8.25 8.25 0 0 1 2.25 10.5Z"
+                    />
+                  </svg>
+                </button>
+              </div>
 
-      {estadisticas.length === 0 ? (
-        <p>No hay estadísticas de partidas para mostrar.</p>
-      ) : (
-        <ul className="">
-          {estadisticas.map((e, index) => (
-            <motion.li
-              key={e.id}
-              className="border rounded-xl p-4 bg-white/10 hover:bg-white/20 
+              <ul className="">
+                {estadisticas.map((e, index) => (
+                  <motion.li
+                    key={e.id}
+                    className="border rounded-xl p-4 bg-white/10 hover:bg-white/20 
                 flex space-x-4 mb-2 cursor-pointer"
-              whileTap={{ scale: 1.05 }}
-              onClick={() => {
-                setSelectedEstadisticas(index);
-                setPartidaIdSeleccionada(e.partida_id)
-              }}
-            >
-              {e.posicion > 0 ? (
-                <div>
-                  <p className="text-green-500">Ganaste!</p>
-                  <p>Fecha: </p>
-                </div>
-              ) : (
-                <div>
-                  <p className="text-red-500">Perdiste!</p>
-                  <p>Fecha: </p>
-                </div>
-              )}
-            </motion.li>
-          ))}
-        </ul>
-      )}
-
-      {/* div overlay absoluto en toda la pantalla) */}
-      {selectedEstadisticas !== null && (
-        <div
-          className="fixed h-full inset-0 z-50 bg-black/50 backdrop-blur-sm"
-          onClick={() => setSelectedEstadisticas(null)}
-        >
-          <motion.div
-            onClick={(e) => e.stopPropagation()} // evita que el click burbujee al overlay
-            initial={{ opacity: 0, y: 10, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10 }}
-            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
-                      w-full max-w-8/12 h-fit rounded-2xl bg-indigo-900 text-white p-6 shadow-2xl"
-          >
-
-            {/* Boton X */}
-            <button
-              type="button"
-              aria-label="Cerrar"
-              className="absolute top-2 right-2 rounded-full w-9 h-9 grid place-items-center
-                        hover:bg-black/5 active:scale-95 cursor-pointer text-2xl"
-              onClick={() => setSelectedEstadisticas(null)}
-            >
-              ✕
-            </button>
-
-            {inventarioIdPartidaSeleccionado()}
-
-            {/* Informacion detallada */}
-            <div className="text-2xl">
-
-              <div className="flex flex-row gap-2 mb-2 w-fit">
-                <button type="button" className="bg-black/80 rounded w-48 p-2 cursor-pointer hover:text-white/90">Resumen</button>
-                <div className="flex items-center justify-center">|</div>
-                <button type="button" className="rounded w-48 p-2 cursor-pointer hover:text-white/90">Respuestas</button>
-                <div className="flex items-center justify-center">|</div>
-                <button type="button" className="p-2 cursor-pointer hover:text-white/90">Estadísticas de respuestas</button>
-              </div>
-
-              <div className="bg-indigo-800/90 p-1.5 mt-1">
-                {estadisticas[selectedEstadisticas].posicion > 0 ? (
-                  <p className="p-1"><strong>Posición:</strong> Ganador</p>
-                ) : (
-                  <p className="p-1"><strong>Posición:</strong> Perdedor</p>
-                )}
-                <p className="p-1"><strong>Categoría:</strong> ...</p>
-                <p className="p-1"><strong>Dificultad:</strong> ...</p>
-                <p className="p-1"><strong>Puntaje total:</strong> {estadisticas[selectedEstadisticas].puntaje_total}</p>
-                <p className="p-1"><strong>Respuestas correctas:</strong> {estadisticas[selectedEstadisticas].total_correctas}</p>
-                <p className="p-1"><strong>Respuestas incorrectas:</strong> {estadisticas[selectedEstadisticas].total_incorrectas}</p>
-                <p className="p-1"><strong>Tiempo de partida:</strong> {estadisticas[selectedEstadisticas].tiempo_total_ms} milisegundos</p>
-              </div>
-
+                    whileTap={{ scale: 1.05 }}
+                    onClick={() => {
+                      setSelectedEstadisticas(index);
+                      setPartidaIdSeleccionada(e.partida_id)
+                    }}
+                  >
+                    {e.posicion > 0 ? (
+                      <div>
+                        <p className="text-green-500">Ganaste!</p>
+                        <p>Fecha: </p>
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="text-red-500">Perdiste!</p>
+                        <p>Fecha: </p>
+                      </div>
+                    )}
+                  </motion.li>
+                ))}
+              </ul>
             </div>
+          )
+          }
 
+          {/* div overlay absoluto en toda la pantalla) */}
+          {selectedEstadisticas !== null && (
+            <div
+              className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+            >
+              {/* fonde desenfocado */}
+              <motion.div
+                onClick={(e) => e.stopPropagation()} // evita que el click burbujee al overlay
+                initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 10 }}
+                // 1) wrapper del modal: altura limitada + columna + oculta desborde externo
+                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
+                  w-[95vw] max-w-5xl h-[90vh] max-h-[90vh]
+                  rounded-2xl bg-indigo-900 text-white shadow-2xl
+                  p-3 flex flex-col overflow-hidden"
+              >
 
-          </motion.div>
+                {/* seccion de resumen */}
+                {selectedEstResumen && (
+                  <>
+                    {/* 1) header (no scroll) */}
+                    <div className="flex items-center gap-2 mb-2">
+                      {/* Tabs / encabezado */}
+                      <div className="flex flex-row gap-2 mb-2 w-fit text-2xl">
+                        <button
+                          type="button"
+                          className="bg-black/80 rounded w-48 p-2 hover:text-white/90"
+                        >
+                          Resumen
+                        </button>
+
+                        <div className="flex items-center justify-center">|</div>
+
+                        <button
+                          type="button"
+                          onClick={() => { setSelectedEstRespuestas(true); setSelectedEstResumen(false); }}
+                          className="w-48 p-2 cursor-pointer hover:text-white/90"
+                        >
+                          Respuestas
+                        </button>
+
+                        <div className="flex items-center justify-center">|</div>
+
+                        <button
+                          type="button"
+                          onClick={() => { setSelectedEstGraficaDeRespuestas(true); setSelectedEstResumen(false); }}
+                          className="p-2 cursor-pointer hover:text-white/90"
+                        >
+                          Gráfica de respuestas
+                        </button>
+                      </div>
+
+                      {/* Botón cerrar */}
+                      <button
+                        type="button"
+                        aria-label="Cerrar"
+                        className="ml-auto rounded-full w-9 h-9 grid place-items-center text-2xl cursor-pointer"
+                        onClick={() => { setSelectedEstadisticas(null); setSelectedEstRespuestas(null); setSelectedEstGraficaDeRespuestas(null); setSelectedEstResumen(true); setOpenPreguntaIds(new Set()) }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    {/* Informacion detallada */}
+                    <div className="bg-indigo-800/90 rounded p-4 mt-1 text-xl flex-1 min-h-0 text-[28px]">
+                      {estadisticas[selectedEstadisticas].posicion > 0 ? (
+                        <p className="p-1"><strong>Posición:</strong> Ganador</p>
+                      ) : (
+                        <p className="p-1"><strong>Posición:</strong> Perdedor</p>
+                      )}
+                      <p className="p-1"><strong>Puntaje total:</strong> {estadisticas[selectedEstadisticas].puntaje_total}</p>
+                      <p className="p-1"><strong>Categoría:</strong> {objetoPartidaCompleto?.objCategoria?.nombre ?? "—"}</p>
+                      <p className="p-1"><strong>Dificultad de preguntas:</strong> {objetoPartidaCompleto?.dificultadDePreguntas ?? "—"}</p>
+                      <p className="p-1"><strong>Respuestas correctas:</strong> {estadisticas[selectedEstadisticas].total_correctas}</p>
+                      <p className="p-1"><strong>Respuestas incorrectas:</strong> {estadisticas[selectedEstadisticas].total_incorrectas}</p>
+                      <p className="p-1"><strong>Tiempo de partida:</strong> {fmtMsDetallado(estadisticas[selectedEstadisticas].tiempo_total_ms)}</p>
+                    </div>
+                  </>
+                )}
+
+                {/* seccion de respuestas */}
+                {selectedEstRespuestas && (
+                  <>
+                    {/* 1) header (no scroll) */}
+                    <div className="flex items-center gap-2 mb-2">
+                      {/* Tabs / encabezado */}
+                      <div className="flex flex-row gap-2 mb-2 w-fit text-2xl">
+                        <button
+                          type="button"
+                          onClick={() => { setSelectedEstResumen(true); setSelectedEstRespuestas(false); }}
+                          className="w-48 p-2 cursor-pointer hover:text-white/90"
+                        >
+                          Resumen
+                        </button>
+
+                        <div className="flex items-center justify-center">|</div>
+
+                        <button
+                          type="button"
+                          className="bg-black/80 rounded w-48 p-2 hover:text-white/90">
+                          Respuestas
+                        </button>
+
+                        <div className="flex items-center justify-center">|</div>
+
+                        <button
+                          type="button"
+                          onClick={() => { setSelectedEstGraficaDeRespuestas(true); setSelectedEstRespuestas(false); }}
+                          className="p-2 cursor-pointer hover:text-white/90"
+                        >
+                          Gráfica de respuestas
+                        </button>
+                      </div>
+
+                      {/* Botón cerrar */}
+                      <button
+                        type="button"
+                        aria-label="Cerrar"
+                        className="ml-auto rounded-full w-9 h-9 grid place-items-center text-2xl cursor-pointer"
+                        onClick={() => { setSelectedEstadisticas(null); setSelectedEstRespuestas(null); setSelectedEstGraficaDeRespuestas(null); setSelectedEstResumen(true); setOpenPreguntaIds(new Set()) }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    {/* 2) wrapper (contenedor) que da altura al contenido */}
+                    <div className="flex-1 min-h-0">
+                      {/* 3) área scrollable */}
+                      <div
+                        ref={listRef}
+                        className="h-full overflow-y-auto overscroll-contain touch-pan-y pr-2
+                      bg-indigo-800/90 rounded"
+                      >
+                        {console.log(objetoPartidaCompleto)}
+                        <div className="flex flex-row gap-2 mb-2 sticky top-0 bg-indigo-800 p-2">
+                          <button
+                            onClick={() => setOpenPreguntaIds(new Set(
+                              (objetoPartidaCompleto?.preguntasDeLaPartida ?? []).map(e => Number(e.pregunta_id ?? e.id))
+                            ))}
+                            className="bg-black/60 hover:bg-black rounded p-2 cursor-pointer text-[20px]"
+                          >
+                            Abrir todas las preguntas
+                          </button>
+
+                          <button
+                            onClick={() => setOpenPreguntaIds(new Set())}
+                            className="bg-black/60 hover:bg-black rounded p-2 cursor-pointer text-[20px]"
+                          >
+                            Cerrar todas las preguntas
+                          </button>
+                        </div>
+
+                        {objetoPartidaCompleto?.preguntasDeLaPartida?.length ? (
+                          <ul className="p-2">
+                            {(objetoPartidaCompleto?.preguntasDeLaPartida ?? []).map(e => (
+                              <motion.li
+                                key={Number(e.pregunta_id ?? e.id)}
+                                className="border rounded-xl p-3 flex flex-col mb-2"
+                                whileTap={{ scale: 1.01 }}
+                              >
+                                <button
+                                  type="button"
+                                  className="text-left w-full cursor-pointer hover:bg-black/30 rounded p-0.5 text-[20px]"
+                                  onClick={() => togglePregunta(Number(e.pregunta_id ?? e.id))}
+                                >
+                                  {e.question_text_copy}
+                                </button>
+
+                                {openPreguntaIds.has(Number(e.pregunta_id ?? e.id)) && (
+                                  <div className="mt-2">
+                                    {(objetoPartidaCompleto?.opcionesDeRespuestas ?? [])
+                                      .filter(o => Number(o.pregunta_id) === Number(e.pregunta_id ?? e.id))
+                                      .map(o => (
+                                        <span
+                                          key={o.id}
+                                          className={[
+                                            "block mb-1 indent-2 rounded text-[22px] border",
+                                            (() => {
+                                              const qId = Number(e.pregunta_id ?? e.id);
+                                              const chosenId = elegidaPorPregunta.get(qId);
+                                              const userCorrect = !!correctaPorPregunta.get(qId);
+                                              const isChosen = chosenId === Number(o.id);
+                                              const isOptionCorrect = !!o.es_correcta;
+
+                                              if (isChosen) {
+                                                return userCorrect
+                                                  ? "bg-green-600/30 border-green-500"
+                                                  : "bg-red-600/30 border-red-500";
+                                              }
+                                              // Si NO es la elegida pero es la correcta → amarillo
+                                              if (isOptionCorrect) {
+                                                return "bg-yellow-600/35 border-yellow-500";
+                                              }
+                                              return "bg-gray-800/30 hover:bg-gray-800/50 border-transparent";
+                                            })()
+                                          ].join(" ")}
+                                        >
+                                          {(() => {
+                                            const qId = Number(e.pregunta_id ?? e.id);
+                                            const chosenId = elegidaPorPregunta.get(qId);
+                                            const userCorrect = !!correctaPorPregunta.get(qId);
+                                            const isChosen = chosenId === Number(o.id);
+                                            const isOptionCorrect = !!o.es_correcta;
+
+                                            if (isChosen) return userCorrect ? "✅ " : "❌ ";
+                                            if (isOptionCorrect) return "📖 "; // correcta no elegida
+                                            return "";
+                                          })()}
+                                          {o.texto ?? o.option_text ?? "—"}
+                                        </span>
+                                      ))}
+                                  </div>
+                                )}
+                                {/* tiempo de respuesta (al abrir) */}
+                                {openPreguntaIds.has(Number(e.pregunta_id ?? e.id)) && (
+                                  <div className="mt-1 text-sm opacity-80">
+                                    Tiempo de respuesta:{" "}
+                                    {/* <b>{formatMs(tiempoPorPregunta.get(Number(e.pregunta_id ?? e.id)))}</b> */}
+                                    <b>{fmtMs(tiempoPorPregunta.get(Number(e.pregunta_id ?? e.id)))}</b>
+                                  </div>
+                                )}
+                              </motion.li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <span>Listado de preguntas…</span>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* seccion de grafica de respuestas */}
+                {selectedEstGraficaDeRespuestas && (
+                  <>
+                    {/* 1) header (no scroll) */}
+                    <div className="flex items-center gap-2 mb-2">
+                      {/* Tabs / encabezado */}
+                      <div className="flex flex-row gap-2 mb-2 w-fit text-2xl">
+                        <button
+                          type="button"
+                          onClick={() => { setSelectedEstResumen(true); setSelectedEstGraficaDeRespuestas(false); }}
+                          className="w-48 p-2 cursor-pointer hover:text-white/90"
+                        >
+                          Resumen
+                        </button>
+
+                        <div className="flex items-center justify-center">|</div>
+
+                        <button
+                          type="button"
+                          onClick={() => { setSelectedEstRespuestas(true); setSelectedEstGraficaDeRespuestas(false); }}
+                          className="w-48 p-2 cursor-pointer hover:text-white/90">
+                          Respuestas
+                        </button>
+
+                        <div className="flex items-center justify-center">|</div>
+
+                        <button
+                          type="button"
+                          onClick={() => { setSelectedEstGraficaDeRespuestas(true); setSelectedEstRespuestas(false); }}
+                          className="bg-black/80 rounded p-2 hover:text-white/90"
+                        >
+                          Gráfica de respuestas
+                        </button>
+                      </div>
+
+                      {/* Botón cerrar */}
+                      <button
+                        type="button"
+                        aria-label="Cerrar"
+                        onClick={() => { setSelectedEstadisticas(null); setSelectedEstRespuestas(null); setSelectedEstGraficaDeRespuestas(null); setSelectedEstResumen(true); setOpenPreguntaIds(new Set()) }}
+                        className="ml-auto rounded-full w-9 h-9 grid place-items-center text-2xl cursor-pointer"
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    {/* grafica lineal de respuestas */}
+                    <div className="text-xl bg-indigo-800/90 rounded p-1.5 mt-1 flex-1 min-h-0">
+                      <span className="p-2 text-[20px]">Grafica lineal de respuestas...</span>
+                    </div>
+                  </>
+                )}
+
+              </motion.div>
+            </div>
+          )}
+        </div >
+      ) : (
+        <div>
+          {/* Estadísticas */}
+          <div className="flex flex-row gap-2 mt-4">
+            <button type="button" onClick={() => { setSelectedEstadisticasResultadosDePartidas(true); }}><h2 className="text-xl font-semibold mb-3 mt-3 cursor-pointer hover:text-white/90 p-1">Resultados de partidas</h2></button>
+            <h2 className="text-xl flex items-center justify-center p-1">|</h2>
+            <button><h2 className="text-xl font-semibold mb-3 mt-3 cursor-pointer hover:text-white/90 bg-black/50 rounded p-1">Estadísticas general</h2></button>
+          </div>
+          <span>Grafica...</span>
         </div>
-      )}
+      )
+      }
+
 
       {/* ====================================================================================== */}
 
@@ -933,7 +1289,7 @@ const Perfil = () => {
         </div>
       </div>
 
-    </div>
+    </div >
   )
 };
 
