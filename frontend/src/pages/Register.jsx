@@ -1,12 +1,29 @@
 import { Link, useNavigate } from 'react-router-dom';
 
 import axios from 'axios';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const Register = () => {
   const navigate = useNavigate();
 
+  const [paises, setPaises] = useState([]);
+  const [paisSeleccionado, setPaisSeleccionado] = useState('');
   const [mensaje, setMensaje] = useState('');
+
+  useEffect(() => {
+    const fetchPaises = async () => {
+      try {
+        const res = await fetch('http://localhost:3006/api/paises');
+        if (!res.ok) throw new Error('Error al obtener países');
+        const data = await res.json();
+        setPaises(data);
+      } catch (err) {
+        console.error('Error cargando países:', err.message);
+        setPaises([]);
+      }
+    };
+    fetchPaises();
+  }, []);
 
   const [values, setValues] = useState({
     usuario: '',
@@ -39,6 +56,8 @@ const Register = () => {
       newErrors.email = 'Ingresar un email válido';
     } else if (!cleanedValues.password) {
       newErrors.password = 'La contraseña es obligatoria';
+    } else if (!paisSeleccionado) {
+      newErrors.pais = 'La eleccion de pais es obligatoria';
     } else if (cleanedValues.password.length < 6) {
       newErrors.password = 'Contraseña mínimo 6 caracteres';
     } else if (cleanedValues.password !== values.repassword) {
@@ -49,7 +68,10 @@ const Register = () => {
     if (Object.keys(newErrors).length > 0) return;
 
     try {
-      const response = await axios.post('http://localhost:3006/auth/register', cleanedValues);
+      const response = await axios.post('http://localhost:3006/auth/register', {
+        ...cleanedValues,
+        pais: paisSeleccionado,
+      });
 
       if (response.status === 201) {
         setMensaje('✅ Registro exitoso. Redirigiendo al login...');
@@ -70,9 +92,7 @@ const Register = () => {
     <div className='w-90 h-fit bg-gradient-to-r from-purple-700 to-indigo-800 rounded-3xl mt-4  p-4 mb-12 text-center items-center justify-center '>
       <h2 className='text-lg font-bold mb-2 text-center'>Completar Registro</h2>
       <form onSubmit={handleSubmit} className='p-2'>
-        
         <div className='bg-gradient-to-r from-indigo-700 to-purple-800 rounded-4xl flex flex-col text-center text-black'>
-          
           <div className='mb-4 mt-4'>
             <label htmlFor='nombreusuario' className='block text-white mb-1'>
               <strong>Ingrese Usuario</strong>
@@ -86,7 +106,6 @@ const Register = () => {
               placeholder='Nombre de Usuario'
               className='w-70 h-15  rounded-4xl text-center rounded-4x1 bg-amber-50 hover:bg-amber-100 placeholder-gray-400 text-black'
             />
-
           </div>
           <div className='mb-4'>
             <label htmlFor='email' className='block text-white mb-1'>
@@ -100,6 +119,21 @@ const Register = () => {
               placeholder='Correo electronico'
               className='w-70 h-15  rounded-4xl text-center rounded-4x1 bg-amber-50 hover:bg-amber-100 placeholder-gray-400 text-black'
             />
+          </div>
+          <div className='mb-4'>
+            <label className='block text-white mb-1'>Ingrese su país</label>
+            <input
+              list='lista-paises'
+              value={paisSeleccionado}
+              onChange={(e) => setPaisSeleccionado(e.target.value)}
+              placeholder='Escribí tu país'
+              className='w-70 h-15  rounded-4xl text-center rounded-4x1 bg-amber-50 hover:bg-amber-100 placeholder-gray-400 text-black'
+            />
+            <datalist id='lista-paises'>
+              {paises.map((p) => (
+                <option key={p.codigo} value={p.nombre} />
+              ))}
+            </datalist>
           </div>
           <div className='mb-4'>
             <label htmlFor='contraseña' className='block text-white mb-1'>
@@ -135,6 +169,7 @@ const Register = () => {
           <div className='p-2'>
             {errores.email && <p className='text-red-600 mt-1'>{errores.email}</p>}
             {errores.emailValido && <p className='text-red-600 mt-1'>{errores.emailValido}</p>}
+            {errores.pais && <p className='text-red-600 mt-1'>{errores.pais}</p>}
             {errores.password && <p className='text-red-600 mt-1'>{errores.password}</p>}
             {errores.repassword && <p className='text-red-600 mt-1'>{errores.repassword}</p>}
             {errores.general && <p className='text-red-600 mt-1'>{errores.general}</p>}
@@ -148,9 +183,7 @@ const Register = () => {
             Iniciar Sesion
           </Link>
         </div>
-
       </form>
-      
     </div>
   );
 };

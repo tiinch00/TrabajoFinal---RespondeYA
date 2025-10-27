@@ -19,6 +19,7 @@ import Tienda from './pages/Tienda';
 import AbmCategorias from './pages/Admin/AbmCategorias.jsx';
 import AbmPreguntas from './pages/Admin/AbmPreguntas.jsx';
 import Ranking from './pages/Ranking.jsx';
+import BotonPago from './pages/BotonPago.jsx';
 // Elige layout según sesión
 function LayoutSwitch() {
   const user = (() => {
@@ -62,10 +63,10 @@ function App() {
           <Route path='/admin/categorias' element={<AbmCategorias />} />
           <Route path='/tienda' element={<Tienda />} />
           <Route path='/perfil' element={<Perfil />} />
-          <Route path='/chatGlobal' element={<ChatGlobal />} />
           <Route path='/Ruleta' element={<Ruleta />} />
           <Route path='/categoria/:nombre/:id/preguntas' element={<AbmPreguntas />} />
           <Route path='/Ranking' element={<Ranking />} />
+          <Route path='/crearOrden' element={<BotonPago />} />
         </Route>
       </Route>
       {/* Catch-all: mandá a "/" (el guard decide) */}

@@ -25,6 +25,7 @@ const Ranking = () => {
             id: usuario.id,
             name: usuario.name,
             email: usuario.email,
+            pais: usuario.pais,
             puntaje: jugador.puntaje || 0,
           };
         })
@@ -77,19 +78,28 @@ const Ranking = () => {
       </div>
 
       {jugadoresFiltrados.length > 0 ? (
-        jugadoresFiltrados.map((jugador) => (
-          <div
-            key={jugador.id}
-            className='p-4 bg-gray-800 text-amber-300 border border-yellow-500 rounded-lg shadow mb-3 flex justify-between items-center mt-2'
-          >
-            <div>
-              <p className='font-bold text-lg'>
-                {jugador.posicion}. {jugador.name}
-              </p>
-            </div>
-            <p className='text-xl font-semibold text-yellow-400'>{jugador.puntaje} pts</p>
-          </div>
-        ))
+        <table className='w-full bg-gray-800 text-amber-300 border border-yellow-500 rounded-lg shadow '>
+          <thead>
+            <tr className='bg-gray-900 text-yellow-400'>
+              <th className='p-4 text-center'>Posición</th>
+              <th className='p-4 text-center'>Nombre</th>
+              <th className='p-4 text-center'>País</th>
+              <th className='p-4 text-center'>Puntos</th>
+            </tr>
+          </thead>
+          <tbody className='text-center'>
+            {jugadoresFiltrados.map((jugador) => (
+              <tr key={jugador.id} className='border-t border-yellow-500/50'>
+                <td className='p-4 text-center'>{jugador.posicion}</td>
+                <td className='p-4 text-center'>{jugador.name}</td>
+                <td className='p-4 text-center'>{jugador.pais}</td>
+                <td className='p-4 text-center'>
+                  <span className='text-xl font-semibold text-yellow-400'>{jugador.puntaje}</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       ) : (
         <p className='text-center text-gray-400'>No se encontraron jugadores</p>
       )}

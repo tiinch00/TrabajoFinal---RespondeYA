@@ -5,7 +5,7 @@ import './models/associations.js';
 
 import { Server } from 'socket.io';
 import adminRoutes from './routes/adminRoutes.js';
-import amigoRoutes from './routes/amigoRoutes.js'
+import amigoRoutes from './routes/amigoRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import avataresRoutes from './routes/avataresRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
@@ -14,18 +14,20 @@ import cors from 'cors';
 import estadisticaRoutes from './routes/estadisticaRoutes.js';
 import express from 'express';
 import http from 'http';
-import jugadorRoutes from "./routes/jugadorRoutes.js";
+import jugadorRoutes from './routes/jugadorRoutes.js';
 import opcionesRoutes from './routes/opcionesRoutes.js';
 import partidaJugadoresRoutes from './routes/partida_jugadoresRoutes.js';
 import partidaPreguntasRoutes from './routes/partida_preguntasRoutes.js';
 import partidasRoutes from './routes/partidasRoutes.js';
 import preguntasRoutes from './routes/preguntasRoutes.js';
 import respuestasRoutes from './routes/respuestasRoutes.js';
-import salaJugadoresRoutes from './routes/sala_jugadoresRoutes.js'
+import salaJugadoresRoutes from './routes/sala_jugadoresRoutes.js';
 import salasRoutes from './routes/salasRoutes.js';
 import sequelize from './models/sequelize.js';
 import userAvataresRoutes from './routes/userAvataresRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+import crearPagoRoutes from './routes/crearPagoRoutes.js';
+import soapRoutes from './routes/soapRoutes.js';
 
 const app = express();
 
@@ -49,6 +51,8 @@ app.get('/env-check', (_req, res) => {
 app.use('/auth', authRoutes);
 app.use('/api/contactar', contactRoutes);
 app.use('/admin', adminRoutes);
+app.use('/api', crearPagoRoutes);
+app.use('/api', soapRoutes);
 app.use(userRoutes);
 app.use(jugadorRoutes);
 app.use(avataresRoutes);

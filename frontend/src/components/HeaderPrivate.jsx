@@ -137,11 +137,6 @@ export default function HeaderPrivate() {
               </Link>
             </li>
             <li>
-              <Link to='/ChatGlobal' className='hover:underline'>
-                Chat Global
-              </Link>
-            </li>
-            <li>
               <button className='cursor-pointer'>EN|ES</button>
             </li>
             <li className='relative'>

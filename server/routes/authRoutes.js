@@ -12,10 +12,11 @@ const router = express.Router();
 
 router.post('/register', async (req, res) => {
   try {
-    const { usuario, email, password } = req.body;
+    const { usuario, email, password, pais } = req.body;
     const role = 'jugador'; // default de registrar un usuario
     // Validaciones mínimas
     if (!usuario) return res.status(400).json({ error: 'El usuario es obligatorio' });
+    if (!pais) return res.status(400).json({ error: 'El pais es obligarotio' });
     if (!email) return res.status(400).json({ error: 'El email es obligatorio' });
     if (!password) return res.status(400).json({ error: 'La contraseña es obligatoria' });
     const exists = await User.findOne({ where: { email } });
@@ -25,6 +26,7 @@ router.post('/register', async (req, res) => {
     const newUser = await User.create({
       role,
       name: usuario,
+      pais,
       email,
       password,
     });
@@ -68,7 +70,7 @@ router.post('/login', async (req, res) => {
 
     const user_id = user.id;
     // validacion de role jugador
-    if (user.role == "jugador") {
+    if (user.role == 'jugador') {
       const jugador = await Jugador.findOne({ where: { user_id } });
       const { jugador_id } = jugador.dataValues;
       if (!jugador) {
@@ -81,7 +83,7 @@ router.post('/login', async (req, res) => {
       }
     } else {
       // validacion de role administrador
-      if (user.role == "administrador") {
+      if (user.role == 'administrador') {
         const administrador = await Administrador.findOne({ where: { user_id } });
         const { admin_id } = administrador.dataValues;
         if (!administrador) {

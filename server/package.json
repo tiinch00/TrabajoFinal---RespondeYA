@@ -17,10 +17,12 @@
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
+    "mercadopago": "^2.9.0",
     "mysql2": "^3.14.5",
     "nodemailer": "^7.0.6",
     "nodemon": "^3.1.10",
     "sequelize": "^6.37.7",
+    "soap": "^1.6.0",
     "socket.io": "^4.8.1"
   }
 }

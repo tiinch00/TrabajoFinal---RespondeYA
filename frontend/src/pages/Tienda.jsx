@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'motion/react';
-import { use, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import axios from 'axios';
 
@@ -17,7 +17,6 @@ const Tienda = () => {
   const [mostrarModal, setMostrarModal] = useState(false);
   const [modalConfirmarEliminar, setModalConfirmarEliminar] = useState(false);
   const [alerta, setAlerta] = useState('');
-
   const [form, setForm] = useState({
     admin_id: 1,
     nombre: '',
@@ -196,10 +195,31 @@ const Tienda = () => {
     }
   };
 
+  const crearPago = async (avatarNombre) => {
+    const values = {
+      //jugador_id: jugador.jugador_id,
+      nombre: avatarNombre,
+      precio: 1000,
+      //origen: 'compra',
+      imagen:
+        'https://miweb.com/https://img.freepik.com/vector-gratis/icono-vectorial-dibujos-animados-ilustracion-naturaleza-icono-vacaciones-aislado-plano_138676-13304.jpg?semt=ais_hybrid&w=740&q=80.png',
+      //adquirido_at: formatDateTimeAR(),
+    };
+    try {
+      const res = await axios.post('http://localhost:3006/api/crearOrden', values);
+      if (res.data.id && res.data.init_point) {
+        window.open(res.data.init_point, '_blank');
+        setSelected(null);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   // actualiza los valores cuando se produce un nuevo evento
   useEffect(() => {
     infoallJugadores();
-    if (user.role !== "administrador") {
+    if (user.role !== 'administrador') {
       infoJugador();
     }
     infoAvatares();
@@ -218,8 +238,10 @@ const Tienda = () => {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
-  const yaLoTiene = Array.isArray(jugadorAvatares) && avatares[selected] && jugadorAvatares.some((a) => a.avatar_id === avatares[selected].id);
-
+  const yaLoTiene =
+    Array.isArray(jugadorAvatares) &&
+    avatares[selected] &&
+    jugadorAvatares.some((a) => a.avatar_id === avatares[selected].id);
   return (
     <div>
       <h1 className='text-6xl mb-6'>Tienda</h1>
@@ -353,7 +375,8 @@ const Tienda = () => {
 
             {/* Precio */}
             <div className='text-4xl text-center font-semibold'>
-              Precio: {`${avatares[selected].precio_puntos} puntos`}
+              <p>Precio: {`${avatares[selected].precio_puntos} puntos`}/1000ARS</p>
+              <p>Precio MercadoPago: 1000ARS</p>
             </div>
 
             {/* boton de compra */}
@@ -390,12 +413,20 @@ const Tienda = () => {
                     Ya lo tienes
                   </button>
                 ) : (
-                  <button
-                    className='text-xl mt-3 px-4 py-2 rounded bg-sky-600 text-white hover:bg-sky-700 cursor-pointer'
-                    onClick={() => setConfirmar(true)}
-                  >
-                    Comprar
-                  </button>
+                  <div>
+                    <button
+                      className='text-xl mt-3 px-4 py-2 rounded bg-sky-600 text-white hover:bg-sky-700 cursor-pointer mr-2'
+                      onClick={() => setConfirmar(true)}
+                    >
+                      Comprar con puntos
+                    </button>
+                    <button
+                      onClick={() => crearPago(avatares[selected].nombre)}
+                      className='text-xl mt-3 px-4 py-2 rounded bg-blue-600 text-white  hover:bg-blue-700 cursor-pointer ml-5'
+                    >
+                      Comprar con Mercado Pago
+                    </button>
+                  </div>
                 )}
               </div>
             ) : (
@@ -409,7 +440,7 @@ const Tienda = () => {
                   </button>
                 ) : (
                   <div>
-                    <p>Fondos Insuficiente</p>
+                    <p>Fondos Insuficientes</p>
                     <button className='mt-3 px-4 py-2 rounded bg-gray-500 text-white hover:bg-gray-600 cursor-not-allowed'>
                       Comprar
                     </button>
@@ -470,11 +501,10 @@ const Tienda = () => {
             </AnimatePresence>
           </motion.div>
         </div>
-      )
-      }
+      )}
 
       <hr className='my-12 border-1 border-sky-500' />
-    </div >
+    </div>
   );
 };
 
