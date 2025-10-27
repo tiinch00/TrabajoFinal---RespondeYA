@@ -1,10 +1,12 @@
 import { Estadistica } from '../models/associations.js';
 
-const index = async (req, res) => {
-
-  const { jugador_id } = req.params;
-
+const index = async (req, res) => {  
+    const { jugador_id } = req.params; 
+    console.log(jugador_id);
   try {
+      
+    //const jugador_id = Number(req.params.jugador_id);
+    //console.log(jugador_id);
 
     if (jugador_id !== undefined && jugador_id !== null) {
 
@@ -14,6 +16,7 @@ const index = async (req, res) => {
     if (!Number.isInteger(jugadorId)) {
       return res.status(400).json({ error: "Numero incorrecto, jugador_id inválido." });
     }
+    console.log("Entro al if de Number.isInteger(jugadorId)")
 
     // obtiene todos los avatares del jugador
       const rows = await Estadistica.findAll({
@@ -21,8 +24,8 @@ const index = async (req, res) => {
       });
       // devuelve una lista (vacía o con datos de los avatares)
       return res.json(rows);
-
     } else {
+      console.log("Estadas todas las estadisicas en findAll()")
       const estadisticas = await Estadistica.findAll();
       res.json(estadisticas);
     }

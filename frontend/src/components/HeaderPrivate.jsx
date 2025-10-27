@@ -1,6 +1,8 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 
+import { useAuth } from "../context/auth-context.jsx";
+
 const getStoredUser = () => {
   const raw = localStorage.getItem('user');
   if (!raw) return null;
@@ -17,10 +19,13 @@ export default function HeaderPrivate() {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
   const btnRef = useRef(null);
-  const [user, setUser] = useState(getStoredUser);
-
+  //const [user, setUser] = useState(getStoredUser);
+  const { user, updateUser, logout, loading } = useAuth();
+  const API = "http://localhost:3006"; // URL base de tu API
   const isAdmin = user?.role === 'administrador';
   const name = user.name || user?.email?.split('@')[0] || 'Jugador';
+  const fotoUrl = user?.foto_perfil ? `${API}${user.foto_perfil}` : null;
+  //console.log(name);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -50,6 +55,22 @@ export default function HeaderPrivate() {
   useEffect(() => {
     setOpen(false);
   }, [location.pathname]);
+
+  const fotoSrc = user?.foto_perfil
+    ? `${API}${user.foto_perfil}?v=${Date.now()}` // cache-buster
+    : null;
+
+  if (loading) {
+    // opcional: mientras el AuthContext resuelve el user inicial (p. ej. desde localStorage)
+    return (
+      <header className='bg-black px-6 py-3 font-semibold shadow sticky top-0 w-full z-10'>
+        <nav className='flex items-center justify-between text-white'>
+          <img src='/logo.png' alt='Logo' className='h-72' />
+          <span>Cargando…</span>
+        </nav>
+      </header>
+    );
+  }
 
   return (
     <header className='bg-black px-6 py-3 font-semibold shadow sticky top-0 w-full z-10'>
@@ -83,7 +104,33 @@ export default function HeaderPrivate() {
                 aria-expanded={open}
                 className='flex items-center gap-2 rounded-full bg-white/20 px-3 py-1.5 hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-black/30 cursor-pointer'
               >
-                <span aria-hidden>👤</span>
+                {/* <span aria-hidden>
+                  {foto == null ?
+                    (<p>👤</p>)
+                    :
+                    (<img
+                      src={
+                        preview
+                          ? preview
+                          : user?.foto_perfil
+                            ? `${API}${user.foto_perfil}` // el server devuelve ruta relativa
+                            : "https://placehold.co/128x128?text=Foto" // placeholder opcional
+                      }
+                      alt="Foto de perfil"
+                      className="w-32 h-32 rounded-full object-cover bg-white/20"
+                    />)}
+                </span> */}
+                <span aria-hidden>
+                  {fotoSrc ? (
+                    <img
+                      src={fotoSrc}
+                      alt="Foto de perfil"
+                      className="w-6 h-6 rounded-full object-cover bg-white/20"
+                    />
+                  ) : (
+                    <span className="text-xl">👤</span>
+                  )}
+                </span>
                 <span className='opacity-90'>{name}</span>
                 <svg
                   className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`}
@@ -148,7 +195,17 @@ export default function HeaderPrivate() {
                 aria-expanded={open}
                 className='flex items-center gap-2 rounded-full bg-white/20 px-3 py-1.5 hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-black/30 cursor-pointer'
               >
-                <span aria-hidden>👤</span>
+                <span aria-hidden>
+                  {fotoSrc ? (
+                    <img
+                      src={fotoSrc}
+                      alt="Foto de perfil"
+                      className="w-6 h-6 rounded-full object-cover bg-white/20"
+                    />
+                  ) : (
+                    <span className="text-xl">👤</span>
+                  )}
+                </span>
                 <span className='opacity-90'>{name}</span>
                 <svg
                   className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`}

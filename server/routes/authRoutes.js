@@ -66,7 +66,7 @@ router.post('/login', async (req, res) => {
       return res.status(500).json({ error: 'JWT_KEY no configurada en el servidor' });
 
     const token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: '3h' });
-    const { id, name, email: mail } = user;
+    const { id, name, email: mail, foto_perfil} = user;
 
     const user_id = user.id;
     // validacion de role jugador
@@ -78,7 +78,7 @@ router.post('/login', async (req, res) => {
       } else {
         return res.status(200).json({
           token,
-          user: { id, name, email: mail, role: user.role, jugador_id: jugador_id },
+          user: { id, name, email: mail, role: user.role, jugador_id: jugador_id, foto_perfil, puntaje: jugador.puntaje },
         });
       }
     } else {

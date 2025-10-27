@@ -1,21 +1,18 @@
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
+import Cropper from 'react-easy-crop';
+import SimpleBarChart from "../components/simpleBarChart";
 import axios from "axios";
+import { getCroppedImg } from '../utils/cropImage.js';
+import { useAuth } from "../context/auth-context.jsx";
 
 const Perfil = () => {
 
-  // 1) usuario logueado desde localStorage (parseado)
-  const [user] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem("user") || "null");
-    } catch {
-      return null;
-    }
-
-  });
+  const { user, updateUser } = useAuth();
   const userId = user?.id;
   const jugador_id = user?.jugador_id;
+  const [eliminando, setEliminando] = useState(false);
 
   // scroll respuestas
   const listRef = useRef(null);
@@ -23,7 +20,7 @@ const Perfil = () => {
   // botones hooks
   const [selectedPerfil, setSelectedPerfil] = useState(false); // boton de perfil 👤
   const [selectedPefilEditar, setSelectedPefilEditar] = useState(false); // abrir el modal del boton "editar" foto de perfil
-  const [selectedAvatar, setSelectedAvatar] = useState(false); // boton mis avatares
+  const [selectedAvatar, setSelectedAvatar] = useState(null); // boton mis avatares
 
   // no lo uso aun=======================================
   // aun no se usa (para cambiar la foto del avatar del perfil)
@@ -72,6 +69,22 @@ const Perfil = () => {
 
   const [estadisticas, setEstadisticas] = useState([]); // array estadisticas
 
+  // hooks de foto de perfil
+  const API = "http://localhost:3006"; // URL base de tu API
+  const [foto, setFoto] = useState(user.foto_perfil);
+  const [preview, setPreview] = useState(null);  // URL local de previsualización
+  const [subiendo, setSubiendo] = useState(false);
+  const fileInputRef = useRef(null);
+  //para recorte de foto de perfil
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [tempImageUrl, setTempImageUrl] = useState(null); // URL de la imagen original para cropear
+
+
+
+
   // errores o inicializaciones
   const [error, setError] = useState(null); // mensaje de error en general
   const [loadingPerfil, setLoadingPerfil] = useState(true); // verifica si el perfil esta y carga la pagina
@@ -104,6 +117,143 @@ const Perfil = () => {
 
     return () => { alive = false; };
   }, [userId]);
+
+  // al elegir archivo
+  const onPickFile = (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    // guardo el File original
+    setFoto(f);
+    // URL temporal para el cropper
+    const url = URL.createObjectURL(f);
+    setTempImageUrl(url);
+    // mostrar modal de recorte
+    setCropModalOpen(true);
+  };
+
+  const onCropComplete = useCallback((_, croppedPixels) => {
+    setCroppedAreaPixels(croppedPixels);
+  }, []);
+
+  // aplicar recorte: genera File/Blob + preview recortada
+  const aplicarRecorte = async () => {
+    if (!tempImageUrl || !croppedAreaPixels) return;
+    const { file, previewUrl } = await getCroppedImg(tempImageUrl, croppedAreaPixels, 'perfil.jpg');
+    // reemplazo la foto original por la recortada
+    setFoto(file);
+    setPreview(previewUrl);
+    setCropModalOpen(false);
+    // libero memoria de la URL temporal
+    URL.revokeObjectURL(tempImageUrl);
+    setTempImageUrl(null);
+  };
+
+  const cancelarCrop = () => {
+    setCropModalOpen(false);
+    if (preview) {
+      setPreview(null);
+      setFoto(null)
+    }
+    if (tempImageUrl) {
+      URL.revokeObjectURL(tempImageUrl);
+      setTempImageUrl(null);
+    }
+    // limpiar input
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const subirFoto = async () => {
+    if (!foto || !perfil?.id) return;
+    setSubiendo(true);
+    try {
+      const fd = new FormData();
+      fd.append('foto', foto); // <-- la recortada (File)
+
+      const token = localStorage.getItem("token");
+      const { data } = await axios.post(
+        `http://localhost:3006/users/${user.id}/foto`,
+        fd,
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+      );
+
+      // El server debería responder algo así:
+      // { ok: true, url: '/uploads/fotos_perfil/abc.jpg', user: {...} }
+      const nuevaRuta = data?.url;
+      if (nuevaRuta) {
+        // Actualizá el perfil en estado para que se vea la nueva foto
+        setPerfil(prev => ({ ...prev, foto_perfil: nuevaRuta }));
+        setFoto(nuevaRuta);
+
+        // 2) ACTUALIZÁ EL CONTEXTO (esto refresca el Header automáticamente)
+        updateUser({
+          ...user,
+          foto_perfil: nuevaRuta,
+        });
+
+        // Opcional: actualizá el localStorage
+        const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+        localStorage.setItem("user", JSON.stringify({
+          ...storedUser,
+          foto_perfil: nuevaRuta,
+        }));
+
+        if (preview) URL.revokeObjectURL(preview);
+        setPreview(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        setCropModalOpen(false);
+        //setSelectedPefilEditar(false);
+        window.dispatchEvent(new CustomEvent('user:changed', { detail: { user: storedUser } }));
+      } else {
+        throw new Error("El servidor no devolvió la URL de la imagen");
+      }
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.error || err.message);
+    } finally {
+      setSubiendo(false);
+    }
+  };
+
+  const cancelarFotoLocal = () => {
+    if (foto == null || preview == null) {
+      setFoto(null);
+      setPreview(null);
+    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  // liberar la URL del preview cuando cambie (higiene)
+  useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview);
+    };
+  }, [preview]);
+
+  const eliminarFoto = async () => {
+    if (!user?.id || !user?.foto_perfil) return;
+    const ok = window.confirm("¿Seguro querés eliminar tu foto de perfil?");
+    if (!ok) return;
+
+    try {
+      setEliminando(true);
+      const token = localStorage.getItem("token");
+      await axios.delete(`http://localhost:3006/users/${user.id}/foto`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+
+      // 1) limpiar estado local
+      setPreview(null);
+      setFoto(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+
+      // 2) actualizar usuario global (Header se refresca solo)
+      updateUser({ ...user, foto_perfil: null });
+    } catch (err) {
+      console.error("Error eliminando foto:", err);
+    } finally {
+      setEliminando(false);
+    }
+  };
 
   // funcion que hace reemplazar los datos del jugador
   const handleChange = (e) => {
@@ -531,7 +681,7 @@ const Perfil = () => {
     opciones, respuestas, partidaIdSeleccionada
   ]);
 
-  const algunModalAbierto = selectedPerfil || selectedEstadisticas !== null;
+  const algunModalAbierto = selectedPerfil || selectedEstadisticas || selectedAvatar !== null;
   useEffect(() => {
     if (!algunModalAbierto) return;
     const prev = document.body.style.overflow;
@@ -561,7 +711,21 @@ const Perfil = () => {
           role="button"
           aria-pressed={selectedPerfil}
         >
-          <p>👤</p>
+          {foto == null ?
+            (<p>👤</p>)
+            :
+            (<img
+              src={
+                preview
+                  ? preview
+                  : perfil?.foto_perfil
+                    ? `${API}${perfil.foto_perfil}` // el server devuelve ruta relativa
+                    : "https://placehold.co/128x128?text=Foto" // placeholder opcional
+              }
+              alt="Foto de perfil"
+              className="w-32 h-32 rounded-full object-cover bg-white/20"
+            />)}
+
         </motion.div>
 
         {/* agranda la foto de perfil - poder editar */}
@@ -592,29 +756,159 @@ const Perfil = () => {
             </button>
 
             <div className="relative inline-block">
-              <div className="rounded-full w-72 h-72 bg-white/60">
-                <p className="text-[190px] text-center">👤</p>
-              </div>
+
+              {foto == null ?
+                (<p className="text-[190px] bg-white/60 rounded-full text-center">
+                  👤
+                </p>)
+                :
+                (<img
+                  src={
+                    preview
+                      ? preview
+                      : perfil?.foto_perfil
+                        ? `${API}${perfil.foto_perfil}` // el server devuelve ruta relativa
+                        : "https://placehold.co/128x128?text=Foto" // placeholder opcional
+                  }
+                  alt="Foto de perfil"
+                  className="w-68 h-68 rounded-full object-cover bg-white/20"
+                />)}
 
               {selectedPefilEditar ? (
-                <div className="absolute left-14 top-56 
-                      bg-white text-black rounded-2xl px-3 py-3">
-
-                  <button
-                    type="button"
-                    aria-label="Cerrar"
-                    className="text-end rounded-full w-full h-fit hover:text-red/5 cursor-pointer text-md text-red-500"
-                    onClick={() =>
-                      setSelectedPefilEditar(false)
-                    }
-                  >
-                    ✕
-                  </button>
+                <div className="absolute left-8 top-56 
+                      
+                    bg-white text-black rounded-2xl px-3 py-3">
 
                   <ul>
-                    <li className="indent-1 cursor-pointer hover:text-gray-600">Elegir de la biblioteca </li>
-                    <li className="indent-1 mt-2 cursor-pointer hover:text-gray-600">Elegir un avatar</li>
-                    <li className="indent-1 mt-2 cursor-pointer hover:text-red-700 text-red-500">Eliminar foto</li>
+                    {/* Elegir de la biblioteca */}
+
+                    <li className="flex flex-row gap-2">
+                      <div>
+                        {/* Input file oculto */}
+                        <input
+                          id="file-picker"
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          className="sr-only"
+                          onChange={onPickFile}
+                        />
+
+                        {/* Botón visible */}
+                        <label
+                          htmlFor="file-picker"
+                          className="rounded-md text-black hover:text-gray-600 cursor-pointer"
+                        >
+                          Elegir de la biblioteca
+                        </label>
+
+                        <div className="flex flex-row">
+                          {/* Guardar */}
+                          {(preview) && (
+                            <button
+                              type="button"
+                              onClick={subirFoto}
+                              disabled={subiendo}
+                              className="p-1 rounded-md bg-violet-600 hover:bg-violet-800 text-white disabled:opacity-50 cursor-pointer"
+                            >
+                              {subiendo ? 'Subiendo...' : 'Guardar foto'}
+                            </button>
+                          )}
+
+                          {/* Cancelar */}
+                          {(preview) && (
+                            <button
+                              type="button"
+                              onClick={cancelarFotoLocal}
+                              className="ml-2 px-3 py-1.5 rounded-md bg-gray-600 hover:bg-gray-800  text-white cursor-pointer"
+                            >
+                              Cancelar
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Preview = pre vista de la for=to recortada (recortada, si ya aplicaste recorte) */}
+                        {/*preview && (
+                          <div className="mt-3">
+                            <img src={preview} alt="preview" className="w-40 h-40 rounded-full object-cover" />
+                          </div>
+                        )*/}
+
+                        {/* Modal de recorte */}
+                        {cropModalOpen && (
+                          <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center">
+                            <div className="bg-white rounded-2xl p-4 w-[90vw] max-w-xl">
+                              <div className="relative w-full h-[60vh] max-h-[70vh] bg-black/5 rounded">
+                                {tempImageUrl && (
+                                  <Cropper
+                                    image={tempImageUrl}
+                                    crop={crop}
+                                    zoom={zoom}
+                                    aspect={1}           // cuadrado (ideal para avatar)
+                                    cropShape="round"     // círculo visual (opcional)
+                                    showGrid={false}
+                                    onCropChange={setCrop}
+                                    onZoomChange={setZoom}
+                                    onCropComplete={onCropComplete}
+                                  />
+                                )}
+                              </div>
+
+                              {/* Controles */}
+                              <div className="mt-4 flex items-center justify-between">
+                                <input
+                                  type="range"
+                                  min={1}
+                                  max={3}
+                                  step={0.01}
+                                  value={zoom}
+                                  onChange={(e) => setZoom(Number(e.target.value))}
+                                  className="w-2/3 cursor-pointer"
+                                />
+                                <div className="flex gap-2">
+                                  <button
+                                    type="button"
+                                    className="px-3 py-1.5 rounded bg-gray-200 cursor-pointer"
+                                    onClick={cancelarCrop}
+                                  >
+                                    Cancelar
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="px-3 py-1.5 rounded bg-violet-600 text-white cursor-pointer"
+                                    onClick={aplicarRecorte}
+                                  >
+                                    Aplicar recorte
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        aria-label="Cerrar"
+                        className="text-end rounded-full w-3 h-6 hover:text-red/5 cursor-pointer text-md text-red-500"
+                        onClick={() =>
+                          setSelectedPefilEditar(false)
+                        }
+                      >
+                        ✕
+                      </button>
+                    </li>
+
+                    <li className="cursor-pointer hover:text-gray-600">Elegir un avatar</li>
+                    {foto && (
+                      <li className="cursor-pointer hover:text-red-700 text-red-500"><button
+                        type="button"
+                        onClick={eliminarFoto}
+                        disabled={eliminando}
+                        className=" cursor-pointer hover:text-red-700 text-red-500 disabled:opacity-50"
+                      >
+                        {eliminando ? "Eliminando..." : "Eliminar foto"}
+                      </button></li>
+                    )}
                   </ul>
                 </div>
               ) : (
@@ -622,7 +916,7 @@ const Perfil = () => {
                   type="button"
                   whileTap={{ scale: 0.9 }}
                   whileHover={{ scale: 1.05 }}
-                  className="absolute left-52 top-60 -translate-y-1/2 ml-4
+                  className="absolute left-46 top-60 -translate-y-1/2 ml-4
                                 rounded-full px-2 py-2 bg-black text-white 
                                 cursor-pointer text-sm"
                   aria-pressed={selectedPefilEditar}
@@ -712,7 +1006,7 @@ const Perfil = () => {
                     className="absolute top-2 right-2 rounded-full w-9 h-9 
                               grid place-items-center hover:bg-black/5 active:scale-95 
                               cursor-pointer text-2xl"
-                    onClick={() => setSelectedAvatar(false)}
+                    onClick={() => setSelectedAvatar(null)}
                   >
                     ✕
                   </button>
@@ -1044,6 +1338,7 @@ const Perfil = () => {
                       bg-indigo-800/90 rounded"
                       >
                         {console.log(objetoPartidaCompleto)}
+
                         <div className="flex flex-row gap-2 mb-2 sticky top-0 bg-indigo-800 p-2">
                           <button
                             onClick={() => setOpenPreguntaIds(new Set(
@@ -1064,10 +1359,10 @@ const Perfil = () => {
 
                         {objetoPartidaCompleto?.preguntasDeLaPartida?.length ? (
                           <ul className="p-2">
-                            {(objetoPartidaCompleto?.preguntasDeLaPartida ?? []).map(e => (
+                            {(objetoPartidaCompleto?.preguntasDeLaPartida ?? []).map((e, index) => (
                               <motion.li
                                 key={Number(e.pregunta_id ?? e.id)}
-                                className="border rounded-xl p-3 flex flex-col mb-2"
+                                className="border rounded-xl p-3 odd:bg-black/5 even:bg-black/30 flex flex-col mb-2"
                                 whileTap={{ scale: 1.01 }}
                               >
                                 <button
@@ -1075,7 +1370,11 @@ const Perfil = () => {
                                   className="text-left w-full cursor-pointer hover:bg-black/30 rounded p-0.5 text-[20px]"
                                   onClick={() => togglePregunta(Number(e.pregunta_id ?? e.id))}
                                 >
-                                  {e.question_text_copy}
+                                  <span className="shrink-0 inline-flex items-center justify-center w-7 h-7 font-semibold">
+                                    {`${index + 1})`}
+                                  </span>
+
+                                  <span className="leading-snug">{e.question_text_copy}</span>
                                 </button>
 
                                 {openPreguntaIds.has(Number(e.pregunta_id ?? e.id)) && (
@@ -1191,6 +1490,9 @@ const Perfil = () => {
                     {/* grafica lineal de respuestas */}
                     <div className="text-xl bg-indigo-800/90 rounded p-1.5 mt-1 flex-1 min-h-0">
                       <span className="p-2 text-[20px]">Grafica lineal de respuestas...</span>
+
+                      {/* grafica de respuesta de simpleBarChart */}
+                      <SimpleBarChart objPartidaIdInformacion={objetoPartidaCompleto} />
                     </div>
                   </>
                 )}

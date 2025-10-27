@@ -11,26 +11,29 @@ import avataresRoutes from './routes/avataresRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
 import contactRoutes from './routes/contactRoutes.js';
 import cors from 'cors';
+import crearPagoRoutes from './routes/crearPagoRoutes.js';
 import estadisticaRoutes from './routes/estadisticaRoutes.js';
 import express from 'express';
+import { fileURLToPath } from "url";
 import http from 'http';
 import jugadorRoutes from './routes/jugadorRoutes.js';
 import opcionesRoutes from './routes/opcionesRoutes.js';
 import partidaJugadoresRoutes from './routes/partida_jugadoresRoutes.js';
 import partidaPreguntasRoutes from './routes/partida_preguntasRoutes.js';
 import partidasRoutes from './routes/partidasRoutes.js';
+import path from "path";
 import preguntasRoutes from './routes/preguntasRoutes.js';
 import respuestasRoutes from './routes/respuestasRoutes.js';
 import salaJugadoresRoutes from './routes/sala_jugadoresRoutes.js';
 import salasRoutes from './routes/salasRoutes.js';
 import sequelize from './models/sequelize.js';
+import soapRoutes from './routes/soapRoutes.js';
 import userAvataresRoutes from './routes/userAvataresRoutes.js';
 import userRoutes from './routes/userRoutes.js';
-import crearPagoRoutes from './routes/crearPagoRoutes.js';
-import soapRoutes from './routes/soapRoutes.js';
 
 const app = express();
-
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 // Middlewares base
 app.use(express.json());
 app.use(
