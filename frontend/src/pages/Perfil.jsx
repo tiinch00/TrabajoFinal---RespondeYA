@@ -168,7 +168,7 @@ const Perfil = () => {
     try {
       const fd = new FormData();
       fd.append('foto', foto); // <-- la recortada (File)
-
+      
       const token = localStorage.getItem("token");
       const { data } = await axios.post(
         `http://localhost:3006/users/${user.id}/foto`,

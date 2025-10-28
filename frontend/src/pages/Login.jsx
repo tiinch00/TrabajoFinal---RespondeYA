@@ -1,11 +1,12 @@
 import { Link, useNavigate } from 'react-router-dom';
 
 import axios from 'axios';
+import { useAuth } from "../context/auth-context";
 import { useState } from 'react';
 
 const Login = () => {
   const navigate = useNavigate();
-
+  const { login, setLoading } = useAuth();
   const [errores, setErrores] = useState({});
 
   const [values, setValues] = useState({
@@ -19,6 +20,7 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     const cleanedValues = {
       email: values.email.trim(),
       password: values.password.trim(),
@@ -45,6 +47,7 @@ const Login = () => {
       }
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user || { name: 'anonymous' }));
+      login(data.user, data.token);  // <- dispara re-render global
       navigate('/bienvenido', { replace: true });
     } catch (err) {
       if (err.response?.data?.error) {
@@ -52,6 +55,7 @@ const Login = () => {
       } else {
         setErrores({ general: 'Error de conexión con el servidor' });
       }
+      setLoading(false);
     }
   };
 

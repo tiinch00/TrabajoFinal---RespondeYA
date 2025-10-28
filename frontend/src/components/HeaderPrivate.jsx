@@ -20,10 +20,12 @@ export default function HeaderPrivate() {
   const menuRef = useRef(null);
   const btnRef = useRef(null);
   //const [user, setUser] = useState(getStoredUser);
-  const { user, updateUser, logout, loading } = useAuth();
+  const { user, logout, loading } = useAuth();
   const API = "http://localhost:3006"; // URL base de tu API
   const isAdmin = user?.role === 'administrador';
+  // const name = user?.name ?? user?.email?.split('@')[0] ?? 'Jugador';
   const name = user.name || user?.email?.split('@')[0] || 'Jugador';
+  // const fotoUrl = user?.foto_perfil ? `${API}${user.foto_perfil}` : null;
   const fotoUrl = user?.foto_perfil ? `${API}${user.foto_perfil}` : null;
   //console.log(name);
 
@@ -58,19 +60,7 @@ export default function HeaderPrivate() {
 
   const fotoSrc = user?.foto_perfil
     ? `${API}${user.foto_perfil}?v=${Date.now()}` // cache-buster
-    : null;
-
-  if (loading) {
-    // opcional: mientras el AuthContext resuelve el user inicial (p. ej. desde localStorage)
-    return (
-      <header className='bg-black px-6 py-3 font-semibold shadow sticky top-0 w-full z-10'>
-        <nav className='flex items-center justify-between text-white'>
-          <img src='/logo.png' alt='Logo' className='h-72' />
-          <span>Cargando…</span>
-        </nav>
-      </header>
-    );
-  }
+    : null;  
 
   return (
     <header className='bg-black px-6 py-3 font-semibold shadow sticky top-0 w-full z-10'>

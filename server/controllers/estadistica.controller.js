@@ -1,22 +1,16 @@
 import { Estadistica } from '../models/associations.js';
 
-const index = async (req, res) => {  
-    const { jugador_id } = req.params; 
-    console.log(jugador_id);
+const index = async (req, res) => {      
   try {
-      
-    //const jugador_id = Number(req.params.jugador_id);
-    //console.log(jugador_id);
+    const rawId = req.params.jugador_id ?? req.query.jugador_id;
+    const jugadorId = Number(rawId);    
 
-    if (jugador_id !== undefined && jugador_id !== null) {
-
-    const jugadorId = Number(jugador_id);
-
+    if (Number.isFinite(jugadorId) && jugadorId > 0) {
+    
     // si no es un numero entero, envia un error
     if (!Number.isInteger(jugadorId)) {
       return res.status(400).json({ error: "Numero incorrecto, jugador_id inválido." });
-    }
-    console.log("Entro al if de Number.isInteger(jugadorId)")
+    }    
 
     // obtiene todos los avatares del jugador
       const rows = await Estadistica.findAll({

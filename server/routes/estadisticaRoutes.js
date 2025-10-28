@@ -6,5 +6,7 @@ import express from "express";
 const router = express.Router();
 
 router.get("/estadisticas", estadisticasController.index);
+router.get("/estadisticas/:id", estadisticasController.show);
+router.put("/estadisticas/:id", estadisticasController.update);
 
 export default router;
