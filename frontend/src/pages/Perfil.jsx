@@ -66,6 +66,7 @@ const Perfil = () => {
   const [respuestas, setRespuestas] = useState([]);
 
   const [objetoPartidaCompleto, setObjetoPartidaCompleto] = useState(null);
+  const [listaObjetosPartidaInformacion, setListaObjetosPartidaInformacion] = useState(null);
 
   const [estadisticas, setEstadisticas] = useState([]); // array estadisticas
 
@@ -168,7 +169,7 @@ const Perfil = () => {
     try {
       const fd = new FormData();
       fd.append('foto', foto); // <-- la recortada (File)
-      
+
       const token = localStorage.getItem("token");
       const { data } = await axios.post(
         `http://localhost:3006/users/${user.id}/foto`,
@@ -305,6 +306,7 @@ const Perfil = () => {
       // data = user actualizado (idealmente sin password)
       setPerfil(data);
       setEditMode(false);
+      updateUser(data); // data = { id, name, email, role, foto_perfil, ... }
       setForm(f => ({ ...f, password: "" }));
 
       // actualizamos localStorage para que el Header refleje el cambio
@@ -494,6 +496,28 @@ const Perfil = () => {
     }
   };
 
+  const inventarioInforCompletaDeTodasLasPartidas = () => {
+    if (Array.isArray(partidas) && Array.isArray(categorias) && Array.isArray(preguntas)) {
+
+      // de cada partida me quedo con id, categoria_id y fecha
+      const partidasInfo = (partidas ?? []).map(({ id, categoria_id, ended_at, modo }) => ({
+        id,
+        categoria_id,
+        ended_at,
+        modo,
+      }));
+
+      //console.log("array partidasInfo:", partidasInfo);
+
+      return partidasInfo;
+
+    } else {
+      console.log("Alguno de los arrays no es un array:",
+        { partidas, categorias, preguntas });
+      return [];
+    }
+  }
+
   // Une el array jugadorAvatares (avatar_id) con el array avatares (id)
   const inventarioIdPartidaSeleccionado = () => {
     if (Array.isArray(partidas) && Array.isArray(preguntas) && Array.isArray(partida_jugadores)
@@ -681,6 +705,15 @@ const Perfil = () => {
     opciones, respuestas, partidaIdSeleccionada
   ]);
 
+  useEffect(() => {
+    const objDos = inventarioInforCompletaDeTodasLasPartidas(); // debe ser una funcion pura (sin setState adentro)
+    setListaObjetosPartidaInformacion(prev =>
+      JSON.stringify(prev) === JSON.stringify(objDos) ? prev : objDos
+    );
+  }, [
+    partidas, preguntas, categorias,    
+  ]);
+
   const algunModalAbierto = selectedPerfil || selectedEstadisticas || selectedAvatar !== null;
   useEffect(() => {
     if (!algunModalAbierto) return;
@@ -703,7 +736,7 @@ const Perfil = () => {
       {/* perfil */}
       <div className="flex flex-col items-center h-fit w-full">
         <motion.div
-          className="h-32 w-32 bg-gray-200/80 rounded-full cursor-pointer  text-black text-6xl text-center flex items-center justify-center"
+          className="h-32 w-32 bg-gray-200/90 hover:bg-gray-300/90 rounded-full cursor-pointer  text-black text-6xl text-center flex items-center justify-center"
           whileTap={{ scale: 1.2 }}
           onClick={() =>
             setSelectedPerfil(true)
@@ -746,7 +779,7 @@ const Perfil = () => {
               type="button"
               aria-label="Cerrar"
               className="absolute top-2 right-2 rounded-full w-9 h-9 
-                              grid place-items-center hover:bg-black/5 active:scale-95 
+                              grid place-items-center text-red-600 hover:text-red-500 active:scale-95 
                               cursor-pointer text-2xl"
               onClick={() =>
                 setSelectedPerfil(false)
@@ -758,7 +791,7 @@ const Perfil = () => {
             <div className="relative inline-block">
 
               {foto == null ?
-                (<p className="text-[190px] bg-white/60 rounded-full text-center">
+                (<p className="text-[190px] bg-gray-200/90 rounded-full text-center">
                   👤
                 </p>)
                 :
@@ -868,14 +901,14 @@ const Perfil = () => {
                                 <div className="flex gap-2">
                                   <button
                                     type="button"
-                                    className="px-3 py-1.5 rounded bg-gray-200 cursor-pointer"
+                                    className="px-3 ml-1 py-1.5 rounded bg-gray-200 hover:bg-gray-400 cursor-pointer"
                                     onClick={cancelarCrop}
                                   >
                                     Cancelar
                                   </button>
                                   <button
                                     type="button"
-                                    className="px-3 py-1.5 rounded bg-violet-600 text-white cursor-pointer"
+                                    className="px-3 py-1.5 rounded bg-violet-600 hover:bg-violet-800 text-white cursor-pointer"
                                     onClick={aplicarRecorte}
                                   >
                                     Aplicar recorte
@@ -889,7 +922,7 @@ const Perfil = () => {
                       <button
                         type="button"
                         aria-label="Cerrar"
-                        className="text-end rounded-full w-3 h-6 hover:text-red/5 cursor-pointer text-md text-red-500"
+                        className="text-end rounded-full w-3 h-6 hover:text-red/5 cursor-pointer text-md text-red-600 hover:text-red-500"
                         onClick={() =>
                           setSelectedPefilEditar(false)
                         }
@@ -904,7 +937,7 @@ const Perfil = () => {
                         type="button"
                         onClick={eliminarFoto}
                         disabled={eliminando}
-                        className=" cursor-pointer hover:text-red-700 text-red-500 disabled:opacity-50"
+                        className=" cursor-pointer hover:text-red-500 text-red-600 disabled:opacity-50"
                       >
                         {eliminando ? "Eliminando..." : "Eliminar foto"}
                       </button></li>
@@ -940,7 +973,7 @@ const Perfil = () => {
       {/* boton "mis avatares" */}
       <div className="flex flex-col items-center mt-6 h-fit w-full">
         <motion.button
-          className="bg-violet-500 rounded-xl w-32 h-8 mb-4 cursor-pointer"
+          className="bg-violet-500 hover:bg-violet-600 rounded-xl w-32 h-8 mb-4 cursor-pointer"
           whileTap={{ scale: 1.2 }}
           onClick={() => {
             setSelectedAvatar(true);
@@ -1141,11 +1174,11 @@ const Perfil = () => {
           <div className="flex flex-row gap-2 mt-4">
             <button><h2 className="text-xl font-semibold mb-3 mt-3 cursor-pointer hover:text-white/90 bg-black/50 rounded p-1">Resultados de partidas</h2></button>
             <h2 className="text-xl flex items-center justify-center p-1">|</h2>
-            <button type="button" onClick={() => { setSelectedEstadisticasResultadosDePartidas(false); }}><h2 className="text-xl font-semibold mb-3 mt-3 cursor-pointer hover:text-white/90 p-1">Estadísticas general</h2></button>
+            <button type="button" onClick={() => { setSelectedEstadisticasResultadosDePartidas(false); }}><h2 className="text-xl font-semibold mb-3 mt-3 cursor-pointer hover:text-white/90 p-1">Gráfica de estadísticas general</h2></button>
           </div>
 
           {estadisticas.length === 0 ? (
-            <p>No hay estadísticas de partidas para mostrar.</p>
+            <p>No hay resultados de partidas para mostrar...</p>
           ) : (
             <div>
               {/* buscador de estadísticas */}
@@ -1187,13 +1220,19 @@ const Perfil = () => {
                   >
                     {e.posicion > 0 ? (
                       <div>
-                        <p className="text-green-500">Ganaste!</p>
+                        <p className="text-green-500">Ganaste</p>
                         <p>Fecha: </p>
+                        <p>Modo: </p>
+                        <p>Categoria: </p>
+                        <p>dificultad: </p>
                       </div>
                     ) : (
                       <div>
-                        <p className="text-red-500">Perdiste!</p>
+                        <p className="text-red-500">Perdiste</p>
                         <p>Fecha: </p>
+                        <p>Modo: </p>
+                        <p>Categoria: </p>
+                        <p>dificultad: </p>
                       </div>
                     )}
                   </motion.li>
@@ -1337,7 +1376,8 @@ const Perfil = () => {
                         className="h-full overflow-y-auto overscroll-contain touch-pan-y pr-2
                       bg-indigo-800/90 rounded"
                       >
-                        {console.log(objetoPartidaCompleto)}
+                        {console.log(listaObjetosPartidaInformacion)}
+                        {/*console.log(objetoPartidaCompleto)*/}
 
                         <div className="flex flex-row gap-2 mb-2 sticky top-0 bg-indigo-800 p-2">
                           <button
@@ -1507,9 +1547,9 @@ const Perfil = () => {
           <div className="flex flex-row gap-2 mt-4">
             <button type="button" onClick={() => { setSelectedEstadisticasResultadosDePartidas(true); }}><h2 className="text-xl font-semibold mb-3 mt-3 cursor-pointer hover:text-white/90 p-1">Resultados de partidas</h2></button>
             <h2 className="text-xl flex items-center justify-center p-1">|</h2>
-            <button><h2 className="text-xl font-semibold mb-3 mt-3 cursor-pointer hover:text-white/90 bg-black/50 rounded p-1">Estadísticas general</h2></button>
+            <button><h2 className="text-xl font-semibold mb-3 mt-3 cursor-pointer hover:text-white/90 bg-black/50 rounded p-1">Gráfica de estadísticas general</h2></button>
           </div>
-          <span>Grafica...</span>
+          <span>No hay gráfica de estadísticas general para mostrar...</span>
         </div>
       )
       }
