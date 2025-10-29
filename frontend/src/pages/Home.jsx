@@ -1,67 +1,128 @@
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle } from 'lucide-react';
+import { Play, Dice5, Trophy, ChevronDown, User, Users } from 'lucide-react';
 import ChatGlobal from './ChatGlobal';
 
 const Home = () => {
-  const [mostrarJugarOptions, setMostrarJugarOptions] = useState('');
+  const [mostrarJugarOptions, setMostrarJugarOptions] = useState(false);
   const [chatAbierto, setChatAbierto] = useState(false);
 
   return (
-    <div className='rounded-3xl text-center relative'>
-      <div className='w-90 mt-2 rounded-4xl flex flex-col text-center items-center justify-center text-white'>
-        <div className='flex flex-col items-center'>
-          <button
+    <div className='rounded-3xl text-center relative mt-4'>
+      <div className='w-90 mt-2 rounded-4xl flex flex-col text-center items-center justify-center text-white gap-5'>
+        <div className='flex flex-col items-center w-full max-w-md'>
+          <motion.button
             onClick={() => setMostrarJugarOptions(!mostrarJugarOptions)}
-            className='bg-amber-600 w-70 h-15 rounded-4xl mb-2 cursor-pointer hover:scale-105 transition-transform'
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className='relative bg-gradient-to-br from-yellow-100 via-orange-300 to-orange-400 w-full h-16 rounded-full cursor-pointer shadow-2xl hover:shadow-orange-500/50 transition-all duration-300 border-4 border-yellow-300'
           >
-            Jugar
-          </button>
-
-          {mostrarJugarOptions && (
-            <div className='flex flex-col gap-2 mt-2 items-center'>
-              <p className='bg-violet-700 w-80 rounded'>
-                <strong>Modo de Juego</strong>
-              </p>
-              <Link
-                to='/crearPartida'
-                className='bg-amber-500 w-60 h-12 rounded-2xl cursor-pointer hover:scale-105 transition-transform flex items-center justify-center'
+            <div className='flex items-center justify-center gap-3'>
+              <Play className='w-6 h-6 fill-white stroke-white' />
+              <span className='text-2xl font-black tracking-wide text-white drop-shadow-lg'>
+                JUGAR
+              </span>
+              <motion.div
+                animate={{ rotate: mostrarJugarOptions ? 180 : 0 }}
+                transition={{ duration: 0.3 }}
               >
-                Individual
-              </Link>
-              <Link
-                to='*'
-                className='bg-amber-500 w-60 h-12 rounded-2xl cursor-pointer hover:scale-105 transition-transform flex items-center justify-center'
-              >
-                Multijugador
-              </Link>
+                <ChevronDown className='w-6 h-6 text-white' />
+              </motion.div>
             </div>
-          )}
+          </motion.button>
+
+          <AnimatePresence>
+            {mostrarJugarOptions && (
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+                className='flex flex-col gap-3 mt-4 w-full'
+              >
+                <div className='bg-purple-600/90 backdrop-blur-sm py-2 rounded-xl text-lg font-bold text-white border-2 border-purple-400'>
+                  Modo de Juego
+                </div>
+
+                <Link to='/crearPartida'>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className='w-full cursor-pointer bg-gradient-to-br from-blue-400 to-blue-500 h-14 rounded-full shadow-xl hover:shadow-blue-500/50 transition-all duration-300 flex items-center justify-center gap-3 border-4 border-blue-300'
+                  >
+                    <User className='w-5 h-5 text-white' />
+                    <span className='text-xl font-bold text-white'>Individual</span>
+                  </motion.button>
+                </Link>
+
+                <Link to='*'>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className='w-full cursor-pointer bg-gradient-to-br from-green-400 to-green-500 h-14 rounded-full shadow-xl hover:shadow-green-500/50 transition-all duration-300 flex items-center justify-center gap-3 border-4 border-green-300'
+                  >
+                    <Users className='w-5 h-5 text-white' />
+                    <span className='text-xl font-bold text-white'>Multijugador</span>
+                  </motion.button>
+                </Link>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
-        <Link
-          to='/Ruleta'
-          className='w-70 h-15 hover:scale-105 text-white transition-transform cursor-pointer bg-amber-600 rounded-4xl flex items-center justify-center mb-1 mt-4 p-1'
-        >
-          Ruleta
+        <Link to='/Ruleta' className='w-full max-w-md'>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className='relative bg-gradient-to-br from-yellow-100 via-orange-300 to-orange-400 w-full h-16 rounded-full cursor-pointer shadow-2xl hover:shadow-orange-500/50 transition-all duration-300 border-4 border-yellow-300'
+          >
+            <div className='flex items-center justify-center gap-3'>
+              <motion.div whileHover={{ rotate: 360 }} transition={{ duration: 0.6 }}>
+                <Dice5 className='w-6 h-6 text-white' />
+              </motion.div>
+              <span className='text-2xl font-black tracking-wide text-white drop-shadow-lg'>
+                RULETA
+              </span>
+            </div>
+          </motion.button>
         </Link>
-        <Link
-          to='/Ranking'
-          className='w-70 h-15 hover:scale-105 text-white transition-transform cursor-pointer bg-amber-600 rounded-4xl flex items-center justify-center mb-1 mt-4 p-1'
-        >
-          Ranking Mundial
+
+        {/* ranking */}
+        <Link to='/Ranking' className='w-full max-w-md'>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className='relative bg-gradient-to-br from-yellow-100 via-orange-300 to-orange-400 w-full h-16 rounded-full cursor-pointer shadow-2xl hover:shadow-orange-500/50 transition-all duration-300 border-4 border-yellow-300'
+          >
+            <div className='flex items-center justify-center gap-3'>
+              <motion.div whileHover={{ scale: 1.2, rotate: -10 }} transition={{ duration: 0.3 }}>
+                <Trophy className='w-6 h-6 text-white' />
+              </motion.div>
+              <span className='text-2xl font-black tracking-wide text-white drop-shadow-lg'>
+                RANKING MUNDIAL
+              </span>
+            </div>
+          </motion.button>
         </Link>
       </div>
 
-      {/* boton flotante para abrir el chat */}
+      {/* boton chat */}
       <button
         onClick={() => setChatAbierto(!chatAbierto)}
-        className='fixed top-65 right-5 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-4 shadow-lg z-50 cursor-pointer'
+        className='fixed top-65 right-5 bg-blue-600 hover:bg-blue-700 text-white p-4 cursor-pointer rounded-full shadow-2xl transition transform hover:scale-110'
       >
-        <MessageCircle size={24} />
+        <svg className='w-6 h-6' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+          <path
+            strokeLinecap='round'
+            strokeLinejoin='round'
+            strokeWidth={2}
+            d='M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z'
+          />
+        </svg>
       </button>
 
+      {/* chat abierto */}
       <AnimatePresence>
         {chatAbierto && (
           <motion.div

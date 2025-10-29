@@ -1,18 +1,27 @@
-import { Footer } from "../components/Footer";
-import HeaderPublic from "../components/HeaderPublic";
-import { Outlet } from "react-router-dom";
+import { Footer } from '../components/Footer';
+import HeaderPublic from '../components/HeaderPublic';
+import { Outlet } from 'react-router-dom';
+import FondoAnimado from './FondoAnimado';
+import { RespondeYaLogo } from './RespondeYaLogo';
+import { useLocation } from 'react-router-dom';
 
 export default function PublicLayout() {
-    return (
-        <>
-            <HeaderPublic />
-            <main className="w-full min-h-screen flex flex-col items-center justify-start
-                            bg-gradient-to-b from-[#160040] via-[#1c0060] to-[#0a0235] text-white">
-                {/* El fondo comun */}
-                <img src="/fondo.png" alt="responde ya" className="mb-4 mt-6 w-3/4 max-w-xl rounded-2xl" />
-                <Outlet />
-            </main>
-            <Footer />
-        </>
-    );
+  const location = useLocation();
+  const mostrarLogo = location.pathname === '/comoJugar' ? false : true;
+  return (
+    <>
+      <HeaderPublic />
+      <main className='relative w-full min-h-screen flex flex-col items-center bg-gray-900 justify-start pt-20'>
+        {/* Fondo animado */}
+        {mostrarLogo && <FondoAnimado />}
+
+        {/* Contenido sobre el fondo */}
+        <div className='z-10 w-full flex flex-col items-center justify-start'>
+          {mostrarLogo && <RespondeYaLogo />}
+          <Outlet />
+        </div>
+      </main>
+      <Footer />
+    </>
+  );
 }

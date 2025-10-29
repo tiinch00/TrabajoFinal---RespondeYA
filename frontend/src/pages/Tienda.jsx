@@ -163,11 +163,6 @@ const Tienda = () => {
       origen: 'compra',
       adquirido_at: formatDateTimeAR(),
     };
-
-    //console.log("puntaje del jugador " + jugador.puntaje);
-    //console.log("costo del avatar " + avatares[selected].precio_puntos);
-    //console.log("puntaje del jugador actualizado " + values.puntaje);
-
     try {
       // compra un avatar y se guarda en user_avatares
       const { data: ua } = await axios.post('http://localhost:3006/userAvatar', values);
@@ -243,9 +238,15 @@ const Tienda = () => {
     avatares[selected] &&
     jugadorAvatares.some((a) => a.avatar_id === avatares[selected].id);
   return (
-    <div>
-      <h1 className='text-6xl mb-6'>Tienda</h1>
-      <hr className='border-1 border-sky-600' />
+    <div className='min-h-full'>
+      <motion.h1
+        className='text-6xl font-extrabold text-center my-6 py-5 tracking-wider text-white neon-text'
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.8 }}
+      >
+        ✨ Tienda ✨
+      </motion.h1>
 
       {administrador && administrador === 'administrador' && (
         <div className='text-center mt-6'>
@@ -344,8 +345,8 @@ const Tienda = () => {
             initial={{ opacity: 0, y: 10, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10 }}
-            className='absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
-                      w-full max-w-8/12 h-fit rounded-2xl bg-indigo-900 text-white p-6 shadow-2xl'
+            className='absolute left-1/2 top-125 -translate-x-1/2 -translate-y-1/2
+                      w-150 max-w-8/12 h-195 rounded-2xl bg-indigo-900 text-white p-6 shadow-2xl'
           >
             {/* Boton X */}
             <button
@@ -365,7 +366,7 @@ const Tienda = () => {
               className='w-60 h-80 object-cover rounded-full mx-auto'
             />
 
-            <hr className='my-8 border-1 border-sky-500' />
+            <hr className='my-7 border-1 border-sky-500' />
 
             {/* Nombre */}
             <div className='text-6xl text-center mt-6'>{avatares[selected].nombre}</div>
@@ -373,81 +374,77 @@ const Tienda = () => {
             {/* Division */}
             <div className='text-2xl text-center mt-4 mb-4'>{avatares[selected].division}</div>
 
-            {/* Precio */}
-            <div className='text-4xl text-center font-semibold'>
-              <p>Precio: {`${avatares[selected].precio_puntos} puntos`}/1000ARS</p>
-              <p>Precio MercadoPago: 1000ARS</p>
+            <div className='text-center mt-4'>
+              <p className='text-3xl font-bold text-yellow-400'>
+                {avatares[selected].precio_puntos} puntos
+              </p>
+              <p className='text-lg text-gray-400'>o</p>
+              <p className='text-2xl font-semibold text-green-400'>$1000 ARS con Mercado Pago</p>
             </div>
 
             {/* boton de compra */}
-            {jugador.puntaje >= avatares[selected].precio_puntos ? (
-              <div className='text-center mt-4'>
-                {confirmar ? (
-                  <div>
-                    <p className='text-4xl'>¿Estas seguro de comprar este avatar?</p>
-
-                    <div className='flex justify-center gap-3 mt-6 text-xl'>
-                      <button
-                        className='cursor-pointer w-24 rounded bg-red-600 hover:bg-red-700'
-                        onClick={() => {
-                          setConfirmar(false);
-                        }}
-                      >
-                        Cancelar
-                      </button>
-
-                      <button
-                        className='cursor-pointer w-24 rounded bg-green-600 hover:bg-green-700'
-                        onClick={() => handleSubmit(avatares[selected].id)}
-                        disabled={selected == null || !avatares[selected]}
-                      >
-                        Aceptar
-                      </button>
-                    </div>
-                  </div>
-                ) : yaLoTiene ? (
-                  <button
-                    className='text-xl mt-3 px-4 py-2 rounded bg-gray-500 hover:bg-gray-600  text-white cursor-not-allowed'
-                    disabled
-                  >
-                    Ya lo tienes
-                  </button>
-                ) : (
-                  <div>
-                    <button
-                      className='text-xl mt-3 px-4 py-2 rounded bg-sky-600 text-white hover:bg-sky-700 cursor-pointer mr-2'
-                      onClick={() => setConfirmar(true)}
-                    >
-                      Comprar con puntos
-                    </button>
-                    <button
-                      onClick={() => crearPago(avatares[selected].nombre)}
-                      className='text-xl mt-3 px-4 py-2 rounded bg-blue-600 text-white  hover:bg-blue-700 cursor-pointer ml-5'
-                    >
-                      Comprar con Mercado Pago
-                    </button>
-                  </div>
-                )}
+            {yaLoTiene ? (
+              <div className='flex-col items-center justify-center text-center mt-5'>
+                <button
+                  className='text-xl mt-3 px-4 py-2 rounded bg-gray-500 hover:bg-gray-600 text-white cursor-not-allowed'
+                  disabled
+                >
+                  Ya lo tienes
+                </button>
               </div>
-            ) : (
-              <div className='text-center mt-4'>
-                {yaLoTiene ? (
-                  <button
-                    className='text-xl mt-3 px-4 py-2 rounded bg-gray-500 hover:bg-gray-600  text-white cursor-not-allowed'
-                    disabled
-                  >
-                    Ya lo tienes
-                  </button>
-                ) : (
-                  <div>
-                    <p>Fondos Insuficientes</p>
-                    <button className='mt-3 px-4 py-2 rounded bg-gray-500 text-white hover:bg-gray-600 cursor-not-allowed'>
-                      Comprar
+            ) : jugador.puntaje >= avatares[selected].precio_puntos ? (
+              confirmar ? (
+                <div className='mt-4'>
+                  <p className='text-4xl text-center'>¿Estás seguro de comprar este avatar?</p>
+                  {console.log('entro 1')}
+                  <div className='flex justify-center gap-3 my-8 text-xl'>
+                    <button
+                      className='cursor-pointer w-24 rounded bg-red-600 hover:bg-red-700'
+                      onClick={() => setConfirmar(false)}
+                    >
+                      Cancelar
+                    </button>
+
+                    <button
+                      className='cursor-pointer w-24 rounded bg-green-600 hover:bg-green-700'
+                      onClick={() => handleSubmit(avatares[selected].id)}
+                      disabled={selected == null || !avatares[selected]}
+                    >
+                      Aceptar
                     </button>
                   </div>
-                )}
+                </div>
+              ) : (
+                <div className='flex-col items-center justify-center text-center'>
+                  <button
+                    className='text-xl mt-3 px-4 py-2 rounded bg-sky-600 text-white hover:bg-sky-700 cursor-pointer mr-2'
+                    onClick={() => setConfirmar(true)}
+                  >
+                    Comprar con puntos
+                  </button>
+                </div>
+              )
+            ) : (
+              <div className='flex-col items-center justify-center text-center'>
+                <button
+                  className='mt-3 px-2 py-2 rounded bg-gray-500 text-white hover:bg-gray-600 cursor-not-allowed'
+                  disabled
+                >
+                  Comprar con puntos
+                </button>
+                <p className='text-red-700'>Fondos insuficientes</p>
               </div>
             )}
+            <div className='flex items-center justify-center'>
+              <button
+                onClick={() => crearPago(avatares[selected].nombre)}
+                className={`text-xl mt-3 px-2 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 cursor-pointer ${
+                  yaLoTiene || confirmar ? 'hidden' : ''
+                }`}
+              >
+                Comprar con Mercado Pago
+              </button>
+            </div>
 
             {administrador && administrador === 'administrador' && (
               <div className='text-center mt-6'>
@@ -502,8 +499,6 @@ const Tienda = () => {
           </motion.div>
         </div>
       )}
-
-      <hr className='my-12 border-1 border-sky-500' />
     </div>
   );
 };

@@ -123,7 +123,7 @@ const update = async (req, res) => {
   if (!categoria) {
     return res.status(400).json({ error: 'Invalid categoria_id' });
   }
-  if (dificultad && !['facil', 'normal', 'difícil'].includes(dificultad)) {
+  if (dificultad && !['facil', 'normal', 'dificil'].includes(dificultad)) {
     return res.status(400).json({ error: 'Invalid dificultad value' });
   }
   try {

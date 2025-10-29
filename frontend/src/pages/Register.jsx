@@ -89,8 +89,8 @@ const Register = () => {
   };
 
   return (
-    <div className='w-90 h-fit bg-gradient-to-r from-purple-700 to-indigo-800 rounded-3xl mt-4  p-4 mb-12 text-center items-center justify-center '>
-      <h2 className='text-lg font-bold mb-2 text-center'>Completar Registro</h2>
+    <div className='w-90 h-fit bg-gradient-to-r from-purple-700 to-indigo-800 rounded-3xl mt-3  p-2 mb-6 text-center items-center justify-center '>
+      <h2 className='text-lg font-bold mb-2 text-center text-white'>Completar Registro</h2>
       <form onSubmit={handleSubmit} className='p-2'>
         <div className='bg-gradient-to-r from-indigo-700 to-purple-800 rounded-4xl flex flex-col text-center text-black'>
           <div className='mb-4 mt-4'>
@@ -178,8 +178,8 @@ const Register = () => {
         </div>
 
         <div className='text-center p-2'>
-          <span>Ya tienes usuario?</span>
-          <Link to='/login' className='m-1 text-blue-500 hover:text-blue-400'>
+          <span className='font-semibold text-white'>Ya tienes usuario?</span>
+          <Link to='/login' className='m-1 text-green-400 hover:text-yellow-400'>
             Iniciar Sesion
           </Link>
         </div>

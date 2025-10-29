@@ -1,7 +1,6 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 
 import Bienvenido from './pages/Bienvenido.jsx';
-import ChatGlobal from './pages/ChatGlobal';
 import ComoJugar from './pages/ComoJugar';
 import Contacto from './pages/Contacto';
 import CrearPartida from './pages/CrearPartida.jsx';
@@ -19,7 +18,7 @@ import Tienda from './pages/Tienda';
 import AbmCategorias from './pages/Admin/AbmCategorias.jsx';
 import AbmPreguntas from './pages/Admin/AbmPreguntas.jsx';
 import Ranking from './pages/Ranking.jsx';
-import BotonPago from './pages/BotonPago.jsx';
+
 // Elige layout según sesión
 function LayoutSwitch() {
   const user = (() => {
@@ -40,7 +39,7 @@ function App() {
       {/* Rutas compartidas en ambos layouts */}
       <Route element={<LayoutSwitch />}>
         <Route path='/contacto' element={<Contacto />} />
-        <Route path='/comojugar' element={<ComoJugar />} />
+        <Route path='/comoJugar' element={<ComoJugar />} />
       </Route>
 
       {/* Publico (sin sesion) */}
@@ -66,7 +65,6 @@ function App() {
           <Route path='/Ruleta' element={<Ruleta />} />
           <Route path='/categoria/:nombre/:id/preguntas' element={<AbmPreguntas />} />
           <Route path='/Ranking' element={<Ranking />} />
-          <Route path='/crearOrden' element={<BotonPago />} />
         </Route>
       </Route>
       {/* Catch-all: mandá a "/" (el guard decide) */}
