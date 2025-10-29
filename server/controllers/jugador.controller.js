@@ -17,7 +17,7 @@ const show = async (req, res) => {
     const jugador = await Jugador.findByPk(jugador_id);
 
     if (!jugador) return res.status(404).json({ error: 'Jugador not found' });
-
+    //console.log(jugador);
     res.json(jugador);
   } catch (err) {
     console.error(err);
@@ -50,27 +50,43 @@ const store = async (req, res) => {
 const update = async (req, res) => {
   try {
     // parseo seguro
-    const jugador_id = Number(req.params.jugador_id);
-    const puntaje = Number(req.body?.puntaje);
+    const jugador_id = Number(req.params.jugador_id);         // de params
+    const puntosGanados = Number(req.body.puntosGanados);     // del body
+    const ruleta_started_at = req.body.ruleta_started_at;     // del body
+
+    //console.log("jugador_id:", jugador_id);
+    //console.log("puntaje:", puntaje);
+    //console.log({ t1: typeof req.body.ruleta_started_at });
 
     // Debug opcional para ver tipos/valores
-    // console.log({ jugador_id, puntaje, t1: typeof req.params.jugador_id, t2: typeof req.body?.puntaje });
+    // console.log({ jugador_id, puntaje, t1: typeof req.params.jugador_id, t2: typeof req.body?.puntaje });  
 
     // validaciones
-    if (!Number.isInteger(jugador_id) || jugador_id <= 0) {
+    if (!Number.isFinite(jugador_id) && !(jugador_id > 0)) {
       return res.status(400).json({ error: 'jugador_id inválido' });
     }
 
-    if (!Number.isFinite(puntaje) || puntaje < 0) {
-      return res.status(400).json({ error: 'puntaje inválido' });
+    if (!Number.isFinite(puntosGanados) || puntosGanados < 0) {
+      return res.status(400).json({ error: 'puntosGanados inválido' });
     }
 
-    const jugador = await Jugador.findByPk(jugador_id);    
+    const jugador = await Jugador.findByPk(jugador_id);
     if (!jugador) {
       return res.status(404).send('Jugador not found');
     }
 
+    const puntaje = (jugador.puntaje + puntosGanados);
     await jugador.update({ puntaje });
+    
+    if (ruleta_started_at !== undefined && ruleta_started_at !== null) {
+      if (typeof ruleta_started_at === 'string') {
+        await jugador.update({ ruleta_started_at });
+      } else {
+        return res.status(400).json({ error: 'ruleta_started_at inválido (no es un string)' });
+      }
+    }
+
+    await jugador.reload();
     res.json(jugador);
 
   } catch (error) {

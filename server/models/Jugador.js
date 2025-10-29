@@ -20,6 +20,11 @@ const Jugador = sequelize.define("Jugador", {
     allowNull: false,
     defaultValue: 0,
   },
+  ruleta_started_at: { 
+    type: DataTypes.DATE,
+    allowNull: true ,
+    defaultValue: null,
+  },
   // otros campos específicos del jugador...
 }, {
   tableName: "jugadores",
