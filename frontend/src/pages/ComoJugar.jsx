@@ -47,24 +47,47 @@ const ComoJugar = () => {
               </div>
               <h2 className='text-5xl font-bold mb-6 text-white'>Cómo jugar</h2>
               <p className='text-xl text-gray-300 leading-relaxed'>
-                Para comenzar, elige un modo de juego:
+                Para comenzar, elige un modo de juego, haciendo click en Jugar.
                 <span className='text-purple-400 font-semibold'>
                   {' '}
-                  partida rápida desafiandote a ti mismo
+                  Elige Individual para una partida rápida desafiandote a ti mismo
                 </span>{' '}
-                o<span className='text-pink-400 font-semibold'> 1 vs 1 en tiempo real</span>.
-                Responde las preguntas correctamente antes de que se acabe el tiempo y suma puntos
+                o
+                <span className='text-pink-400 font-semibold'>
+                  {' '}
+                  Multijugador , para hacer 1 vs 1 contra otra persona en tiempo real
+                </span>
+                . Responde las preguntas correctamente antes de que se acabe el tiempo y suma puntos
                 para ganar la partida.
               </p>
             </div>
 
-            {/* Imagen */}
+            {/* Imágenes Superpuestas */}
             <div className='order-1 md:order-2'>
-              <div className='relative rounded-2xl overflow-hidden shadow-2xl'>
-                <div className='bg-gradient-to-br from-purple-600 to-pink-600 p-1'>
-                  <div className='bg-gray-900 rounded-xl p-12'>
-                    <div className='text-6xl mb-4 text-center'>🎯</div>
-                    <p className='text-white text-center text-lg'>Imagen de gameplay aquí</p>
+              <div className='relative w-full h-96'>
+                {/* Imagen 1 (Fondo - izquierda superior) */}
+                <div className='absolute top-0 left-0 w-72 h-80 z-10'>
+                  <div className='bg-gradient-to-br from-purple-600 to-pink-600 p-1 rounded-2xl shadow-2xl h-full'>
+                    <div className='bg-gray-900 rounded-xl p-6 h-full flex items-center justify-center'>
+                      <img
+                        src='./assets/comoJugar/jugar.png'
+                        alt='Jugar'
+                        className='w-full h-full object-contain'
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Imagen 2 (Frente - derecha inferior) */}
+                <div className='absolute bottom-0 right-0 w-72 h-80 z-20'>
+                  <div className='bg-gradient-to-br from-pink-600 to-purple-600 p-1 rounded-2xl shadow-2xl h-full'>
+                    <div className='bg-gray-900 rounded-xl p-6 h-full flex items-center justify-center'>
+                      <img
+                        src='./assets/comoJugar/opciones.png'
+                        alt='Opciones'
+                        className='w-full h-full object-contain'
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -118,18 +141,35 @@ const ComoJugar = () => {
               <p className='text-xl text-gray-300 leading-relaxed'>
                 Al ingresar a la plataforma podras utilizar{' '}
                 <span className='text-green-400 font-semibold text-center'>Chat comunidad</span> al
-                hacer click en el icono <MessageCircle /> ubicado en el centro derecha. Allí podrás
-                escribir mensajes en tiempo real para hablar con todas los usuarios conectados en la
-                plataforma.
+                hacer click en el icono ubicado en el centro derecha. Allí podrás escribir mensajes
+                en tiempo real para hablar con todas los usuarios conectados en la plataforma.
               </p>
             </div>
-
-            {/* Imagen */}
             <div className='order-1 md:order-2'>
-              <div className='relative rounded-2xl overflow-hidden shadow-2xl'>
-                <div className='bg-gradient-to-br from-green-600 to-teal-600 p-1'>
-                  <div className='bg-gray-900 rounded-xl p-12'>
-                    <img src='./assets/comoJugar/chat.jpeg' />
+              <div className='relative w-full h-96'>
+                {/* Imagen 1 (Fondo - izquierda superior) */}
+                <div className='absolute bottom-20 right-80 w-65 h-60 z-10'>
+                  <div className='bg-gradient-to-br from-purple-600 to-pink-600 p-1 rounded-2xl shadow-2xl h-full'>
+                    <div className='bg-gray-900 rounded-xl p-6 h-full flex items-center justify-center'>
+                      <img
+                        src='./assets/comoJugar/logoChat.png'
+                        alt='Jugar'
+                        className='w-full h-full object-contain'
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Imagen 2 (Frente - derecha inferior) */}
+                <div className='absolute bottom-0 right-5 w-85 h-100 z-20'>
+                  <div className='bg-gradient-to-br from-pink-600 to-purple-600 p-1 rounded-2xl shadow-2xl h-full'>
+                    <div className='bg-gray-900 rounded-xl p-6 h-full flex items-center justify-center'>
+                      <img
+                        src='./assets/comoJugar/chat.png'
+                        alt='Opciones'
+                        className='w-full h-full object-contain'
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

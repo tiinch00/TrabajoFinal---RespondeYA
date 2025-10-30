@@ -18,6 +18,7 @@ import Tienda from './pages/Tienda';
 import AbmCategorias from './pages/Admin/AbmCategorias.jsx';
 import AbmPreguntas from './pages/Admin/AbmPreguntas.jsx';
 import Ranking from './pages/Ranking.jsx';
+import './utils/i18n.js';
 
 // Elige layout según sesión
 function LayoutSwitch() {

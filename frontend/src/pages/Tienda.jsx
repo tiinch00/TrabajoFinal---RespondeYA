@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 
 import axios from 'axios';
-
+import { useTranslation, Trans } from 'react-i18next';
 const Tienda = () => {
   const [selected, setSelected] = useState(null); // indice o null
   const [jugadores, setJugadores] = useState([]);
@@ -12,6 +12,8 @@ const Tienda = () => {
   const [confirmar, setConfirmar] = useState(false);
   const [comprado, setComprado] = useState(false);
   const compradoTimerRef = useRef(null);
+
+  const { t, i18n } = useTranslation();
 
   // todo lo usado para agregar avatar a la tienda.
   const [mostrarModal, setMostrarModal] = useState(false);
@@ -245,7 +247,7 @@ const Tienda = () => {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.8 }}
       >
-        ✨ Tienda ✨
+        ✨ {t('store')} ✨
       </motion.h1>
 
       {administrador && administrador === 'administrador' && (
@@ -254,19 +256,19 @@ const Tienda = () => {
             onClick={() => setMostrarModal(true)}
             className='px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded cursor-pointer'
           >
-            + Agregar nueva skin
+            {t('addSkin')}
           </button>
         </div>
       )}
       {mostrarModal && (
         <div className='fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex justify-center items-center'>
-          <div className='bg-indigo-900 p-6 rounded-2xl w-96 text'>
-            <h2 className='text-2xl mb-4 text-center'>Agregar nueva Skin</h2>
+          <div className='bg-indigo-900 p-6 rounded-2xl w-96 text-white'>
+            <h2 className='text-2xl mb-4 text-center'>{t('addSkin2')}</h2>
             <label htmlFor='nombre'>
               <input
                 type='text'
                 name='nombre'
-                placeholder='Nombre'
+                placeholder={t('formName')}
                 value={form.nombre}
                 onChange={handleChangeForm}
                 className='w-full mb-2 p-2 rounded'
@@ -276,7 +278,7 @@ const Tienda = () => {
               <input
                 type='text'
                 name='division'
-                placeholder='División'
+                placeholder={t('formDivition')}
                 value={form.division}
                 onChange={handleChangeForm}
                 className='w-full mb-2 p-2 rounded'
@@ -286,7 +288,7 @@ const Tienda = () => {
               <input
                 type='number'
                 name='precio_puntos'
-                placeholder='Valor'
+                placeholder={t('formValue')}
                 value={form.precio_puntos}
                 onChange={handleChangeForm}
                 className='w-full mb-2 p-2 rounded'
@@ -296,7 +298,7 @@ const Tienda = () => {
               <input
                 type='text'
                 name='preview_url'
-                placeholder='URL de imagen'
+                placeholder={t('formUrl')}
                 value={form.preview_url}
                 onChange={handleChangeForm}
                 className='w-full mb-2 p-2 rounded'
@@ -307,13 +309,13 @@ const Tienda = () => {
                 onClick={() => setMostrarModal(false)}
                 className='px-3 py-2 bg-red-600 hover:bg-red-700 rounded cursor-pointer'
               >
-                Cancelar
+                {t('cancel')}
               </button>
               <button
                 onClick={handleAgregarAvatar}
                 className='px-3 py-2 bg-green-600 hover:bg-green-700 rounded cursor-pointer'
               >
-                Guardar
+                {t('save')}
               </button>
             </div>
           </div>
@@ -376,91 +378,96 @@ const Tienda = () => {
 
             <div className='text-center mt-4'>
               <p className='text-3xl font-bold text-yellow-400'>
-                {avatares[selected].precio_puntos} puntos
+                {avatares[selected].precio_puntos} {t('points')}
               </p>
               <p className='text-lg text-gray-400'>o</p>
-              <p className='text-2xl font-semibold text-green-400'>$1000 ARS con Mercado Pago</p>
+              <p className='text-2xl font-semibold text-green-400'>$1000 ARS {t('mp')} </p>
             </div>
 
             {/* boton de compra */}
-            {yaLoTiene ? (
-              <div className='flex-col items-center justify-center text-center mt-5'>
-                <button
-                  className='text-xl mt-3 px-4 py-2 rounded bg-gray-500 hover:bg-gray-600 text-white cursor-not-allowed'
-                  disabled
-                >
-                  Ya lo tienes
-                </button>
-              </div>
-            ) : jugador.puntaje >= avatares[selected].precio_puntos ? (
-              confirmar ? (
-                <div className='mt-4'>
-                  <p className='text-4xl text-center'>¿Estás seguro de comprar este avatar?</p>
-                  {console.log('entro 1')}
-                  <div className='flex justify-center gap-3 my-8 text-xl'>
-                    <button
-                      className='cursor-pointer w-24 rounded bg-red-600 hover:bg-red-700'
-                      onClick={() => setConfirmar(false)}
-                    >
-                      Cancelar
-                    </button>
-
-                    <button
-                      className='cursor-pointer w-24 rounded bg-green-600 hover:bg-green-700'
-                      onClick={() => handleSubmit(avatares[selected].id)}
-                      disabled={selected == null || !avatares[selected]}
-                    >
-                      Aceptar
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className='flex-col items-center justify-center text-center'>
-                  <button
-                    className='text-xl mt-3 px-4 py-2 rounded bg-sky-600 text-white hover:bg-sky-700 cursor-pointer mr-2'
-                    onClick={() => setConfirmar(true)}
-                  >
-                    Comprar con puntos
-                  </button>
-                </div>
-              )
-            ) : (
-              <div className='flex-col items-center justify-center text-center'>
-                <button
-                  className='mt-3 px-2 py-2 rounded bg-gray-500 text-white hover:bg-gray-600 cursor-not-allowed'
-                  disabled
-                >
-                  Comprar con puntos
-                </button>
-                <p className='text-red-700'>Fondos insuficientes</p>
-              </div>
-            )}
-            <div className='flex items-center justify-center'>
-              <button
-                onClick={() => crearPago(avatares[selected].nombre)}
-                className={`text-xl mt-3 px-2 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 cursor-pointer ${
-                  yaLoTiene || confirmar ? 'hidden' : ''
-                }`}
-              >
-                Comprar con Mercado Pago
-              </button>
-            </div>
-
-            {administrador && administrador === 'administrador' && (
+            {administrador === 'administrador' ? (
+              // 💼 Modo Administrador → solo mostrar eliminar
               <div className='text-center mt-6'>
                 <button
                   onClick={() => setModalConfirmarEliminar(true)}
                   className='px-4 py-2 bg-red-500 hover:bg-amber-700 text-white rounded cursor-pointer'
                 >
-                  Eliminar Skin
-                  {/*console.log(avatares[selected].id)*/}
+                  {t('deleteSkin')}
                 </button>
               </div>
+            ) : (
+              // 👤 Modo Jugador → todo el flujo normal de compra
+              <>
+                {/* Botón de compra con puntos o estado actual */}
+                {yaLoTiene ? (
+                  <div className='flex-col items-center justify-center text-center mt-5'>
+                    <button
+                      className='text-xl mt-3 px-4 py-2 rounded bg-gray-500 hover:bg-gray-600 text-white cursor-not-allowed'
+                      disabled
+                    >
+                      {t('gotThis')}
+                    </button>
+                  </div>
+                ) : jugador.puntaje >= avatares[selected].precio_puntos ? (
+                  confirmar ? (
+                    <div className='mt-2'>
+                      <p className='text-4xl text-center'>¿Estás seguro de comprar este avatar?</p>
+                      <div className='flex justify-center gap-5 my-5 text-xl'>
+                        <button
+                          className='cursor-pointer w-24 rounded bg-red-600 hover:bg-red-700'
+                          onClick={() => setConfirmar(false)}
+                        >
+                          {t('cancel')}
+                        </button>
+
+                        <button
+                          className='cursor-pointer w-24 rounded bg-green-600 hover:bg-green-700'
+                          onClick={() => handleSubmit(avatares[selected].id)}
+                          disabled={selected == null || !avatares[selected]}
+                        >
+                          {t('acepted')}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className='flex-col items-center justify-center text-center'>
+                      <button
+                        className='text-xl mt-3 px-4 py-2 rounded bg-sky-600 text-white hover:bg-sky-700 cursor-pointer mr-2'
+                        onClick={() => setConfirmar(true)}
+                      >
+                        {t('buyWPoints')}
+                      </button>
+                    </div>
+                  )
+                ) : (
+                  <div className='flex-col items-center justify-center text-center'>
+                    <button
+                      className='mt-3 px-2 py-2 rounded bg-gray-500 text-white hover:bg-gray-600 cursor-not-allowed'
+                      disabled
+                    >
+                      {t('buyWPoints')}
+                    </button>
+                    <p className='text-red-700'>{t('noMoney')}</p>
+                  </div>
+                )}
+
+                {/* Botón de Mercado Pago */}
+                <div className='flex items-center justify-center'>
+                  <button
+                    onClick={() => crearPago(avatares[selected].nombre)}
+                    className={`text-xl mt-3 px-2 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 cursor-pointer ${
+                      yaLoTiene || confirmar ? 'hidden' : ''
+                    }`}
+                  >
+                    {t('buyWMP')}
+                  </button>
+                </div>
+              </>
             )}
             {modalConfirmarEliminar && (
               <div className='fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex justify-center items-center'>
                 <div className='bg-indigo-900 p-6 rounded-2xl w-96 '>
-                  <p className='text-center'>Seguro desea eliminar el avatar?</p>
+                  <p className='text-center'>{t('avatarDeleteSure')}</p>
                   <div className='flex justify-between'>
                     <button
                       onClick={() => {
@@ -469,13 +476,13 @@ const Tienda = () => {
                       }}
                       className='px-4 py-2 bg-green-500 hover:bg-amber-700 text-white rounded cursor-pointer'
                     >
-                      Cancelar
+                      {t('cancel')}
                     </button>
                     <button
                       onClick={() => handleEliminarAvatar(avatares[selected].id)}
                       className='px-4 py-2 bg-red-500 hover:bg-amber-700 text-white rounded cursor-pointer'
                     >
-                      Confirmar
+                      {t('acepted')}
                     </button>
                   </div>
                 </div>
@@ -492,7 +499,7 @@ const Tienda = () => {
                   className='fixed bottom-6 left-1/2 -translate-x-1/2
                             bg-green-600 text-white px-4 py-2 rounded shadow-lg z-[100]'
                 >
-                  Su avatar ha sido agregado a su lista de avatares
+                  {t('avatarADDED')}
                 </motion.p>
               )}
             </AnimatePresence>

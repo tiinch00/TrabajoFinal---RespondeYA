@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 export const Footer = () => {
+  const { t, i18n } = useTranslation();
   return (
     <footer className='z-20 bg-gradient-to-b from-black/90 to-black w-full py-6 mt-auto border-t border-purple-500/30'>
       <div className='max-w-7xl mx-auto px-6'>
@@ -25,7 +27,7 @@ export const Footer = () => {
               className='text-white font-semibold text-2xl tracking-wide hover:text-purple-400 hover:scale-105 transition-all duration-300'
               style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}
             >
-              Contactar
+              {t('contact')}
             </Link>
           </div>
           <div className='flex items-center justify-end gap-6'>
@@ -82,7 +84,7 @@ export const Footer = () => {
         {/* Copyright */}
         <div className='text-center mt-6 pt-4 border-t border-purple-500/20'>
           <p className='text-gray-400 text-sm'>
-            © {new Date().getFullYear()} Dev2Play - Todos los derechos reservados
+            © {new Date().getFullYear()} Dev2Play - {t('allRights')}
           </p>
         </div>
       </div>

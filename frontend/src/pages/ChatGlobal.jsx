@@ -98,7 +98,7 @@ export default function ChatGlobal() {
 
   return (
     <div>
-      <div className='flex flex-col h-[60vh] max-w-[900px] mx-auto border rounded-lg bg-white text-black'>
+      <div className='flex flex-col h-[55vh] max-w-[900px] mx-auto border rounded-lg bg-white text-black'>
         {/* título */}
         <div className='px-4 py-2 border-b flex items-center justify-between h-12'>
           <div className='font-semibold text-md'>Chat Comunidad</div>

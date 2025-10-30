@@ -2,16 +2,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import { Globe } from 'lucide-react';
 import { useAuth } from '../context/auth-context.jsx';
-
-const getStoredUser = () => {
-  const raw = localStorage.getItem('user');
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return { name: raw };
-  }
-};
+import { useTranslation } from 'react-i18next';
 
 export default function HeaderPrivate() {
   const navigate = useNavigate();
@@ -24,6 +15,13 @@ export default function HeaderPrivate() {
   const isAdmin = user?.role === 'administrador';
   const name = user.name || user?.email?.split('@')[0] || 'Jugador';
   const fotoUrl = user?.foto_perfil ? `${API}${user.foto_perfil}` : null;
+  const { t, i18n } = useTranslation();
+
+  const cambiarIdioma = (e) => {
+    const nuevoIdioma = e.target.value;
+    i18n.changeLanguage(nuevoIdioma);
+    localStorage.setItem('idioma', nuevoIdioma);
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -75,18 +73,33 @@ export default function HeaderPrivate() {
           <ul className='flex items-center gap-6 text-lg'>
             <li className='flex items-center'>
               <Link to='/' className='hover:underline transition-all'>
-                Inicio
+                {t('home')}
               </Link>
             </li>
             <li className='flex items-center'>
               <Link to='/admin/categorias' className='hover:underline transition-all'>
-                Administrar Categorías
+                {t('admCategory')}
               </Link>
             </li>
             <li className='flex items-center'>
               <Link to='/tienda' className='hover:underline transition-all'>
-                Administrar Tienda
+                {t('admStore')}
               </Link>
+            </li>
+            <li className='flex items-center relative'>
+              <Globe className='absolute left-2 text-white w-5 h-5 pointer-events-none z-10' />
+              <select
+                value={i18n.language}
+                onChange={cambiarIdioma}
+                className='cursor-pointer hover:scale-110 transition-transform p-2 pl-9 pr-3 rounded-full hover:bg-white/10 bg-transparent text-white border border-white/30 appearance-none'
+              >
+                <option value='es' className='bg-gray-800'>
+                  ES
+                </option>
+                <option value='en' className='bg-gray-800'>
+                  EN
+                </option>
+              </select>
             </li>
             <li className='relative flex items-center'>
               <button
@@ -130,14 +143,14 @@ export default function HeaderPrivate() {
                     role='menuitem'
                     className='block w-full px-4 py-3 text-left hover:bg-gray-100 transition-colors'
                   >
-                    Ver perfil
+                    {t('profile')}
                   </Link>
                   <button
                     onClick={handleLogout}
                     role='menuitem'
                     className='block w-full px-4 py-3 text-left hover:bg-gray-100 cursor-pointer transition-colors'
                   >
-                    Cerrar sesión
+                    {t('logout')}
                   </button>
                 </div>
               )}
@@ -147,23 +160,33 @@ export default function HeaderPrivate() {
           <ul className='flex items-center gap-6 text-lg'>
             <li className='flex items-center'>
               <Link to='/' className='hover:underline transition-all'>
-                Inicio
+                {t('home')}
               </Link>
             </li>
             <li className='flex items-center'>
               <Link to='/tienda' className='hover:underline transition-all'>
-                Tienda
+                {t('store')}
               </Link>
             </li>
             <li className='flex items-center'>
               <Link to='/comoJugar' className='hover:underline transition-all'>
-                Cómo Jugar
+                {t('howToPlay')}
               </Link>
             </li>
-            <li className='flex items-center'>
-              <button className='cursor-pointer hover:scale-110 transition-transform p-1 rounded-full hover:bg-white/10'>
-                <Globe className='text-white w-6 h-6' />
-              </button>
+            <li className='flex items-center relative'>
+              <Globe className='absolute left-2 text-white w-5 h-5 pointer-events-none z-10' />
+              <select
+                value={i18n.language}
+                onChange={cambiarIdioma}
+                className='cursor-pointer hover:scale-110 transition-transform p-2 pl-9 pr-3 rounded-full hover:bg-white/10 bg-transparent text-white border border-white/30 appearance-none'
+              >
+                <option value='es' className='bg-gray-800'>
+                  ES
+                </option>
+                <option value='en' className='bg-gray-800'>
+                  EN
+                </option>
+              </select>
             </li>
             <li className='relative flex items-center'>
               <button
@@ -207,14 +230,14 @@ export default function HeaderPrivate() {
                     role='menuitem'
                     className='block w-full px-4 py-3 text-left hover:bg-gray-100 transition-colors'
                   >
-                    Ver perfil
+                    {t('profile')}
                   </Link>
                   <button
                     onClick={handleLogout}
                     role='menuitem'
                     className='block w-full px-4 py-3 text-left hover:bg-gray-100 cursor-pointer transition-colors'
                   >
-                    Cerrar sesión
+                    {t('logout')}
                   </button>
                 </div>
               )}

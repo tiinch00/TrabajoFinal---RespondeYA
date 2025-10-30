@@ -3,10 +3,12 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Dice5, Trophy, ChevronDown, User, Users } from 'lucide-react';
 import ChatGlobal from './ChatGlobal';
+import { useTranslation } from 'react-i18next';
 
 const Home = () => {
   const [mostrarJugarOptions, setMostrarJugarOptions] = useState(false);
   const [chatAbierto, setChatAbierto] = useState(false);
+  const { t, i18n } = useTranslation();
 
   return (
     <div className='rounded-3xl text-center relative mt-4'>
@@ -21,7 +23,7 @@ const Home = () => {
             <div className='flex items-center justify-center gap-3'>
               <Play className='w-6 h-6 fill-white stroke-white' />
               <span className='text-2xl font-black tracking-wide text-white drop-shadow-lg'>
-                JUGAR
+                {t('play')}
               </span>
               <motion.div
                 animate={{ rotate: mostrarJugarOptions ? 180 : 0 }}
@@ -42,7 +44,7 @@ const Home = () => {
                 className='flex flex-col gap-3 mt-4 w-full'
               >
                 <div className='bg-purple-600/90 backdrop-blur-sm py-2 rounded-xl text-lg font-bold text-white border-2 border-purple-400'>
-                  Modo de Juego
+                  {t('gameMode')}
                 </div>
 
                 <Link to='/crearPartida'>
@@ -52,7 +54,7 @@ const Home = () => {
                     className='w-full cursor-pointer bg-gradient-to-br from-blue-400 to-blue-500 h-14 rounded-full shadow-xl hover:shadow-blue-500/50 transition-all duration-300 flex items-center justify-center gap-3 border-4 border-blue-300'
                   >
                     <User className='w-5 h-5 text-white' />
-                    <span className='text-xl font-bold text-white'>Individual</span>
+                    <span className='text-xl font-bold text-white'>{t('singlePlayer')}</span>
                   </motion.button>
                 </Link>
 
@@ -63,7 +65,7 @@ const Home = () => {
                     className='w-full cursor-pointer bg-gradient-to-br from-green-400 to-green-500 h-14 rounded-full shadow-xl hover:shadow-green-500/50 transition-all duration-300 flex items-center justify-center gap-3 border-4 border-green-300'
                   >
                     <Users className='w-5 h-5 text-white' />
-                    <span className='text-xl font-bold text-white'>Multijugador</span>
+                    <span className='text-xl font-bold text-white'>{t('multiPlayer')}</span>
                   </motion.button>
                 </Link>
               </motion.div>
@@ -82,7 +84,7 @@ const Home = () => {
                 <Dice5 className='w-6 h-6 text-white' />
               </motion.div>
               <span className='text-2xl font-black tracking-wide text-white drop-shadow-lg'>
-                RULETA
+                {t('roulette')}
               </span>
             </div>
           </motion.button>
@@ -100,7 +102,7 @@ const Home = () => {
                 <Trophy className='w-6 h-6 text-white' />
               </motion.div>
               <span className='text-2xl font-black tracking-wide text-white drop-shadow-lg'>
-                RANKING MUNDIAL
+                {t('ranking')}
               </span>
             </div>
           </motion.button>
