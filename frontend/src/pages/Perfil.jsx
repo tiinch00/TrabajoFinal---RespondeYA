@@ -1,7 +1,10 @@
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import ChartMultilineLabels from '../components/graficosQuickchart.io/ChartMultilineLabels.jsx';
+import ChartVerticalLabels from '../components/graficosQuickchart.io/ChartVerticalLabels.jsx';
 import Cropper from 'react-easy-crop';
+import QCChartStable from '../components/graficosQuickchart.io/QCChartStable.jsx';
 import SimpleBarChart from "../components/simpleBarChart";
 import axios from "axios";
 import { getCroppedImg } from '../utils/cropImage.js';
@@ -32,8 +35,7 @@ const Perfil = () => {
   const [editMode, setEditMode] = useState(false); // boton editar datos de perfil
   const [saving, setSaving] = useState(false); // boton de guardar los datos de formulario de editar perfil
 
-  // tener en cuenta que hago fecth de todas las estadisticas y no lo filtro por jugador_id
-
+  const [modalEstadisticaAbierto, setModalEstadisticaAbierto] = useState(null);
   const [selectedEstadisticasResultadosDePartidas, setSelectedEstadisticasResultadosDePartidas] = useState(true); // boton "resultados de partidas"
   //const [selectedEstadisticasGeneral, setSelectedEstadisticasGeneral] = useState(null); // boton "Estadísticas general"
   const [selectedEstadisticas, setSelectedEstadisticas] = useState(null); // boton abrir modal detalle completo de la partida
@@ -711,10 +713,11 @@ const Perfil = () => {
       JSON.stringify(prev) === JSON.stringify(objDos) ? prev : objDos
     );
   }, [
-    partidas, preguntas, categorias,    
+    partidas, preguntas, categorias, listaObjetosPartidaInformacion
   ]);
 
-  const algunModalAbierto = selectedPerfil || selectedEstadisticas || selectedAvatar !== null;
+  // 
+  const algunModalAbierto = selectedPerfil || selectedEstadisticas || modalEstadisticaAbierto || selectedAvatar !== null;
   useEffect(() => {
     if (!algunModalAbierto) return;
     const prev = document.body.style.overflow;
@@ -731,7 +734,7 @@ const Perfil = () => {
   // console.log(partidaIdSeleccionada);  
 
   return (
-    <div className="w-[70%] mb-6">
+    <div className="w-[70%] mb-6 mt-20">
 
       {/* perfil */}
       <div className="flex flex-col items-center h-fit w-full">
@@ -773,7 +776,7 @@ const Perfil = () => {
             exit={{ opacity: 0, y: 10 }}
             className="fixed inset-0 z-40 
               bg-black/5 backdrop-blur-sm 
-                flex items-center justify-center"
+                flex items-center justify-center mt-22"
           >
             <button
               type="button"
@@ -965,7 +968,7 @@ const Perfil = () => {
           </motion.div>
 
         )}
-        <p className="mt-2 text-4xl">{perfil.name}</p>
+        <p className="mt-2 text-4xl text-white">{perfil.name}</p>
       </div>
 
       {/* ====================================================================================== */}
@@ -973,7 +976,7 @@ const Perfil = () => {
       {/* boton "mis avatares" */}
       <div className="flex flex-col items-center mt-6 h-fit w-full">
         <motion.button
-          className="bg-violet-500 hover:bg-violet-600 rounded-xl w-32 h-8 mb-4 cursor-pointer"
+          className="bg-fuchsia-500 hover:bg-pink-500/90 text-white rounded-xl w-32 h-8 mb-4 cursor-pointer"
           whileTap={{ scale: 1.2 }}
           onClick={() => {
             setSelectedAvatar(true);
@@ -1090,9 +1093,9 @@ const Perfil = () => {
 
       {/* Mi Perfil */}
       <div className="mt-4 space-y-4">
-        <h2 className="text-xl font-semibold">Datos personales</h2>
+        <h2 className="text-xl text-white font-semibold">Datos personales</h2>
         {!editMode ? (
-          <div className="space-y-2 bg-white/10 p-4 text-xl rounded-xl">
+          <div className="space-y-2 bg-white/10 text-white p-4 text-xl rounded-xl">
             <p><b>Nombre:</b> {perfil.name}</p>
             <p><b>Email:</b> {perfil.email}</p>
             <p><b>Contraseña:</b> ••••••</p>
@@ -1166,15 +1169,15 @@ const Perfil = () => {
         )}
       </div>
 
-      {/* ====================================================================================== */}
+      {/* ================= estadisticas ===================================================================== */}
 
       {selectedEstadisticasResultadosDePartidas ? (
         <div>
           {/* Estadísticas */}
           <div className="flex flex-row gap-2 mt-4">
-            <button><h2 className="text-xl font-semibold mb-3 mt-3 cursor-pointer hover:text-white/90 bg-black/50 rounded p-1">Resultados de partidas</h2></button>
-            <h2 className="text-xl flex items-center justify-center p-1">|</h2>
-            <button type="button" onClick={() => { setSelectedEstadisticasResultadosDePartidas(false); }}><h2 className="text-xl font-semibold mb-3 mt-3 cursor-pointer hover:text-white/90 p-1">Gráfica de estadísticas general</h2></button>
+            <button><h2 className="text-xl font-semibold mb-3 mt-3 text-fuchsia-500/95 p-1">Resultados de partidas</h2></button>
+            <h2 className="text-xl text-white flex items-center justify-center p-1">|</h2>
+            <button type="button" onClick={() => { setSelectedEstadisticasResultadosDePartidas(false); }}><h2 className="text-xl text-white font-semibold mb-3 mt-3 cursor-pointer hover:text-fuchsia-500/95  p-1">Gráfica de estadísticas general</h2></button>
           </div>
 
           {estadisticas.length === 0 ? (
@@ -1206,6 +1209,10 @@ const Perfil = () => {
                 </button>
               </div>
 
+              {console.log("primera visualizacion de partidas listaObjetosPartidaInformacion:\n", listaObjetosPartidaInformacion)}
+
+
+              {/* listado de las partidas */}
               <ul className="">
                 {estadisticas.map((e, index) => (
                   <motion.li
@@ -1215,24 +1222,26 @@ const Perfil = () => {
                     whileTap={{ scale: 1.05 }}
                     onClick={() => {
                       setSelectedEstadisticas(index);
-                      setPartidaIdSeleccionada(e.partida_id)
+                      setPartidaIdSeleccionada(e.partida_id);
+                      setModalEstadisticaAbierto(true)
                     }}
-                  >
+                  >                    
+
                     {e.posicion > 0 ? (
-                      <div>
+                      <div className="flex flex-row gap-5">
                         <p className="text-green-500">Ganaste</p>
-                        <p>Fecha: </p>
-                        <p>Modo: </p>
-                        <p>Categoria: </p>
-                        <p>dificultad: </p>
+                        <p className="text-white">Fecha: </p>
+                        <p className="text-white">Modo: </p>
+                        <p className="text-white">Categoria: </p>
+                        <p className="text-white">Dificultad: </p>
                       </div>
                     ) : (
-                      <div>
+                      <div className="flex flex-row gap-5">
                         <p className="text-red-500">Perdiste</p>
-                        <p>Fecha: </p>
-                        <p>Modo: </p>
-                        <p>Categoria: </p>
-                        <p>dificultad: </p>
+                        <p className="text-white">Fecha: </p>
+                        <p className="text-white">Modo: </p>
+                        <p className="text-white">Categoria: </p>
+                        <p className="text-white">Dificultad: </p>
                       </div>
                     )}
                   </motion.li>
@@ -1245,7 +1254,7 @@ const Perfil = () => {
           {/* div overlay absoluto en toda la pantalla) */}
           {selectedEstadisticas !== null && (
             <div
-              className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+              className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm mt-22 "
             >
               {/* fonde desenfocado */}
               <motion.div
@@ -1254,10 +1263,10 @@ const Perfil = () => {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 10 }}
                 // 1) wrapper del modal: altura limitada + columna + oculta desborde externo
-                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
-                  w-[95vw] max-w-5xl h-[90vh] max-h-[90vh]
-                  rounded-2xl bg-indigo-900 text-white shadow-2xl
-                  p-3 flex flex-col overflow-hidden"
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+                  w-[95vw] max-w-5xl max-h-[900px] h-[600px] rounded-2xl
+                bg-indigo-900 text-white shadow-2xl p-3 
+                  flex flex-col overflow-hidden"
               >
 
                 {/* seccion de resumen */}
@@ -1265,7 +1274,7 @@ const Perfil = () => {
                   <>
                     {/* 1) header (no scroll) */}
                     <div className="flex items-center gap-2 mb-2">
-                      {/* Tabs / encabezado */}
+                      {/* Tabs / encabezados */}
                       <div className="flex flex-row gap-2 mb-2 w-fit text-2xl">
                         <button
                           type="button"
@@ -1295,12 +1304,19 @@ const Perfil = () => {
                         </button>
                       </div>
 
-                      {/* Botón cerrar */}
+                      {/* Encabezado: Botón cerrar */}
                       <button
                         type="button"
                         aria-label="Cerrar"
                         className="ml-auto rounded-full w-9 h-9 grid place-items-center text-2xl cursor-pointer"
-                        onClick={() => { setSelectedEstadisticas(null); setSelectedEstRespuestas(null); setSelectedEstGraficaDeRespuestas(null); setSelectedEstResumen(true); setOpenPreguntaIds(new Set()) }}
+                        onClick={() => {
+                          setSelectedEstadisticas(null);
+                          setSelectedEstRespuestas(null);
+                          setSelectedEstGraficaDeRespuestas(null);
+                          setSelectedEstResumen(true);
+                          setOpenPreguntaIds(new Set());
+                          setModalEstadisticaAbierto(null)
+                        }}
                       >
                         ✕
                       </button>
@@ -1362,7 +1378,14 @@ const Perfil = () => {
                         type="button"
                         aria-label="Cerrar"
                         className="ml-auto rounded-full w-9 h-9 grid place-items-center text-2xl cursor-pointer"
-                        onClick={() => { setSelectedEstadisticas(null); setSelectedEstRespuestas(null); setSelectedEstGraficaDeRespuestas(null); setSelectedEstResumen(true); setOpenPreguntaIds(new Set()) }}
+                        onClick={() => {
+                          setSelectedEstadisticas(null);
+                          setSelectedEstRespuestas(null);
+                          setSelectedEstGraficaDeRespuestas(null);
+                          setSelectedEstResumen(true);
+                          setOpenPreguntaIds(new Set());
+                          setModalEstadisticaAbierto(null);
+                        }}
                       >
                         ✕
                       </button>
@@ -1376,8 +1399,8 @@ const Perfil = () => {
                         className="h-full overflow-y-auto overscroll-contain touch-pan-y pr-2
                       bg-indigo-800/90 rounded"
                       >
-                        {console.log(listaObjetosPartidaInformacion)}
                         {/*console.log(objetoPartidaCompleto)*/}
+                        {/*console.log(objetoPartidaCompleto.respuestasDeLaPartida)*/}
 
                         <div className="flex flex-row gap-2 mb-2 sticky top-0 bg-indigo-800 p-2">
                           <button
@@ -1454,7 +1477,7 @@ const Perfil = () => {
                                             const isOptionCorrect = !!o.es_correcta;
 
                                             if (isChosen) return userCorrect ? "✅ " : "❌ ";
-                                            if (isOptionCorrect) return "📖 "; // correcta no elegida
+                                            if (isOptionCorrect) return "🥲 "; // correcta no elegida
                                             return "";
                                           })()}
                                           {o.texto ?? o.option_text ?? "—"}
@@ -1485,7 +1508,7 @@ const Perfil = () => {
                 {selectedEstGraficaDeRespuestas && (
                   <>
                     {/* 1) header (no scroll) */}
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-center gap-2">
                       {/* Tabs / encabezado */}
                       <div className="flex flex-row gap-2 mb-2 w-fit text-2xl">
                         <button
@@ -1520,7 +1543,14 @@ const Perfil = () => {
                       <button
                         type="button"
                         aria-label="Cerrar"
-                        onClick={() => { setSelectedEstadisticas(null); setSelectedEstRespuestas(null); setSelectedEstGraficaDeRespuestas(null); setSelectedEstResumen(true); setOpenPreguntaIds(new Set()) }}
+                        onClick={() => {
+                          setSelectedEstadisticas(null);
+                          setSelectedEstRespuestas(null);
+                          setSelectedEstGraficaDeRespuestas(null);
+                          setSelectedEstResumen(true);
+                          setOpenPreguntaIds(new Set());
+                          setModalEstadisticaAbierto(null);
+                        }}
                         className="ml-auto rounded-full w-9 h-9 grid place-items-center text-2xl cursor-pointer"
                       >
                         ✕
@@ -1528,11 +1558,31 @@ const Perfil = () => {
                     </div>
 
                     {/* grafica lineal de respuestas */}
-                    <div className="text-xl bg-indigo-800/90 rounded p-1.5 mt-1 flex-1 min-h-0">
-                      <span className="p-2 text-[20px]">Grafica lineal de respuestas...</span>
-
-                      {/* grafica de respuesta de simpleBarChart */}
-                      <SimpleBarChart objPartidaIdInformacion={objetoPartidaCompleto} />
+                    <div
+                      ref={listRef}
+                      className="text-xl bg-indigo-800/90 rounded p-1.5 mt-1 flex-1 min-h-0
+                    overflow-y-auto overscroll-contain touch-pan-y pr-2">
+                      {objetoPartidaCompleto.partida[0].modo == "individual" ? (
+                        //<span className="p-2 text-[20px]">Grafica lineal de respuestas...</span>
+                        //grafica de respuesta de simpleBarChart 
+                        //<SimpleBarChart objPartidaIdInformacion={objetoPartidaCompleto}
+                        
+                      //grafica de respuesta de la api quickchart.js
+                      //<h3 className="mt-4">QCChartStable</h3>
+                      //config={null}
+                      //<QCChartStable className="mt-4 bg-white" />
+                      <div>                        
+                        {/* objetoPartidaCompleto */}
+                        {/* <h3 className="mt-4">Vertical axis labels - indiviual</h3> */}
+                        <ChartVerticalLabels arregloCompleto={objetoPartidaCompleto} className="bg-white rounded" />
+                      </div>
+                      ) : (
+                      <div>
+                        {/* varias lineas - multijugador */}
+                        {/* <h3 className="mt-4">Multiline labels - multijugador</h3>*/}
+                        <ChartMultilineLabels className="mt-4 bg-white" />
+                      </div>
+                      )}
                     </div>
                   </>
                 )}
@@ -1545,11 +1595,11 @@ const Perfil = () => {
         <div>
           {/* Estadísticas */}
           <div className="flex flex-row gap-2 mt-4">
-            <button type="button" onClick={() => { setSelectedEstadisticasResultadosDePartidas(true); }}><h2 className="text-xl font-semibold mb-3 mt-3 cursor-pointer hover:text-white/90 p-1">Resultados de partidas</h2></button>
-            <h2 className="text-xl flex items-center justify-center p-1">|</h2>
-            <button><h2 className="text-xl font-semibold mb-3 mt-3 cursor-pointer hover:text-white/90 bg-black/50 rounded p-1">Gráfica de estadísticas general</h2></button>
+            <button type="button" onClick={() => { setSelectedEstadisticasResultadosDePartidas(true); }}><h2 className="text-xl text-white font-semibold mb-3 mt-3 cursor-pointer hover:text-fuchsia-500/95 p-1">Resultados de partidas</h2></button>
+            <h2 className="text-xl text-white flex items-center justify-center p-1">|</h2>
+            <button><h2 className="text-xl font-semibold text-fuchsia-500/95 mb-3 mt-3 p-1">Gráfica de estadísticas general</h2></button>
           </div>
-          <span>No hay gráfica de estadísticas general para mostrar...</span>
+          <span className="text-white">No hay gráfica de estadísticas general para mostrar...</span>
         </div>
       )
       }
@@ -1559,7 +1609,7 @@ const Perfil = () => {
 
       {/* Mis amigos */}
       <div className="mb-6 mt-8 bg-white/10 rounded-xl p-1">
-        <h2 className="text-xl font-semibold mb-3 mt-2 indent-2">Amigos</h2>
+        <h2 className="text-xl text-white font-semibold mb-3 mt-2 indent-2">Amigos</h2>
 
         <div>
           {/* Mensaje de amigo eliminado */}
@@ -1626,7 +1676,7 @@ const Perfil = () => {
             </div>
           ) : (
             // lista de amigos vacio
-            <p className="indent-2 mb-4">No tienes amigos guardado...</p>
+            <p className="indent-2 text-white mb-4">No tienes amigos guardado...</p>
           )}
         </div>
       </div>
