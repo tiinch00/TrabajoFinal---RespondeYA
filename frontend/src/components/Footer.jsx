@@ -27,7 +27,7 @@ export const Footer = () => {
               className='text-white font-semibold text-2xl tracking-wide hover:text-purple-400 hover:scale-105 transition-all duration-300'
               style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}
             >
-              {t('contact')}
+              {t('contactUs')}
             </Link>
           </div>
           <div className='flex items-center justify-end gap-6'>

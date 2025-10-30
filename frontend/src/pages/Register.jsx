@@ -1,11 +1,11 @@
 import { Link, useNavigate } from 'react-router-dom';
-
+import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 import { useState, useEffect } from 'react';
 
 const Register = () => {
   const navigate = useNavigate();
-
+  const { t, i18n } = useTranslation();
   const [paises, setPaises] = useState([]);
   const [paisSeleccionado, setPaisSeleccionado] = useState('');
   const [mensaje, setMensaje] = useState('');
@@ -36,7 +36,7 @@ const Register = () => {
     setValues({ ...values, [e.target.name]: e.target.value });
   };
 
-  const [errores, setErrores] = useState('');
+  const [errores, setErrores] = useState({});
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -49,19 +49,19 @@ const Register = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!cleanedValues.usuario) {
-      newErrors.usuario = 'El usuario es obligatorio';
+      newErrors.usuario = t('errorUser');
     } else if (!cleanedValues.email) {
-      newErrors.email = 'El Email es obligatorio';
+      newErrors.email = t('errorEmailRequired');
     } else if (!emailRegex.test(cleanedValues.email)) {
-      newErrors.email = 'Ingresar un email válido';
+      newErrors.email = t('errorEmailInvalid');
     } else if (!cleanedValues.password) {
-      newErrors.password = 'La contraseña es obligatoria';
+      newErrors.password = t('errorPasswordRequired');
     } else if (!paisSeleccionado) {
-      newErrors.pais = 'La eleccion de pais es obligatoria';
+      newErrors.pais = t('errorCountryRequired');
     } else if (cleanedValues.password.length < 6) {
-      newErrors.password = 'Contraseña mínimo 6 caracteres';
+      newErrors.password = t('errorPasswordMin');
     } else if (cleanedValues.password !== values.repassword) {
-      newErrors.repassword = 'Las contraseñas no coinciden';
+      newErrors.repassword = t('errorPasswordMatch');
     }
 
     setErrores(newErrors);
@@ -74,7 +74,7 @@ const Register = () => {
       });
 
       if (response.status === 201) {
-        setMensaje('✅ Registro exitoso. Redirigiendo al login...');
+        setMensaje('✅ ' + t('registerSuccess'));
         setTimeout(() => {
           navigate('/login');
         }, 4000); // 4 segundos
@@ -83,19 +83,19 @@ const Register = () => {
       if (err.response?.data?.error) {
         setErrores({ general: err.response.data.error });
       } else {
-        setErrores({ general: 'Error de conexión con el servidor' });
+        setErrores({ general: t('errorServer') });
       }
     }
   };
 
   return (
     <div className='w-90 h-fit bg-gradient-to-r from-purple-700 to-indigo-800 rounded-3xl mt-3  p-2 mb-6 text-center items-center justify-center '>
-      <h2 className='text-lg font-bold mb-2 text-center text-white'>Completar Registro</h2>
+      <h2 className='text-lg font-bold mb-2 text-center text-white'>{t('completeRegister')}</h2>
       <form onSubmit={handleSubmit} className='p-2'>
         <div className='bg-gradient-to-r from-indigo-700 to-purple-800 rounded-4xl flex flex-col text-center text-black'>
           <div className='mb-4 mt-4'>
             <label htmlFor='nombreusuario' className='block text-white mb-1'>
-              <strong>Ingrese Usuario</strong>
+              <strong>{t('insertUser')}</strong>
             </label>
 
             <input
@@ -103,31 +103,33 @@ const Register = () => {
               required
               onChange={handleChanges}
               type='text'
-              placeholder='Nombre de Usuario'
-              className='w-70 h-15  rounded-4xl text-center rounded-4x1 bg-amber-50 hover:bg-amber-100 placeholder-gray-400 text-black'
+              placeholder={t('userName')}
+              className='w-70 h-15  rounded-4xl text-center rounded-4x1 bg-amber-50 hover:bg-amber-100 placeholder-gray-500/50 text-black'
             />
           </div>
           <div className='mb-4'>
             <label htmlFor='email' className='block text-white mb-1'>
-              <strong>Ingrese Email</strong>
+              <strong>{t('insertEmail')}</strong>
             </label>
             <input
               name='email'
               required
               type='text'
               onChange={handleChanges}
-              placeholder='Correo electronico'
-              className='w-70 h-15  rounded-4xl text-center rounded-4x1 bg-amber-50 hover:bg-amber-100 placeholder-gray-400 text-black'
+              placeholder={t('email')}
+              className='w-70 h-15  rounded-4xl text-center rounded-4x1 bg-amber-50 hover:bg-amber-100 placeholder-gray-500/50 text-black'
             />
           </div>
           <div className='mb-4'>
-            <label className='block text-white mb-1'>Ingrese su país</label>
+            <label className='block text-white mb-1'>
+              <strong>{t('insertCountry')}</strong>
+            </label>
             <input
               list='lista-paises'
               value={paisSeleccionado}
               onChange={(e) => setPaisSeleccionado(e.target.value)}
-              placeholder='Escribí tu país'
-              className='w-70 h-15  rounded-4xl text-center rounded-4x1 bg-amber-50 hover:bg-amber-100 placeholder-gray-400 text-black'
+              placeholder={t('country')}
+              className='w-70 h-15  rounded-4xl text-center rounded-4x1 bg-amber-50 hover:bg-amber-100 placeholder-gray-500/50 text-black'
             />
             <datalist id='lista-paises'>
               {paises.map((p) => (
@@ -137,33 +139,33 @@ const Register = () => {
           </div>
           <div className='mb-4'>
             <label htmlFor='contraseña' className='block text-white mb-1'>
-              <strong>Ingrese Contraseña</strong>
+              <strong>{t('insertPass')}</strong>
             </label>
             <input
               type='password'
               required
               name='password'
               onChange={handleChanges}
-              placeholder='Contraseña'
-              className='w-70 h-15  rounded-4xl text-center rounded-4x1 bg-amber-50 hover:bg-amber-100 placeholder-gray-400 text-black'
+              placeholder={t('pass')}
+              className='w-70 h-15  rounded-4xl text-center rounded-4x1 bg-amber-50 hover:bg-amber-100 placeholder-gray-500/50 text-black'
             />
           </div>
           <div className='mb-4'>
             <label htmlFor='contraseña' className='block text-white mb-1'>
-              <strong>Confirmar Contraseña</strong>
+              <strong>{t('confimPass')}</strong>
             </label>
             <input
               type='password'
               required
               name='repassword'
               onChange={handleChanges}
-              placeholder='Contraseña'
-              className='w-70 h-15  rounded-4xl text-center rounded-4x1 bg-amber-50 hover:bg-amber-100 placeholder-gray-400 text-black'
+              placeholder={t('pass')}
+              className='w-70 h-15  rounded-4xl text-center rounded-4x1 bg-amber-50 hover:bg-amber-100 placeholder-gray-500/50 text-black'
             />
           </div>
           <div>
             <button className='w-50 h-10 bg-green-600 hover:bg-green-700 text-white py-2 cursor-pointer rounded-4xl mt-3'>
-              Registrarse
+              {t('register')}
             </button>
           </div>
           <div className='p-2'>
@@ -178,9 +180,9 @@ const Register = () => {
         </div>
 
         <div className='text-center p-2'>
-          <span className='font-semibold text-white'>Ya tienes usuario?</span>
+          <span className='font-semibold text-white'>{t('aReadyLogin')}</span>
           <Link to='/login' className='m-1 text-green-400 hover:text-yellow-400'>
-            Iniciar Sesion
+            {t('sesion')}
           </Link>
         </div>
       </form>

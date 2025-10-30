@@ -1,6 +1,16 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { Globe } from 'lucide-react';
 
 export default function HeaderPublic() {
+  const { t, i18n } = useTranslation();
+
+  const cambiarIdioma = (e) => {
+    const nuevoIdioma = e.target.value;
+    i18n.changeLanguage(nuevoIdioma);
+    localStorage.setItem('idioma', nuevoIdioma);
+  };
+
   return (
     <header className='bg-black text-white px-6 py-3 shadow sticky top-0 w-full'>
       <nav className='flex items-center justify-between'>
@@ -18,18 +28,33 @@ export default function HeaderPublic() {
         <ul className='flex items-center gap-6 text-lg'>
           <li>
             <Link to='/login' className='hover:underline'>
-              Ingresar
+              {t('login')}
             </Link>
           </li>
           <li>
             <Link to='/register' className='hover:underline'>
-              Registrarse
+              {t('register')}
             </Link>
           </li>
           <li>
             <Link to='/comoJugar' className='hover:underline'>
-              Cómo Jugar
+              {t('howToPlay')}
             </Link>
+          </li>
+          <li className='flex items-center relative'>
+            <Globe className='absolute left-2 text-white w-5 h-5 pointer-events-none z-10' />
+            <select
+              value={i18n.language}
+              onChange={cambiarIdioma}
+              className='cursor-pointer hover:scale-110 transition-transform p-2 pl-9 pr-3 rounded-full hover:bg-white/10 bg-transparent text-white border border-white/30 appearance-none'
+            >
+              <option value='es' className='bg-gray-800'>
+                ES
+              </option>
+              <option value='en' className='bg-gray-800'>
+                EN
+              </option>
+            </select>
           </li>
         </ul>
       </nav>
