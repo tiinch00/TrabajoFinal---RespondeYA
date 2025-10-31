@@ -1,4 +1,6 @@
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { MusicProvider, useMusic } from './context/MusicContext';
+import { useEffect, useRef } from 'react';
 
 import Bienvenido from './pages/Bienvenido.jsx';
 import ComoJugar from './pages/ComoJugar';
@@ -20,7 +22,6 @@ import AbmPreguntas from './pages/Admin/AbmPreguntas.jsx';
 import Ranking from './pages/Ranking.jsx';
 import './utils/i18n.js';
 
-// Elige layout según sesión
 function LayoutSwitch() {
   const user = (() => {
     try {
@@ -30,11 +31,47 @@ function LayoutSwitch() {
     }
   })();
 
-  // Tus layouts ya deberían renderizar <Outlet /> adentro
   return user ? <PrivateLayout /> : <PublicLayout />;
 }
 
-function App() {
+// Componente que controla la música según autenticación y ruta
+function MusicController() {
+  const { audioRef } = useMusic();
+  const location = useLocation();
+  const prevAuthRef = useRef(null);
+
+  useEffect(() => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || 'null');
+      const isGameRoute = location.pathname.startsWith('/jugarIndividual');
+      const isCurrentlyAuth = !!user;
+
+      // Reiniciar música solo si cambia el estado de autenticación
+      if (isCurrentlyAuth !== prevAuthRef.current) {
+        if (isCurrentlyAuth && !isGameRoute) {
+          audioRef.current.currentTime = 0;
+          audioRef.current?.play().catch(() => {});
+        } else {
+          audioRef.current?.pause();
+          audioRef.current.currentTime = 0;
+        }
+        prevAuthRef.current = isCurrentlyAuth;
+      } else if (isCurrentlyAuth && isGameRoute) {
+        // Si ya estaba autenticado pero entró a juego, pausa
+        audioRef.current?.pause();
+      } else if (isCurrentlyAuth && !isGameRoute) {
+        // Si ya estaba autenticado y sale de juego, reproduce
+        audioRef.current?.play().catch(() => {});
+      }
+    } catch {
+      audioRef.current?.pause();
+    }
+  }, [location, audioRef]);
+
+  return null;
+}
+
+function AppRoutes() {
   return (
     <Routes>
       {/* Rutas compartidas en ambos layouts */}
@@ -50,10 +87,11 @@ function App() {
           <Route path='/register' element={<Register />} />
         </Route>
       </Route>
+
       {/* Privado (con sesion) */}
       <Route element={<ProtectedRoute />}>
         <Route element={<PrivateLayout />}>
-          <Route index element={<Home />} /> {/* "/" */}
+          <Route index element={<Home />} />
           <Route path='/bienvenido' element={<Bienvenido />} />
           <Route path='/crearPartida' element={<CrearPartida />} />
           <Route
@@ -68,9 +106,19 @@ function App() {
           <Route path='/Ranking' element={<Ranking />} />
         </Route>
       </Route>
-      {/* Catch-all: mandá a "/" (el guard decide) */}
+
+      {/* Catch-all */}
       <Route path='*' element={<Navigate to='/' replace />} />
     </Routes>
+  );
+}
+
+function App() {
+  return (
+    <MusicProvider>
+      <MusicController />
+      <AppRoutes />
+    </MusicProvider>
   );
 }
 

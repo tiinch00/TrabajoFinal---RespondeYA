@@ -1,14 +1,16 @@
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Dice5, Trophy, ChevronDown, User, Users } from 'lucide-react';
+import { Play, Dice5, Trophy, ChevronDown, User, Users, Volume2, VolumeX } from 'lucide-react';
 import ChatGlobal from './ChatGlobal';
 import { useTranslation } from 'react-i18next';
+import { useMusic } from '../context/MusicContext.jsx';
 
 const Home = () => {
   const [mostrarJugarOptions, setMostrarJugarOptions] = useState(false);
   const [chatAbierto, setChatAbierto] = useState(false);
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
+  const { isMuted, toggleMute } = useMusic();
 
   return (
     <div className='rounded-3xl text-center relative mt-4'>
@@ -90,7 +92,6 @@ const Home = () => {
           </motion.button>
         </Link>
 
-        {/* ranking */}
         <Link to='/Ranking' className='w-full max-w-md'>
           <motion.button
             whileHover={{ scale: 1.05 }}
@@ -109,7 +110,13 @@ const Home = () => {
         </Link>
       </div>
 
-      {/* boton chat */}
+      <button
+        onClick={toggleMute}
+        className='relative top-10 bg-gray-800 text-white p-3 rounded-full shadow-lg z-10 cursor-pointer'
+      >
+        {isMuted ? <VolumeX /> : <Volume2 />}
+      </button>
+
       <button
         onClick={() => setChatAbierto(!chatAbierto)}
         className='fixed top-65 right-5 bg-blue-600 hover:bg-blue-700 text-white p-4 cursor-pointer rounded-full shadow-2xl transition transform hover:scale-110'
@@ -124,7 +131,6 @@ const Home = () => {
         </svg>
       </button>
 
-      {/* chat abierto */}
       <AnimatePresence>
         {chatAbierto && (
           <motion.div

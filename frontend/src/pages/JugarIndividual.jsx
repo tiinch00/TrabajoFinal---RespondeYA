@@ -4,6 +4,7 @@ import useSound from 'use-sound';
 import incorrecta from '/sounds/incorrecta.wav';
 import correcta from '/sounds/correcta.wav';
 import finalDeJuego from '/sounds/finalDeJuego.wav';
+import musicaPreguntas from '/sounds/musicaPreguntas.mp3';
 import axios from 'axios';
 
 const JugarIndividual = () => {
@@ -21,6 +22,7 @@ const JugarIndividual = () => {
   const [playCorrect] = useSound(correcta, { volume: 0.6 });
   const [playWrong] = useSound(incorrecta, { volume: 0.6 });
   const [playTimeout] = useSound(finalDeJuego, { volume: 0.7 });
+  const [PlayWhile] = useSound(musicaPreguntas, { volume: 0.7 });
 
   const { categoria, tiempo, dificultad } = useParams();
   const [preguntas, setPreguntas] = useState([]);
@@ -51,7 +53,7 @@ const JugarIndividual = () => {
     return '';
   }
 
-  // Efecto para cargar preguntas
+  // cargar preguntas
   useEffect(() => {
     if (!user) {
       navigate('/login');
@@ -93,6 +95,7 @@ const JugarIndividual = () => {
       return () => clearTimeout(timer);
     } else if (mostrarContador && contadorInicial === 0 && !juegoIniciado) {
       setJuegoIniciado(true);
+      PlayWhile();
     }
   }, [contadorInicial, mostrarContador, juegoIniciado]);
 
@@ -142,6 +145,7 @@ const JugarIndividual = () => {
       } else {
         setAlerta('Juego terminado ✅');
         setJuegoTerminado(true);
+        setJuegoIniciado(false);
         playTimeout();
       }
     }, 2000);

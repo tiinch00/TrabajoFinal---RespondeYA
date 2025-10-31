@@ -16,7 +16,7 @@ const Bienvenido = () => {
     // ⏳ después de 3 segundos manda al Home
     const timer = setTimeout(() => {
       navigate('/', { replace: true });
-    }, 3000);
+    }, 8000);
 
     return () => clearTimeout(timer);
   }, [navigate]);
