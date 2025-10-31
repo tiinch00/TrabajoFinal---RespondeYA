@@ -49,9 +49,17 @@ const store = async (req, res) => {
 
 const update = async (req, res) => {
   try {
+    // verificacion si es null o no una variable de tipo INT
+    const toNullableNumber = (v) => {
+      if (v == null || v === '') return null;     // trata undefined, null y '' como null
+      const n = Number(v);
+      return Number.isNaN(n) ? null : n;          // si no es número válido → null
+    };
+    
     // parseo seguro
     const jugador_id = Number(req.params.jugador_id);         // de params
-    const puntosGanados = Number(req.body.puntosGanados);     // del body
+    const puntosGanados = toNullableNumber(Number(req.body.puntaje));     // del body
+    const puntosRestados = toNullableNumber(Number(req.body.puntajeRestado));     // del body
     const ruleta_started_at = req.body.ruleta_started_at;     // del body
 
     //console.log("jugador_id:", jugador_id);
@@ -66,18 +74,33 @@ const update = async (req, res) => {
       return res.status(400).json({ error: 'jugador_id inválido' });
     }
 
-    if (!Number.isFinite(puntosGanados) || puntosGanados < 0) {
+    /*if (!Number.isFinite(puntosGanados) || puntosGanados < 0) {
       return res.status(400).json({ error: 'puntosGanados inválido' });
     }
+
+    if (!Number.isFinite(puntosRestados) || puntosRestados < 0) {
+      return res.status(400).json({ error: 'puntosRestados inválido' });
+    }*/
 
     const jugador = await Jugador.findByPk(jugador_id);
     if (!jugador) {
       return res.status(404).send('Jugador not found');
     }
 
-    const puntaje = (jugador.puntaje + puntosGanados);
-    await jugador.update({ puntaje });
-    
+    if (puntosGanados !== null && puntosGanados !== undefined) {
+      const puntaje = (jugador.puntaje + puntosGanados);
+      //console.log("PuntosGanados: ", puntosGanados);
+      //console.log("PuntosGanados de jugador.puntaje: ", jugador.puntaje);
+      await jugador.update({ puntaje });
+    } else {
+      if (puntosRestados !== null && puntosRestados !== undefined){
+      const puntaje = (jugador.puntaje - puntosRestados);
+      //console.log("puntosRestados: ", puntosRestados);
+      //console.log("puntosRestados de jugador.puntaje: ", jugador.puntaje);
+      await jugador.update({ puntaje });
+      }
+    }
+
     if (ruleta_started_at !== undefined && ruleta_started_at !== null) {
       if (typeof ruleta_started_at === 'string') {
         await jugador.update({ ruleta_started_at });

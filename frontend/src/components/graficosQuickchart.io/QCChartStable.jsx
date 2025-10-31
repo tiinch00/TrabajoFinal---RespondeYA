@@ -3,32 +3,28 @@
 import { useEffect, useState } from 'react';
 
 import { buildQuickChartURL } from '../../utils/quickchart';
+import { scale } from 'motion/react';
 
 export default function QCChartStable({
     //config,
     labels = [
-        'pregunta 1',
-        'pregunta 2',
-        'pregunta 3',
-        'pregunta 4',
-        'pregunta 5',
-        'pregunta 6',
-        'pregunta 7',
-        'pregunta 8',
-        'pregunta 9',
-        'pregunta 10'
+        'Categoria 1',
+        'Categoria 2',
+        'Categoria 3',
+        'Categoria 4',
+        'Categoria 5',
+        'Categoria 6',
+        'Categoria 7',
+        'Categoria 8',
+        'Categoria 9',
+        'Categoria 10'
     ],
     data = [19, 10, 15, 10, 12, 18, 17, 16, 15, 8],
-    width = 700,
-
-    height = 380,
-
+    width = '700px',
+    height = 'fit',
     format = 'png',
-
     backgroundColor = 'transparent',
-
     alt = 'chart',
-
     className = '',
 }) {
     // antes era barConfig
@@ -37,15 +33,17 @@ export default function QCChartStable({
         data: {
             labels,
             datasets: [{
-                label: 'Preguntas',
+                label: 'Categorias',                
                 data,
-                backgroundColor: 'rgba(54,162,235,0.6)',
-                borderColor: 'rgb(54, 162, 235)',
+                //backgroundColor: 'rgba(54,162,235,0.6)', //color-mix(in oklab, var(--color-fuchsia-500) 95%, transparent)
+                backgroundColor: '#e12afbf2',
+                borderColor: '#e32afb',
                 borderWidth: 1,
             }],
         },
         options: {
             plugins: {
+                legend: { labels: { color: 'white' } },
                 datalabels: {
                     anchor: 'center',
                     align: 'center',
@@ -54,23 +52,57 @@ export default function QCChartStable({
                         weight: 'bold',
                     },
                 },
+                // title: {
+                //     display: true,
+                //     text: "Chart.js Line Chart" //hace el titulo  
+                // }
+            },            
+            scales: {
+                x: {
+                    ticks: { color: 'white', autoSkip: false }, // preguntas (el color)
+                    grid: {
+                        display: true,                      // ON
+                        color: 'rgba(0, 0, 0, 0.432)',         // contraste de las lineas de fondo
+                        lineWidth: 1,
+                        drawOnChartArea: true,
+                        drawTicks: true,
+                        borderColor: 'rgba(0,0,0,0.2)',               // bordes del eje
+                        //borderWidth: 1,
+                    },
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: { color: 'white' },
+                    grid: {
+                        display: true,
+                        color: 'rgba(0, 0, 0, 0.432)',
+                        lineWidth: 1,
+                        drawOnChartArea: true,
+                        drawTicks: true,
+                        borderColor: 'rgba(0,0,0,0.2)',
+                        borderWidth: 1,
+                    },
+                    title: {
+                        display: true,
+                        text: 'Partidas realizadas',
+                        color: 'white',
+                        padding: { top: 4, bottom: 4 },
+                        font: { size: 14, family: 'sans-serif', weight: 'light' },
+                    },
+                },
             },
+            backgroundColor: 'transparent',
         },
     };
 
-    // ✅ Calcula la URL en el primer render (no queda en "")
-    const [src, setSrc] = useState(() =>
-        // reemplazo config por barConfig
-        buildQuickChartURL({ config, width, height, format, backgroundColor })
-    );
+    // se crea la URL y se forza en version=4 para evitar ambigüedades
+    const baseUrl = buildQuickChartURL({ config, width, height, format, backgroundColor });
+    const withVersion = `${baseUrl}`; // importante declarar version 4 (&version=4)
+    const [src, setSrc] = useState(withVersion);
 
     useEffect(() => {
-        // reemplazo config por barConfig
-        setSrc(buildQuickChartURL({ config, width, height, format, backgroundColor }));
-        // Detectar cambios reales en config sin useMemo:
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-
-        // reemplazo config por barConfig
+        const url = buildQuickChartURL({ config, width, height, format, backgroundColor }) + '&version=4';
+        setSrc(url);
     }, [JSON.stringify(config), width, height, format, backgroundColor]);
 
     return (
@@ -78,7 +110,7 @@ export default function QCChartStable({
             src={src}
             alt={alt}
             className={className}
-            style={{ width: '100%', height: 'auto', display: 'block' }}
+            // style={{ width: '100%', height: 'auto', display: 'block' }}
             loading="lazy"
         />
     );

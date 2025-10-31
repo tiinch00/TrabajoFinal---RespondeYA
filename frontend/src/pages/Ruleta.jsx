@@ -134,7 +134,7 @@ export default function Ruleta() {
   const guardarPuntaje = async (jugador_id, puntosGanados) => {
     try {
       await axios.put(`http://localhost:3006/jugadores/update/${jugador_id}`, {
-        puntosGanados, ruleta_started_at: jugador.ruleta_started_at // body de la request
+        puntaje: puntosGanados, ruleta_started_at: jugador.ruleta_started_at // body de la request
       });
     } catch (err) {
       console.log('PUT /jugadores error:', err.response?.data?.error || err.message);
