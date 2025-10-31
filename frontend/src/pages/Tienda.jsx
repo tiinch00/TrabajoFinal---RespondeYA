@@ -1,8 +1,9 @@
 import { AnimatePresence, motion } from 'motion/react';
+import { Trans, useTranslation } from 'react-i18next';
 import { useEffect, useRef, useState } from 'react';
 
 import axios from 'axios';
-import { useTranslation, Trans } from 'react-i18next';
+
 const Tienda = () => {
   const [selected, setSelected] = useState(null); // indice o null
   const [jugadores, setJugadores] = useState([]);
@@ -156,7 +157,7 @@ const Tienda = () => {
 
   // funcion que crea un user_avatar para un usuario
   const handleSubmit = async (idAvatar) => {
-    const nuevoSaldo = jugador.puntaje - avatares[selected].precio_puntos;
+    const nuevoSaldo = avatares[selected].precio_puntos;
 
     // prepara todos los atributos del objeto user_avatar
     const values = {
@@ -170,14 +171,19 @@ const Tienda = () => {
       const { data: ua } = await axios.post('http://localhost:3006/userAvatar', values);
 
       // actualiza el puntaje
-      const { data: jUpdated } = await axios.put(
+      try{
+        const { data: jUpdated } = await axios.put(
         `http://localhost:3006/jugadores/update/${jugador_id}`,
-        { puntaje: nuevoSaldo }
+        { puntajeRestado: nuevoSaldo }
       );
-
+      
       // actualiza el puntaje del jugador
       setJugador(jUpdated ?? { ...jugador, puntaje: nuevoSaldo });
-
+      
+    } catch (err) {
+      console.log('@@@@ Error PUT jugadores/update\n', err.response?.data?.error || err.message);
+    }
+    
       setJugadorAvatares((prev) => {
         // si el POST devuelve el objeto, usalo; si no, añadí uno mínimo
         const item = ua ?? { jugador_id, avatar_id: idAvatar };
@@ -187,8 +193,8 @@ const Tienda = () => {
       setConfirmar(false);
       setComprado(true);
       scheduleToastHide();
-    } catch (error) {
-      console.log('@@@@ Error Post /user_Avatar\n', error);
+    } catch (err) {
+      console.log('@@@@ Error Post /user_Avatar\n', err.response?.data?.error || err.message);
     }
   };
 

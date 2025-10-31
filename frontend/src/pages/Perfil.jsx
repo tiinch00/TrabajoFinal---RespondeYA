@@ -628,6 +628,26 @@ const Perfil = () => {
     console.log("Buscar…");
   };
 
+  const formatDateDMYLocal = (isoString) => {
+    if (!isoString) return '';
+    const d = new Date(isoString);           // interpreta el ISO en UTC y lo muestra en hora local
+    if (isNaN(d)) return '';
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0'); // 0-based
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  }
+
+  const formatTimeHMLocal = (isoString) => {
+    if (!isoString) return '';
+    const d = new Date(isoString);     // interpreta en UTC si trae Z; si no, como local
+    if (isNaN(d)) return '';
+    const dPlus3 = new Date(d.getTime() + 3 * 60 * 60 * 1000);
+    const hh = String(dPlus3.getHours()).padStart(2, '0');
+    const mm = String(dPlus3.getMinutes()).padStart(2, '0');
+    return `${hh}:${mm}`;
+  }
+
   // const formatMs = (ms) => {
   //   if (ms == null || Number.isNaN(Number(ms))) return "—";
   //   const s = Number(ms) / 1000;
@@ -713,7 +733,7 @@ const Perfil = () => {
       JSON.stringify(prev) === JSON.stringify(objDos) ? prev : objDos
     );
   }, [
-    partidas, preguntas, categorias, listaObjetosPartidaInformacion
+    partidas, preguntas, categorias
   ]);
 
   // 
@@ -1181,7 +1201,7 @@ const Perfil = () => {
           </div>
 
           {estadisticas.length === 0 ? (
-            <p>No hay resultados de partidas para mostrar...</p>
+            <p className="indent-2 text-white">No hay resultados de partidas para mostrar...</p>
           ) : (
             <div>
               {/* buscador de estadísticas */}
@@ -1195,12 +1215,12 @@ const Perfil = () => {
                   type="button"
                   onClick={handleSearch}
                   className="absolute h-full w-fit top-0 right-0 flex items-center rounded-r-xl 
-                  bg-slate-800 px-2 border border-transparent text-sm transition-all 
+                  bg-slate-800 hover:bg-slate-700 px-2 border border-transparent text-sm transition-all 
                     shadow-sm hover:shadow focus:bg-slate-700 active:bg-slate-700 
                     disabled:pointer-events-none disabled:opacity-50 cursor-pointer"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                    fill="currentColor" className="w-4 h-4">
+                    fill="currentColor" className="w-4 h-4 text-white">
                     <path
                       fillRule="evenodd" clipRule="evenodd"
                       d="M10.5 3.75a6.75 6.75 0 1 0 0 13.5 6.75 6.75 0 0 0 0-13.5ZM2.25 10.5a8.25 8.25 0 1 1 14.59 5.28l4.69 4.69a.75.75 0 1 1-1.06 1.06l-4.69-4.69A8.25 8.25 0 0 1 2.25 10.5Z"
@@ -1214,38 +1234,47 @@ const Perfil = () => {
 
               {/* listado de las partidas */}
               <ul className="">
-                {estadisticas.map((e, index) => (
-                  <motion.li
-                    key={e.id}
-                    className="border rounded-xl p-4 bg-white/10 hover:bg-white/20 
-                flex space-x-4 mb-2 cursor-pointer"
-                    whileTap={{ scale: 1.05 }}
-                    onClick={() => {
-                      setSelectedEstadisticas(index);
-                      setPartidaIdSeleccionada(e.partida_id);
-                      setModalEstadisticaAbierto(true)
-                    }}
-                  >                    
+                {estadisticas.map((e, index) => {
+                  const info = listaObjetosPartidaInformacion.find(i => i.id === e.partida_id);
+                  const cate = (categorias ?? []).find(l => Number(l.id) === Number(info?.categoria_id));
 
-                    {e.posicion > 0 ? (
-                      <div className="flex flex-row gap-5">
-                        <p className="text-green-500">Ganaste</p>
-                        <p className="text-white">Fecha: </p>
-                        <p className="text-white">Modo: </p>
-                        <p className="text-white">Categoria: </p>
-                        <p className="text-white">Dificultad: </p>
-                      </div>
-                    ) : (
-                      <div className="flex flex-row gap-5">
-                        <p className="text-red-500">Perdiste</p>
-                        <p className="text-white">Fecha: </p>
-                        <p className="text-white">Modo: </p>
-                        <p className="text-white">Categoria: </p>
-                        <p className="text-white">Dificultad: </p>
-                      </div>
-                    )}
-                  </motion.li>
-                ))}
+                  //console.log('cate', cate);
+                  //console.log('typeof e.categoria_id:', typeof e?.categoria_id, e?.categoria_id);
+
+                  return (
+                    <motion.li
+                      key={e.id}
+                      className="border rounded-xl p-4 bg-white/10 hover:bg-white/20 
+                        flex space-x-4 mb-2 cursor-pointer"
+                      whileTap={{ scale: 1.05 }}
+                      onClick={() => {
+                        setSelectedEstadisticas(index);
+                        setPartidaIdSeleccionada(e.partida_id);
+                        setModalEstadisticaAbierto(true);
+                      }}
+                    >
+                      {e.posicion > 0 ? (
+                        <div className="flex flex-row gap-5">
+                          <p className="text-green-500">Ganaste</p>
+                          <p className="text-white">Fecha: {formatDateDMYLocal(info?.ended_at) ?? '-'}</p>
+                          <p className="text-white">Hora: {formatTimeHMLocal(info?.ended_at) ?? '-'}</p>
+                          <p className="text-white">Modo: {info?.modo ?? '-'}</p>
+                          <p className="text-white">Categoria: {cate?.nombre ?? '-'}</p>
+                          <p className="text-white">Dificultad: {info?.dificultad ?? '-'}</p>
+                        </div>
+                      ) : (
+                        <div className="flex flex-row gap-5">
+                          <p className="text-red-500">Perdiste</p>
+                          <p className="text-white">Fecha: {formatDateDMYLocal(info?.ended_at) ?? '-'}</p>
+                          <p className="text-white">Hora: {formatTimeHMLocal(info?.ended_at) ?? '-'}</p>
+                          <p className="text-white">Modo: {info?.modo ?? '-'}</p>
+                          <p className="text-white">Categoria: {cate?.nombre ?? '-'}</p>
+                          <p className="text-white">Dificultad: {info?.dificultad ?? '-'}</p>
+                        </div>
+                      )}
+                    </motion.li>
+                  );
+                })}
               </ul>
             </div>
           )
@@ -1566,22 +1595,19 @@ const Perfil = () => {
                         //<span className="p-2 text-[20px]">Grafica lineal de respuestas...</span>
                         //grafica de respuesta de simpleBarChart 
                         //<SimpleBarChart objPartidaIdInformacion={objetoPartidaCompleto}
-                        
-                      //grafica de respuesta de la api quickchart.js
-                      //<h3 className="mt-4">QCChartStable</h3>
-                      //config={null}
-                      //<QCChartStable className="mt-4 bg-white" />
-                      <div>                        
-                        {/* objetoPartidaCompleto */}
-                        {/* <h3 className="mt-4">Vertical axis labels - indiviual</h3> */}
-                        <ChartVerticalLabels arregloCompleto={objetoPartidaCompleto} className="bg-white rounded" />
-                      </div>
+
+                        //grafica de respuesta de la api quickchart.js                        
+                        <div>
+                          {/* objetoPartidaCompleto */}
+                          {/* <h3 className="mt-4">Vertical axis labels - indiviual</h3> */}
+                          <ChartVerticalLabels arregloCompleto={objetoPartidaCompleto} className="bg-white rounded" />
+                        </div>
                       ) : (
-                      <div>
-                        {/* varias lineas - multijugador */}
-                        {/* <h3 className="mt-4">Multiline labels - multijugador</h3>*/}
-                        <ChartMultilineLabels className="mt-4 bg-white" />
-                      </div>
+                        <div>
+                          {/* varias lineas - multijugador */}
+                          {/* <h3 className="mt-4">Multiline labels - multijugador</h3>*/}
+                          <ChartMultilineLabels className="mt-4 bg-white" />
+                        </div>
                       )}
                     </div>
                   </>
@@ -1599,7 +1625,17 @@ const Perfil = () => {
             <h2 className="text-xl text-white flex items-center justify-center p-1">|</h2>
             <button><h2 className="text-xl font-semibold text-fuchsia-500/95 mb-3 mt-3 p-1">Gráfica de estadísticas general</h2></button>
           </div>
-          <span className="text-white">No hay gráfica de estadísticas general para mostrar...</span>
+          {estadisticas.length !== 0 ? (
+            <>
+              {/* <h3 className="mt-4">QCChartStable</h3> */}
+              {/* config={null} */}
+              <QCChartStable className="mt-4 bg-white/25 rounded" />
+            </>
+          ) : (
+            <>
+              <p className="indent-2 text-white">No hay gráfica de estadísticas general para mostrar...</p>
+            </>
+          )}          
         </div>
       )
       }
