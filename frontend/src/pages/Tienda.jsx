@@ -171,19 +171,18 @@ const Tienda = () => {
       const { data: ua } = await axios.post('http://localhost:3006/userAvatar', values);
 
       // actualiza el puntaje
-      try{
+      try {
         const { data: jUpdated } = await axios.put(
-        `http://localhost:3006/jugadores/update/${jugador_id}`,
-        { puntajeRestado: nuevoSaldo }
-      );
-      
-      // actualiza el puntaje del jugador
-      setJugador(jUpdated ?? { ...jugador, puntaje: nuevoSaldo });
-      
-    } catch (err) {
-      console.log('@@@@ Error PUT jugadores/update\n', err.response?.data?.error || err.message);
-    }
-    
+          `http://localhost:3006/jugadores/update/${jugador_id}`,
+          { puntajeRestado: nuevoSaldo }
+        );
+
+        // actualiza el puntaje del jugador
+        setJugador(jUpdated ?? { ...jugador, puntaje: nuevoSaldo });
+      } catch (err) {
+        console.log('@@@@ Error PUT jugadores/update\n', err.response?.data?.error || err.message);
+      }
+
       setJugadorAvatares((prev) => {
         // si el POST devuelve el objeto, usalo; si no, añadí uno mínimo
         const item = ua ?? { jugador_id, avatar_id: idAvatar };
@@ -199,23 +198,29 @@ const Tienda = () => {
   };
 
   const crearPago = async (avatarNombre) => {
-    const values = {
-      //jugador_id: jugador.jugador_id,
-      nombre: avatarNombre,
-      precio: 1000,
-      //origen: 'compra',
-      imagen:
-        'https://miweb.com/https://img.freepik.com/vector-gratis/icono-vectorial-dibujos-animados-ilustracion-naturaleza-icono-vacaciones-aislado-plano_138676-13304.jpg?semt=ais_hybrid&w=740&q=80.png',
-      //adquirido_at: formatDateTimeAR(),
-    };
     try {
+      const avatarSeleccionado = avatares.find((a) => a.nombre === avatarNombre);
+
+      if (!avatarSeleccionado) {
+        console.error('Avatar no encontrado');
+        return;
+      }
+
+      const imagenUrl = 'https://via.placeholder.com/200x200.png?text=Avatar';
+
+      const values = {
+        nombre: avatarSeleccionado.nombre,
+        precio: 1000,
+        imagen: imagenUrl,
+      };
+
       const res = await axios.post('http://localhost:3006/api/crearOrden', values);
       if (res.data.id && res.data.init_point) {
         window.open(res.data.init_point, '_blank');
         setSelected(null);
       }
     } catch (error) {
-      console.log(error);
+      console.log('Error al crear pago:', error);
     }
   };
 
@@ -246,9 +251,9 @@ const Tienda = () => {
     avatares[selected] &&
     jugadorAvatares.some((a) => a.avatar_id === avatares[selected].id);
   return (
-    <div className='min-h-full'>
+    <div className='min-h-full my-5 py-5 '>
       <motion.h1
-        className='text-6xl font-extrabold text-center my-6 py-5 tracking-wider text-white neon-text'
+        className='text-6xl font-extrabold text-center tracking-wider text-white neon-text'
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.8 }}
@@ -328,7 +333,7 @@ const Tienda = () => {
         </div>
       )}
 
-      <div className='grid grid-cols-6 gap-4 p-12'>
+      <div className='grid grid-cols-6 gap-4 py-10'>
         {avatares.map((avatar, index) => (
           <motion.img
             key={index}

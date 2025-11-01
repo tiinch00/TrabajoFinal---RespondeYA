@@ -11,7 +11,7 @@ const getSoap = async (req, res) => {
       client.ListOfCountryNamesByName({}, (err, result) => {
         if (err) return res.status(500).json({ error: err.message });
 
-        // el resultado viene con esta estructura
+        // guardo result en lista, para luego mapear
         const lista = result.ListOfCountryNamesByNameResult.tCountryCodeAndName;
 
         // formateo JSON simple
@@ -20,7 +20,7 @@ const getSoap = async (req, res) => {
           nombre: p.sName,
         }));
 
-        res.json(paises);
+        res.json(paises); //wrapper
       });
     });
   } catch (error) {

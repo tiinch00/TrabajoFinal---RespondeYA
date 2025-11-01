@@ -15,7 +15,7 @@ const crearOrden = async (req, res) => {
       return res.status(400).json({ error: 'El precio debe ser un número mayor a 0' });
     }
 
-    // Cliente configurado con el token de prueba
+    // cliente con token de prueba
     const client = new MercadoPagoConfig({
       accessToken: process.env.TEST_KEY_MP,
       options: { timeout: 5000 },

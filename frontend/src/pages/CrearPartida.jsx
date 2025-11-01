@@ -1,16 +1,22 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGame } from '../context/ContextJuego.jsx';
+import { useTranslation } from 'react-i18next';
+import { Gamepad } from 'lucide-react';
+import pop from '/sounds/pop.mp3';
+import useSound from 'use-sound';
+import start from '/sounds/start.mp3';
 
 const CrearPartida = () => {
   const { categorias, fetchCategorias, loading } = useGame();
-
+  const { t } = useTranslation();
   const [categoria, setCategoria] = useState('');
   const [tiempo, setTiempo] = useState('');
   const [dificultad, setDificultad] = useState('');
   const [alerta, setAlerta] = useState('');
   const [showDropdown, setShowDropdown] = useState(false); // Para el dropdown personalizado
-
+  const [touchButton] = useSound(pop, { volume: 0.3 });
+  const [startButton] = useSound(start, { volume: 0.3 });
   const navigate = useNavigate();
 
   const handleJugarIndividual = () => {
@@ -18,7 +24,11 @@ const CrearPartida = () => {
       setAlerta('¡Completa todo antes de jugar! 🎮');
       return;
     }
-    navigate(`/jugarIndividual/${categoria.toLowerCase()}/${tiempo}/${dificultad}`);
+    startButton();
+    setAlerta('Mucha Suerte!');
+    setTimeout(() => {
+      navigate(`/jugarIndividual/${categoria.toLowerCase()}/${tiempo}/${dificultad}`);
+    }, 1500);
   };
 
   const handleAlAzar = () => {
@@ -26,17 +36,18 @@ const CrearPartida = () => {
     const categoriaAzar = categorias[Math.floor(Math.random() * categorias.length)];
     setCategoria(categoriaAzar.nombre);
     setShowDropdown(false);
+    touchButton();
   };
 
-  if (loading) return <p className='text-center text-white text-xl'>Cargando categorías... 🌟</p>;
+  if (loading) return <p className='text-center text-white text-xl'>{t('loadingCategory')}🌟</p>;
 
   return (
-    <div className='m-8 flex items-center justify-center'>
+    <div className='m-3 flex items-center justify-center'>
       <div className='p-6 rounded-3xl text-center text-white space-y-8 w-[520px] bg-gradient-to-br from-purple-900/30 via-purple-800/40 to-indigo-900/50 shadow-2xl'>
         {/* TÍTULO CATEGORÍA */}
         <div className='space-y-4'>
           <h2 className='bg-gradient-to-r from-pink-500 to-yellow-500 text-transparent bg-clip-text text-2xl font-extrabold tracking-wider drop-shadow-lg'>
-            🎯 TIPO DE CATEGORÍA
+            🎯 {t('categoryType')}
           </h2>
           <div className='flex justify-center gap-3 flex-wrap'>
             {/* Botón: Al Azar */}
@@ -50,13 +61,16 @@ const CrearPartida = () => {
                 active:scale-95 flex items-center gap-2
               '
             >
-              🎲 ¡Al Azar!
+              🎲 {t('azar')}
             </button>
 
             {/* Dropdown personalizado */}
             <div className='relative'>
               <button
-                onClick={() => setShowDropdown(!showDropdown)}
+                onClick={() => {
+                  setShowDropdown(!showDropdown);
+                  touchButton();
+                }}
                 className={`
                   bg-gradient-to-r from-indigo-500 to-purple-600 
                   px-6 py-3 rounded-full font-bold text-white 
@@ -66,7 +80,7 @@ const CrearPartida = () => {
                   ${categoria ? 'ring-4 ring-yellow-400 ring-opacity-70' : ''}
                 `}
               >
-                {categoria || 'Elige una...'} ▼
+                {categoria || t('choose')} ▼
               </button>
               {showDropdown && (
                 <div className='absolute top-full mt-2 w-full bg-white rounded-2xl shadow-2xl overflow-hidden z-10 animate-fadeIn'>
@@ -76,6 +90,7 @@ const CrearPartida = () => {
                       onClick={() => {
                         setCategoria(cat.nombre);
                         setShowDropdown(false);
+                        touchButton();
                       }}
                       className='block w-full text-left px-4 py-3 text-purple-800 hover:bg-purple-100 font-medium transition'
                     >
@@ -94,27 +109,30 @@ const CrearPartida = () => {
               active:scale-95 flex items-center gap-2
             '
             >
-              🎰 Varias
+              🎰 {t('varias')}
             </button>
           </div>
         </div>
         <div className='space-y-4'>
           <h2 className='bg-gradient-to-r from-red-500 to-orange-500 text-transparent bg-clip-text text-2xl font-extrabold tracking-wider drop-shadow-lg'>
-            ⏱️ DIFICULTAD DE TIEMPO
+            ⏱️ {t('dificultyTime')}
           </h2>
           <div className='flex justify-center gap-4'>
-            {['facil', 'normal', 'dificil'].map((nivel) => (
+            {[t('easy'), t('medium'), t('hard')].map((nivel) => (
               <button
                 key={nivel}
-                onClick={() => setTiempo(nivel)}
+                onClick={() => {
+                  setTiempo(nivel);
+                  touchButton();
+                }}
                 className={`
                   px-8 py-3 rounded-full font-bold text-white 
                   shadow-lg transform transition-all duration-200 
                   hover:scale-110 active:scale-95 cursor-pointer
                   ${
-                    nivel === 'facil'
+                    nivel === 'Facíl'
                       ? 'bg-gradient-to-r from-lime-500 to-emerald-600'
-                      : nivel === 'normal'
+                      : nivel === 'Media'
                       ? 'bg-gradient-to-r from-yellow-500 to-orange-600'
                       : 'bg-gradient-to-r from-red-500 to-rose-600'
                   }
@@ -129,21 +147,24 @@ const CrearPartida = () => {
 
         <div className='space-y-4'>
           <h2 className='bg-gradient-to-r from-blue-500 to-cyan-500 text-transparent bg-clip-text text-2xl font-extrabold tracking-wider drop-shadow-lg'>
-            ❓ DIFICULTAD DE PREGUNTAS
+            ❓ {t('dificultyQuestions')}
           </h2>
           <div className='flex justify-center gap-4'>
-            {['facil', 'normal', 'dificil'].map((nivel) => (
+            {[t('easy'), t('medium'), t('hard')].map((nivel) => (
               <button
                 key={nivel}
-                onClick={() => setDificultad(nivel)}
+                onClick={() => {
+                  setDificultad(nivel);
+                  touchButton();
+                }}
                 className={`
                   px-8 py-3 rounded-full font-bold text-white 
                   shadow-lg transform transition-all duration-200 
                   hover:scale-110 active:scale-95 cursor-pointer
                   ${
-                    nivel === 'facil'
+                    nivel === 'Facíl'
                       ? 'bg-gradient-to-r from-green-500 to-teal-600'
-                      : nivel === 'normal'
+                      : nivel === 'Media'
                       ? 'bg-gradient-to-r from-amber-500 to-yellow-600'
                       : 'bg-gradient-to-r from-pink-500 to-red-600'
                   }
@@ -162,11 +183,12 @@ const CrearPartida = () => {
             w-full py-4 rounded-full font-extrabold text-xl text-white 
             shadow-xl transform transition-all duration-300 cursor-pointer
             hover:scale-105 hover:from-emerald-400 hover:to-lime-500
-            active:scale-95 flex items-center justify-center gap-3
+            active:scale-95 flex items-center justify-center gap-2
             animate-pulse-subtle
           '
         >
-          🚀 ¡JUGAR AHORA!
+          <Gamepad className='text-black h-6 w-8' />
+          {t('playNow')}
         </button>
 
         {alerta && <p className='text-yellow-300 font-bold animate-bounce'>{alerta}</p>}

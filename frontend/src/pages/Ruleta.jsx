@@ -31,7 +31,7 @@ export default function Ruleta() {
     }
   });
   useEffect(() => {
-    if (premio && premio.includes('Has ganado')) {
+    if (premio && premio.includes('Has ganado' || 'You won')) {
       playPremio();
     }
   }, [premio, playPremio]);
@@ -139,8 +139,6 @@ export default function Ruleta() {
     }
   };
 
-  //console.log(jugador);
-
   const lanzar = () => {
     if (tiradas === 0) return;
     setTiradas(0);
@@ -174,31 +172,28 @@ export default function Ruleta() {
     barraRef.current?.classList.toggle('parate');
     const grados = ((rotation % 360) + 360) % 360;
 
+    let puntosGanados = 0;
+
     if ((grados >= 0 && grados <= 29) || (grados >= 180 && grados <= 209)) {
-      setPremio(t('won400'));
-      setPuntos(400);
-      guardarPuntaje(jugador_id, 400);
+      puntosGanados = 400;
     } else if ((grados >= 30 && grados <= 59) || (grados >= 210 && grados <= 239)) {
-      setPremio(t('won200'));
-      setPuntos(200);
-      guardarPuntaje(jugador_id, 200);
+      puntosGanados = 200;
     } else if ((grados >= 60 && grados <= 89) || (grados >= 240 && grados <= 269)) {
-      setPremio(t('won100'));
-      setPuntos(100);
-      guardarPuntaje(jugador_id, 100);
+      puntosGanados = 100;
     } else if ((grados >= 90 && grados <= 119) || (grados >= 270 && grados <= 299)) {
-      setPremio(t('won500'));
-      setPuntos(500);
-      guardarPuntaje(jugador_id, 500);
+      puntosGanados = 500;
     } else if ((grados >= 120 && grados <= 149) || (grados >= 300 && grados <= 329)) {
-      setPremio(t('won300'));
-      setPuntos(300);
-      guardarPuntaje(jugador_id, 300);
+      puntosGanados = 300;
     } else {
-      setPremio(t('won500'));
-      setPuntos(500);
-      guardarPuntaje(jugador_id, 500);
+      puntosGanados = 500;
     }
+
+    setPremio(t(`won${puntosGanados}`));
+    setPuntos(puntosGanados);
+    guardarPuntaje(jugador_id, puntosGanados);
+
+    // reproducir sonido al ganar
+    playPremio();
 
     if (audioRef.current) {
       audioRef.current.pause();

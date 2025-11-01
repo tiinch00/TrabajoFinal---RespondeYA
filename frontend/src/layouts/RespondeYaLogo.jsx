@@ -1,19 +1,14 @@
+import LuzDetrasLogo from './LuzDetrasLogo';
+
 export const RespondeYaLogo = () => {
   return (
-    <div className='relative my-8 flex flex-col items-center justify-center'>
-      {/* Resplandor de fondo */}
-      <div className='absolute inset-0 flex items-center justify-center blur-2xl opacity-40 z-0'>
-        <h1
-          className='text-7xl md:text-9xl font-black text-center'
-          style={{
-            color: '#ff6600',
-          }}
-        >
-          ¡RespondeYa!
-        </h1>
+    <div className='relative my-8 flex flex-col items-center justify-center pt-10'>
+      {/* Rayos de luz detrás */}
+      <div className='absolute inset-0 flex items-center justify-center z-0 my-30'>
+        <LuzDetrasLogo />
       </div>
 
-      {/* Logo principal - por encima del resplandor */}
+      {/* Logo principal */}
       <h1
         className='relative text-7xl md:text-9xl font-black text-center z-10'
         style={{

@@ -27,7 +27,7 @@ export const MusicProvider = ({ children }) => {
 
   return (
     <MusicContext.Provider value={{ isMuted, toggleMute, setMuted, audioRef }}>
-      <audio ref={audioRef} src='/sounds/2001cut10s.mp3' autoPlay loop />
+      <audio ref={audioRef} src='/sounds/intro.mp3' autoPlay loop />
       {children}
     </MusicContext.Provider>
   );

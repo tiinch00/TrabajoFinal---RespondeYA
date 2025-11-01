@@ -13,10 +13,9 @@ const Bienvenido = () => {
       setUser(JSON.parse(storedUser));
     }
 
-    // ⏳ después de 3 segundos manda al Home
     const timer = setTimeout(() => {
       navigate('/', { replace: true });
-    }, 8000);
+    }, 6000);
 
     return () => clearTimeout(timer);
   }, [navigate]);

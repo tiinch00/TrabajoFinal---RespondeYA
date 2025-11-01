@@ -9,7 +9,7 @@ const FondoAnimado = () => {
     let animationFrameId;
     let particles = [];
 
-    // Configurar tamaño del canvas
+    // Ajustar tamaño del canvas
     const resizeCanvas = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
@@ -17,7 +17,7 @@ const FondoAnimado = () => {
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
-    // Crear partículas (estrellas)
+    // Clase Partícula (estrellas)
     class Particle {
       constructor() {
         this.x = Math.random() * canvas.width;
@@ -33,13 +33,13 @@ const FondoAnimado = () => {
         this.x += this.speedX;
         this.y += this.speedY;
 
-        // Efecto de parpadeo
+        // Parpadeo
         this.opacity += this.fadeSpeed;
         if (this.opacity >= 1 || this.opacity <= 0) {
           this.fadeSpeed *= -1;
         }
 
-        // Reiniciar si sale de la pantalla
+        // Reinicio si sale de pantalla
         if (this.x < 0) this.x = canvas.width;
         if (this.x > canvas.width) this.x = 0;
         if (this.y < 0) this.y = canvas.height;
@@ -54,52 +54,14 @@ const FondoAnimado = () => {
       }
     }
 
-    // Crear rayos de luz
-    class LightRay {
-      constructor() {
-        this.angle = Math.random() * Math.PI * 2;
-        this.length = Math.random() * 300 + 200;
-        this.speed = Math.random() * 0.02 + 0.01;
-        this.opacity = Math.random() * 0.3 + 0.1;
-      }
-
-      update() {
-        this.angle += this.speed;
-      }
-
-      draw() {
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 5.5;
-
-        ctx.save();
-        ctx.translate(centerX, centerY);
-        ctx.rotate(this.angle);
-
-        const gradient = ctx.createLinearGradient(0, 0, this.length, 0);
-        gradient.addColorStop(0, `rgba(147, 51, 234, ${this.opacity})`);
-        gradient.addColorStop(0.5, `rgba(59, 130, 246, ${this.opacity * 0.5})`);
-        gradient.addColorStop(1, 'rgba(147, 51, 234, 0)');
-
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, -2, this.length, 4);
-
-        ctx.restore();
-      }
-    }
-
-    // Inicializar partículas y rayos
-    for (let i = 0; i < 150; i++) {
+    // Crear partículas iniciales
+    for (let i = 0; i < 300; i++) {
       particles.push(new Particle());
-    }
-
-    const lightRays = [];
-    for (let i = 0; i < 12; i++) {
-      lightRays.push(new LightRay());
     }
 
     // Función de animación
     const animate = () => {
-      // Gradiente de fondo
+      // Gradiente del fondo
       const gradient = ctx.createRadialGradient(
         canvas.width / 2,
         canvas.height / 2.5,
@@ -115,16 +77,10 @@ const FondoAnimado = () => {
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Dibujar rayos de luz
-      lightRays.forEach((ray) => {
-        ray.update();
-        ray.draw();
-      });
-
       // Dibujar partículas
-      particles.forEach((particle) => {
-        particle.update();
-        particle.draw();
+      particles.forEach((p) => {
+        p.update();
+        p.draw();
       });
 
       animationFrameId = requestAnimationFrame(animate);
@@ -132,6 +88,7 @@ const FondoAnimado = () => {
 
     animate();
 
+    // Limpieza
     return () => {
       window.removeEventListener('resize', resizeCanvas);
       cancelAnimationFrame(animationFrameId);

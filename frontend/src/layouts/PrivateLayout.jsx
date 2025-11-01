@@ -12,9 +12,9 @@ export default function PrivateLayout() {
   return (
     <>
       <HeaderPrivate />
-      <main className='relative w-full min-h-screen flex flex-col items-center bg-gray-900 justify-start pt-20'>
+      <main className='relative w-full min-h-screen flex flex-col items-center justify-start '>
         {mostrarLogo && <FondoAnimado />}
-        <div className='z-10 w-full flex flex-col items-center justify-start'>
+        <div className='z-10 w-full flex flex-col items-center'>
           {mostrarLogo && <RespondeYaLogo />}
           <Outlet />
         </div>

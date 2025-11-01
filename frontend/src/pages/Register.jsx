@@ -47,13 +47,17 @@ const Register = () => {
     };
     let newErrors = {};
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
+    const estaElPais = paises.find(
+      (pais) => pais.nombre.toLowerCase() === paisSeleccionado.toLowerCase()
+    );
     if (!cleanedValues.usuario) {
       newErrors.usuario = t('errorUser');
     } else if (!cleanedValues.email) {
       newErrors.email = t('errorEmailRequired');
     } else if (!emailRegex.test(cleanedValues.email)) {
       newErrors.email = t('errorEmailInvalid');
+    } else if (!estaElPais) {
+      newErrors.pais = 'Debes seleccionar un pais real';
     } else if (!cleanedValues.password) {
       newErrors.password = t('errorPasswordRequired');
     } else if (!paisSeleccionado) {

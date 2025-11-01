@@ -13,7 +13,7 @@ const Home = () => {
   const { isMuted, toggleMute } = useMusic();
 
   return (
-    <div className='rounded-3xl text-center relative mt-4'>
+    <div className='rounded-3xl text-center relative py-3 my-15 '>
       <div className='w-90 mt-2 rounded-4xl flex flex-col text-center items-center justify-center text-white gap-5'>
         <div className='flex flex-col items-center w-full max-w-md'>
           <motion.button

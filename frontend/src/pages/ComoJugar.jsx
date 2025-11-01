@@ -1,12 +1,11 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import FondoAnimado from '../layouts/FondoAnimado.jsx';
 
 const ComoJugar = () => {
   const { t } = useTranslation();
 
   return (
-    <div className='min-h-screen bg-gradient-to-b from-gray-900 via-purple-900 to-gray-900'>
+    <div className='min-h-screen bg-gradient-to-b from-gray-900 via-purple-900 to-gray-900 pt-15'>
       <div className='relative z-20 text-center px-6 '>
         <h1 className='text-6xl md:text-7xl font-bold mb-6 text-white'>
           {t('howToPlay_welcome')}{' '}
@@ -40,7 +39,6 @@ const ComoJugar = () => {
       <section className='relative py-24 px-6'>
         <div className='max-w-7xl mx-auto'>
           <div className='grid md:grid-cols-2 gap-12 items-center'>
-            {/* Contenido */}
             <div className='order-2 md:order-1'>
               <div className='inline-block bg-purple-600/20 px-4 py-2 rounded-full mb-4'>
                 <span className='text-purple-300 font-semibold'>{t('howToPlay_fundamentals')}</span>
