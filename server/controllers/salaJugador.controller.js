@@ -1,12 +1,26 @@
-import {SalaJugador} from '../models/associations.js';
+import { SalaJugador } from '../models/associations.js';
 
 const index = async (req, res) => {
+  const raw = req.query.sala_id; // viene por query. no por .params o .body
+  //console.log("raw: ", raw);
+  const id = raw != null ? Number(raw) : null;
+  
+  //console.log({ t1: typeof id });
+  //console.log(id);
+
+  if (id != null && (!Number.isFinite(id) || id <= 0)) {
+    return res.status(400).json({ error: 'sala_id inválido' });
+  }
+
   try {
-    const salaJugador = await SalaJugador.findAll();
+    const where = id != null ? { sala_id: id } : undefined;
+    //console.log("id de whre: ", where);
+    const salaJugador = await SalaJugador.findAll({ where });
+    //console.log("salaJugador: ", salaJugador);
     res.json(salaJugador);
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ error: "Internal server error" });
+    //console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 

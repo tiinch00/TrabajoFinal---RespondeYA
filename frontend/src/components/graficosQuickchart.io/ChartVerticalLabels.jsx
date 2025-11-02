@@ -18,8 +18,7 @@ export default function ChartVerticalLabels({
         'pregunta 8',
         'pregunta 9',
         'pregunta 10'
-    ],
-    //data = [19, 10, 15, 10, 12, 18, 17, 16, 15, 8],
+    ],    
     width = "500px",
     height = '250px',
     format = 'png',
@@ -29,15 +28,11 @@ export default function ChartVerticalLabels({
 }) {
     // aca comienza agregar const
 
-    //console.log(arregloCompleto.respuestasDeLaPartida);
-
     const tiemposMs = (arregloCompleto?.respuestasDeLaPartida ?? [])
         .map(e => Number(e.tiempo_respuesta_ms))
-        .filter(Number.isFinite); // opcional: limpia null/NaN
+        .filter(Number.isFinite); // limpia null o NaN
     
     const tiemposSeg = tiemposMs.map(ms => Math.round(ms / 1000));
-
-    //console.log(tiemposSeg); // ej: [5000, 5050, 100]
 
     const data = tiemposSeg;
 
@@ -53,19 +48,29 @@ export default function ChartVerticalLabels({
                 backgroundColor: 'rgba(71, 117, 217, 0.281)', // área bajo la línea
                 pointBackgroundColor: '#0049e8',
                 pointBorderColor: '#08c2ecdb',
+                pointRadius: 3,            //  radio del punto
+                pointStyle: 'circle',      // estilo del punto (impacta en la leyenda si usePointStyle=true)
                 fill: false,
                 //tension: 0.3,
             }],
         },
         options: {
             plugins: {
-                legend: { labels: { color: 'black' } },
+                legend: { 
+                    labels: { 
+                        color: 'black', 
+                        usePointStyle: true,
+                        // opcional: forzar círculo para todos los datasets:
+                        pointStyle: 'circle',
+                        boxWidth: 8, boxHeight: 8, padding: 12 
+                    } 
+                },
                 title: {
                     //display: true, // true: habilita un titulo
                     //text: "Chart.js Line Chart" //hace el titulo                
                 },
             },
-            scales: {
+            scales: {                
                 x: {
                     ticks: { color: 'black', autoSkip: false }, // preguntas (el color)
                     grid: {

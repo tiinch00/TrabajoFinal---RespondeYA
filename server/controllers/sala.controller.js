@@ -1,5 +1,4 @@
-import {Sala,User,Categoria} from '../models/associations.js';
-
+import {Categoria, Sala, User} from '../models/associations.js';
 
 const index = async (req, res) => {
   try {
@@ -12,11 +11,14 @@ const index = async (req, res) => {
 };
 
 const show = async (req, res) => {
-  const { id } = req.params;
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id) && !(id > 0)) {
+    return res.status(400).json({ error: 'id de sala inválido' });
+  }
   try {
     const sala = await Sala.findByPk(id);
     if (!sala) {
-      return res.status(404).json({ error: "Sala not found" });
+      return res.status(404).json({ error: "obj Sala not found" });
     }
     res.json(sala);
   } catch (error) {

@@ -14,11 +14,7 @@ const SalaJugador = sequelize.define("SalaJugador", {
   jugador_id:{
     type: DataTypes.INTEGER.UNSIGNED,
     allowNull: false
-  },
-  rol:{
-    type: DataTypes.ENUM('creador','invitado'),
-    allowNull: false,
-  },
+  },  
   joined_at:{
     type: DataTypes.DATE,               
     allowNull: false,

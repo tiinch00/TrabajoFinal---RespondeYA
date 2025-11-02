@@ -8,18 +8,10 @@ import { scale } from 'motion/react';
 export default function QCChartStable({
     //config,
     labels = [
-        'Categoria 1',
-        'Categoria 2',
-        'Categoria 3',
-        'Categoria 4',
-        'Categoria 5',
-        'Categoria 6',
-        'Categoria 7',
-        'Categoria 8',
-        'Categoria 9',
-        'Categoria 10'
+        'Geografia',
+        'Cine',        
     ],
-    data = [19, 10, 15, 10, 12, 18, 17, 16, 15, 8],
+    data = [2, 2, 4],
     width = '700px',
     height = 'fit',
     format = 'png',

@@ -69,6 +69,8 @@ const Perfil = () => {
 
   const [objetoPartidaCompleto, setObjetoPartidaCompleto] = useState(null);
   const [listaObjetosPartidaInformacion, setListaObjetosPartidaInformacion] = useState(null);
+  const [arraySalaJugadores, setArraySalaJugadores] = useState([]);
+  const [salaId, setSalaId] = useState(null);
 
   const [estadisticas, setEstadisticas] = useState([]); // array estadisticas
 
@@ -445,6 +447,23 @@ const Perfil = () => {
     }
   };
 
+  // obtiene un array de sala_jugadores
+  const getArraySalaJugadores = async (id) => {
+    try {
+      const { data } = await axios.get('http://localhost:3006/sala_jugadores', {
+        params: { sala_id: id },
+      });
+      // asegura el array verificandolo
+      const arr = Array.isArray(data) ? data
+        : Array.isArray(data?.sala_jugadores) ? data.sala_jugadores
+          : [];
+      setArraySalaJugadores(arr);
+    } catch (e) {
+      console.error('GET /sala_jugadores', e.response?.data?.error || e.message);
+      setArraySalaJugadores([]); // fallback, caso mal retorna array vacio
+    }
+  };
+
   // obtiene un objeto partida
   const getPartdias = async (id) => {
     try {
@@ -501,17 +520,57 @@ const Perfil = () => {
   const inventarioInforCompletaDeTodasLasPartidas = () => {
     if (Array.isArray(partidas) && Array.isArray(categorias) && Array.isArray(preguntas)) {
 
-      // de cada partida me quedo con id, categoria_id y fecha
-      const partidasInfo = (partidas ?? []).map(({ id, categoria_id, ended_at, modo }) => ({
-        id,
-        categoria_id,
-        ended_at,
-        modo,
-      }));
+      // 1) Índices rápidos
+      const catById = new Map(categorias.map(c => [Number(c.id), c]));
 
-      //console.log("array partidasInfo:", partidasInfo);
+      // Si la dificultad está en "preguntas", tomamos (por simplicidad) la primera que aparezca por categoría.
+      const dificultadPorCategoria = new Map();
+      (preguntas ?? []).forEach(p => {
+        const cid = Number(p.categoria_id);
+        if (!dificultadPorCategoria.has(cid)) {
+          dificultadPorCategoria.set(cid, p.dificultad);
+        }
+      });
 
-      return partidasInfo;
+      // 2) Partidas enriquecidas con "categoria" y "dificultad"
+      const partidasInfo = (partidas ?? []).map(({ id, categoria_id, ended_at, modo }) => {
+        const cid = Number(categoria_id);
+        const categoria = catById.get(cid)?.nombre ?? "—";
+        const dificultad = dificultadPorCategoria.get(cid) ?? "—";
+
+        return { partida_id_dos: id, categoria_id: cid, ended_at, modo, categoria, dificultad };
+      });
+
+      // 1) Índice de partidas por id de partida
+      const partidasById = new Map(
+        (partidasInfo ?? []).map(p => [
+          Number(p.partida_id_dos ?? p.id), // clave del índice
+          p
+        ])
+      );
+
+      // 2) Filtrar + mergear
+      const estadisticasMatch = (estadisticas ?? []).reduce((acc, s) => {
+        const key = Number(s.partida_id);
+        const pi = partidasById.get(key);
+        if (!pi) return acc; // si no hay partida asociada, no la incluimos
+
+        acc.push({
+          ...s,
+          // agrego lo que necesito de partidasInfo
+          partida_id_dos: pi.partida_id_dos ?? pi.id, //partida_id_dos porque ya existe en el otro array: partida_id. por eso es dos al final
+          categoria_id: pi.categoria_id ?? pi.cid, // por si usaste 'cid'
+          ended_at: pi.ended_at,
+          modo: pi.modo,
+          categoria: pi.categoria,
+          dificultad: pi.dificultad,
+        });
+        return acc;
+      }, []);
+
+      //return partidasInfo;
+      return estadisticasMatch;
+
 
     } else {
       console.log("Alguno de los arrays no es un array:",
@@ -614,6 +673,41 @@ const Perfil = () => {
     }
   };
 
+  /*const [objJugador, setObjJugador] = useState(null);
+  const [objUsuario, setObjUsuario] = useState(null);
+  const [arrayUsuariosJugadores, setArrayUsuariosJugadores] = useState([]);*/
+
+  const getJugador = async (id) => {
+    try {
+      const { data } = await axios.get(`http://localhost:3006/jugadores/${id}`);
+      return data ?? null;
+    } catch (e) {
+      console.error('GET /jugadores/:id', e.response?.data?.error || e.message);
+      return null;
+    }
+  };
+
+  const getUsuario = async (id) => {
+    try {
+      const { data } = await axios.get(`http://localhost:3006/users/${id}`);
+      if (!data) return null;
+      const { password, ...safe } = data;
+      return safe;
+    } catch (e) {
+      console.error('GET /users/:id', e.response?.data?.error || e.message);
+      return null;
+    }
+  };
+
+
+  const segundaParteInvetario = () => {
+    if (Array.isArray(arraySalaJugadores)) {
+
+    } else {
+      console.log("No es un array:");
+    }
+  }
+
   // toggle para abri una o mas preguntas en el detalle completo de una partida
   const togglePregunta = (id) => {
     setOpenPreguntaIds(prev => {
@@ -702,6 +796,8 @@ const Perfil = () => {
           getPreguntas(),
           getOpciones(),
           getPartidaJugadores(),
+          //getObjSala(),
+          //getArraySalaJugadores(),
           getPartdias(),
           getPartidaPreguntas(),
           getEstadisticas(),
@@ -715,17 +811,129 @@ const Perfil = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // recalcular el objeto cuando haya datos suficientes
+  // 1) para inventarioIdPartidaSeleccionado -  efecto a
   useEffect(() => {
-    const obj = inventarioIdPartidaSeleccionado(); // debe ser una funcion pura (sin setState adentro)
-    //setObjetoPartidaCompleto(obj);
-    setObjetoPartidaCompleto(prev =>
-      JSON.stringify(prev) === JSON.stringify(obj) ? prev : obj
-    );
-  }, [
-    partidas, preguntas, categorias, partida_jugadores, partida_preguntas,
-    opciones, respuestas, partidaIdSeleccionada
-  ]);
+    const obj = inventarioIdPartidaSeleccionado(); // función pura
+    if (!obj) return;
+    setObjetoPartidaCompleto(obj);                 // guardo base
+    setSalaId(obj.partida?.[0]?.sala_id ?? null);  // dispara fetch en efecto B
+  }, [partidas, preguntas, categorias, partida_jugadores, partida_preguntas, opciones, respuestas, partidaIdSeleccionada]);
+
+  // 2)  efecto b
+  useEffect(() => {
+    if (salaId == null) {
+      setArraySalaJugadores([]);
+      return;
+    }
+    getArraySalaJugadores(salaId); // no retorna; sólo setea el estado
+  }, [salaId]);
+
+  // 3)  efecto c
+  useEffect(() => {
+    if (!objetoPartidaCompleto) return;
+
+    const prevSala = Array.isArray(objetoPartidaCompleto.sala_jugadores)
+      ? objetoPartidaCompleto.sala_jugadores
+      : [];
+
+    const nuevoObj = {
+      ...objetoPartidaCompleto,
+      sala_jugadores: [...prevSala, ...arraySalaJugadores],
+    };
+
+    setObjetoPartidaCompleto(nuevoObj);
+  }, [arraySalaJugadores]);
+
+  const [arrayUsuariosJugadores, setArrayUsuariosJugadores] = useState([]);
+
+  // Efecto D: a partir de arraySalaJugadores → traer jugadores y usuarios y componer
+  useEffect(() => {
+    let cancel = false;
+
+    (async () => {
+      // Reset si no hay sala_jugadores
+      if (!Array.isArray(arraySalaJugadores) || arraySalaJugadores.length === 0) {
+        if (!cancel) setArrayUsuariosJugadores([]);
+        return;
+      }
+
+      // 1) IDs únicos de jugadores (normalizados a número)
+      const jugadorIds = [...new Set(
+        arraySalaJugadores
+          .map(sj => Number(sj?.jugador_id))
+          .filter(n => Number.isFinite(n))
+      )];
+      // console.log('1) jugadorIds:', jugadorIds);
+
+      // 2) Traer jugadores en paralelo
+      const jugadoresArr = await Promise.all(jugadorIds.map(id => getJugador(id)));
+      const jugadores = jugadoresArr.filter(Boolean).map(j => {
+        const id = Number(j.id ?? j.jugador_id);
+        const user_id = Number(j.user_id ?? j.usuario_id ?? j.userId);
+        return { ...j, id, user_id: Number.isFinite(user_id) ? user_id : null };
+      });
+      // console.log('2) jugadores:', jugadores);
+
+      // Diccionario por id de jugador
+      const jugadoresById = Object.fromEntries(
+        jugadores.map(j => [String(j.id), j])
+      );
+
+      // 3) IDs únicos de usuarios (desde jugadores)
+      const userIds = [...new Set(
+        jugadores
+          .map(j => Number(j.user_id))
+          .filter(n => Number.isFinite(n))
+      )];
+      // console.log('3) userIds:', userIds);
+
+      // 4) Traer usuarios en paralelo
+      const usuariosArr = await Promise.all(userIds.map(id => getUsuario(id)));
+      const usuarios = usuariosArr.filter(Boolean).map(u => {
+        const id = Number(u.id ?? u.user_id ?? u.usuario_id ?? u.userId);
+        const { password, pass, ...safe } = u; // por si llegara a venir
+        return { ...safe, id };
+      });
+      // console.log('4) usuarios:', usuarios);
+
+      // Diccionario por id de usuario
+      const usuariosById = Object.fromEntries(
+        usuarios.map(u => [String(u.id), u])
+      );
+
+      // 5) Componer: a cada sala_jugador le pego su jugador y su usuario
+      const compuesto = arraySalaJugadores.map(sj => {
+        const jugador = jugadoresById[String(Number(sj?.jugador_id))] || null;
+        const uid = jugador?.user_id ?? null;
+        const usuario = uid != null ? (usuariosById[String(Number(uid))] || null) : null;
+        return { ...sj, jugador, usuario };
+      });
+
+      if (!cancel) {
+        // Reemplazo directo (lo más simple y evita duplicados)
+        setArrayUsuariosJugadores(compuesto);
+
+        // Si querés ACUMULAR sin duplicar por sala_id+jugador_id, usá esto en cambio:
+        // setArrayUsuariosJugadores(prev => {
+        //   const seen = new Set(prev.map(x => `${x.sala_id}-${x.jugador_id}`));
+        //   const nuevos = compuesto.filter(x => !seen.has(`${x.sala_id}-${x.jugador_id}`));
+        //   return [...prev, ...nuevos];
+        // });
+      }
+    })();
+
+    return () => { cancel = true; };
+  }, [arraySalaJugadores]);
+
+  //Inyectando al objetoPartidaCompleto sin loops
+  /*useEffect(() => {
+    if (!objetoPartidaCompleto) return;
+    objetoPartidaCompletobjetoPartidaCompleto(prev => ({
+      ...prev,
+      usuarios_jugadores: arrayUsuariosJugadores,  // o el nombre que prefieras
+    }));
+  }, [arrayUsuariosJugadores]);*/
+
 
   useEffect(() => {
     const objDos = inventarioInforCompletaDeTodasLasPartidas(); // debe ser una funcion pura (sin setState adentro)
@@ -733,7 +941,7 @@ const Perfil = () => {
       JSON.stringify(prev) === JSON.stringify(objDos) ? prev : objDos
     );
   }, [
-    partidas, preguntas, categorias
+    partidas, preguntas, categorias, estadisticas
   ]);
 
   // 
@@ -746,10 +954,10 @@ const Perfil = () => {
   }, [algunModalAbierto]);
 
   // verifica datos para correr perfil o envia mensaje de errores visual en la interfaz
-  if (!userId) return <p>No hay usuario en sesión.</p>;
+  if (!userId) return <p className="text-red-600">No hay usuario en sesión.</p>;
   if (error) return <p className="text-red-600">Error: {error}</p>;
-  if (loadingPerfil) return <p>Cargando perfil…</p>;
-  if (!perfil) return <p>No se pudo cargar el perfil.</p>;
+  if (loadingPerfil) return <p className="text-white">Cargando perfil…</p>;
+  if (!perfil) return <p className="text-red-600">No se pudo cargar el perfil.</p>;
 
   // console.log(partidaIdSeleccionada);  
 
@@ -1229,18 +1437,11 @@ const Perfil = () => {
                 </button>
               </div>
 
-              {console.log("primera visualizacion de partidas listaObjetosPartidaInformacion:\n", listaObjetosPartidaInformacion)}
+              {/*console.log("primera visualizacion de partidas listaObjetosPartidaInformacion:\n", listaObjetosPartidaInformacion)*/}
 
-
-              {/* listado de las partidas */}
+              {/* listado de las partidas (estadisticas) */}
               <ul className="">
-                {estadisticas.map((e, index) => {
-                  const info = listaObjetosPartidaInformacion.find(i => i.id === e.partida_id);
-                  const cate = (categorias ?? []).find(l => Number(l.id) === Number(info?.categoria_id));
-
-                  //console.log('cate', cate);
-                  //console.log('typeof e.categoria_id:', typeof e?.categoria_id, e?.categoria_id);
-
+                {listaObjetosPartidaInformacion.map((e, index) => {
                   return (
                     <motion.li
                       key={e.id}
@@ -1256,20 +1457,20 @@ const Perfil = () => {
                       {e.posicion > 0 ? (
                         <div className="flex flex-row gap-5">
                           <p className="text-green-500">Ganaste</p>
-                          <p className="text-white">Fecha: {formatDateDMYLocal(info?.ended_at) ?? '-'}</p>
-                          <p className="text-white">Hora: {formatTimeHMLocal(info?.ended_at) ?? '-'}</p>
-                          <p className="text-white">Modo: {info?.modo ?? '-'}</p>
-                          <p className="text-white">Categoria: {cate?.nombre ?? '-'}</p>
-                          <p className="text-white">Dificultad: {info?.dificultad ?? '-'}</p>
+                          <p className="text-white">Fecha: {formatDateDMYLocal(e?.ended_at) ?? '-'}</p>
+                          <p className="text-white">Hora: {formatTimeHMLocal(e?.ended_at) ?? '-'}</p>
+                          <p className="text-white">Modo: {e?.modo ?? '-'}</p>
+                          <p className="text-white">Categoria: {e?.categoria ?? '-'}</p>
+                          <p className="text-white">Dificultad: {e?.dificultad ?? '-'}</p>
                         </div>
                       ) : (
                         <div className="flex flex-row gap-5">
                           <p className="text-red-500">Perdiste</p>
-                          <p className="text-white">Fecha: {formatDateDMYLocal(info?.ended_at) ?? '-'}</p>
-                          <p className="text-white">Hora: {formatTimeHMLocal(info?.ended_at) ?? '-'}</p>
-                          <p className="text-white">Modo: {info?.modo ?? '-'}</p>
-                          <p className="text-white">Categoria: {cate?.nombre ?? '-'}</p>
-                          <p className="text-white">Dificultad: {info?.dificultad ?? '-'}</p>
+                          <p className="text-white">Fecha: {formatDateDMYLocal(e?.ended_at) ?? '-'}</p>
+                          <p className="text-white">Hora: {formatTimeHMLocal(e?.ended_at) ?? '-'}</p>
+                          <p className="text-white">Modo: {e?.modo ?? '-'}</p>
+                          <p className="text-white">Categoria: {e?.categoria ?? '-'}</p>
+                          <p className="text-white">Dificultad: {e?.dificultad ?? '-'}</p>
                         </div>
                       )}
                     </motion.li>
@@ -1353,17 +1554,20 @@ const Perfil = () => {
 
                     {/* Informacion detallada */}
                     <div className="bg-indigo-800/90 rounded p-4 mt-1 text-xl flex-1 min-h-0 text-[28px]">
-                      {estadisticas[selectedEstadisticas].posicion > 0 ? (
-                        <p className="p-1"><strong>Posición:</strong> Ganador</p>
+                      <p className="p-1"><strong>Modo:</strong> {listaObjetosPartidaInformacion[selectedEstadisticas]?.modo ?? "—"}</p>
+                      {listaObjetosPartidaInformacion[selectedEstadisticas].posicion > 0 ? (
+                        <p className="p-1"><strong>Posición:</strong> Ganaste</p>
                       ) : (
-                        <p className="p-1"><strong>Posición:</strong> Perdedor</p>
+                        <p className="p-1"><strong>Posición:</strong> Perdiste</p>
                       )}
-                      <p className="p-1"><strong>Puntaje total:</strong> {estadisticas[selectedEstadisticas].puntaje_total}</p>
-                      <p className="p-1"><strong>Categoría:</strong> {objetoPartidaCompleto?.objCategoria?.nombre ?? "—"}</p>
-                      <p className="p-1"><strong>Dificultad de preguntas:</strong> {objetoPartidaCompleto?.dificultadDePreguntas ?? "—"}</p>
-                      <p className="p-1"><strong>Respuestas correctas:</strong> {estadisticas[selectedEstadisticas].total_correctas}</p>
-                      <p className="p-1"><strong>Respuestas incorrectas:</strong> {estadisticas[selectedEstadisticas].total_incorrectas}</p>
-                      <p className="p-1"><strong>Tiempo de partida:</strong> {fmtMsDetallado(estadisticas[selectedEstadisticas].tiempo_total_ms)}</p>
+                      <p className="p-1"><strong>Puntaje total:</strong> {listaObjetosPartidaInformacion[selectedEstadisticas].puntaje_total}</p>
+                      <p className="p-1"><strong>Categoría:</strong> {listaObjetosPartidaInformacion[selectedEstadisticas]?.categoria ?? "—"}</p>
+                      <p className="p-1"><strong>Fecha:</strong> {formatDateDMYLocal(listaObjetosPartidaInformacion[selectedEstadisticas]?.ended_at) ?? "—"} {formatTimeHMLocal(listaObjetosPartidaInformacion[selectedEstadisticas]?.ended_at) ?? "—"}</p>
+                      <p className="p-1"><strong>Respuestas correctas:</strong> {listaObjetosPartidaInformacion[selectedEstadisticas].total_correctas}</p>
+                      <p className="p-1"><strong>Respuestas incorrectas:</strong> {listaObjetosPartidaInformacion[selectedEstadisticas].total_incorrectas}</p>
+                      <p className="p-1"><strong>Dificultad de preguntas:</strong> {listaObjetosPartidaInformacion[selectedEstadisticas]?.dificultad ?? "—"}</p>
+                      {/* <p className="p-1"><strong>Dificultad de tiempo:</strong> {listaObjetosPartidaInformacion[selectedEstadisticas]?.dificultad_tiempo ?? "—"}</p> */}
+                      <p className="p-1"><strong>Tiempo de partida:</strong> {fmtMsDetallado(listaObjetosPartidaInformacion[selectedEstadisticas].tiempo_total_ms)}</p>
                     </div>
                   </>
                 )}
@@ -1428,7 +1632,7 @@ const Perfil = () => {
                         className="h-full overflow-y-auto overscroll-contain touch-pan-y pr-2
                       bg-indigo-800/90 rounded"
                       >
-                        {/*console.log(objetoPartidaCompleto)*/}
+                        {console.log("objetoPartidaCompleto: ", objetoPartidaCompleto)}
                         {/*console.log(objetoPartidaCompleto.respuestasDeLaPartida)*/}
 
                         <div className="flex flex-row gap-2 mb-2 sticky top-0 bg-indigo-800 p-2">
@@ -1588,9 +1792,8 @@ const Perfil = () => {
 
                     {/* grafica lineal de respuestas */}
                     <div
-                      ref={listRef}
-                      className="text-xl bg-indigo-800/90 rounded p-1.5 mt-1 flex-1 min-h-0
-                    overflow-y-auto overscroll-contain touch-pan-y pr-2">
+                      //ref={listRef}
+                      className="text-xl bg-indigo-800/90 rounded p-1.5 mt-1 flex-1 min-h-0">
                       {objetoPartidaCompleto.partida[0].modo == "individual" ? (
                         //<span className="p-2 text-[20px]">Grafica lineal de respuestas...</span>
                         //grafica de respuesta de simpleBarChart 
@@ -1606,7 +1809,7 @@ const Perfil = () => {
                         <div>
                           {/* varias lineas - multijugador */}
                           {/* <h3 className="mt-4">Multiline labels - multijugador</h3>*/}
-                          <ChartMultilineLabels className="mt-4 bg-white" />
+                          <ChartMultilineLabels arregloCompleto={objetoPartidaCompleto} className="mt-4 bg-white" />
                         </div>
                       )}
                     </div>
@@ -1635,13 +1838,13 @@ const Perfil = () => {
             <>
               <p className="indent-2 text-white">No hay gráfica de estadísticas general para mostrar...</p>
             </>
-          )}          
+          )}
         </div>
       )
       }
 
 
-      {/* ====================================================================================== */}
+      {/* ============================= Mis Amigos ================================================= */}
 
       {/* Mis amigos */}
       <div className="mb-6 mt-8 bg-white/10 rounded-xl p-1">
