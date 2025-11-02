@@ -6,27 +6,83 @@ import { buildQuickChartURL } from '../../utils/quickchart';
 import { scale } from 'motion/react';
 
 export default function QCChartStable({
-    //config,
-    labels = [
-        'Geografia',
-        'Cine',        
-    ],
-    data = [2, 2, 4],
-    width = '700px',
-    height = 'fit',
+    arregloCompleto,    
+    width = 'full',
+    height = '200px',
     format = 'png',
     backgroundColor = 'transparent',
     alt = 'chart',
     className = '',
 }) {
+
+    // comienzo de const:
+
+    //console.log("arregloCompleto: ", arregloCompleto);
+    //console.log("arregloCompleto.categorias: ", arregloCompleto.categorias);
+
+    const arrCats = (() => {
+        const seenUno = new Set();
+        const outUno = [];
+        for (const i of (arregloCompleto.categorias ?? [])) {
+            const raw = i?.nombre;
+            if (typeof raw !== 'string') continue;
+            const norm = raw.trim().toLowerCase(); // normalizo para comparar
+            if (!norm || seenUno.has(norm)) continue;
+            seenUno.add(norm);
+            outUno.push(raw.trim()); // guardo como vino (con mayúsculas originales)
+        }
+        return outUno;
+    })();
+    //console.log("arrCats: ", arrCats);
+
+    const arrayCategorias = (() => {
+        const seen = new Set();
+        const out = [];
+        for (const e of (arregloCompleto.listaObjetosPartidaInformacion ?? [])) {
+            const raw = e?.categoria;
+            if (typeof raw !== 'string') continue;
+            const norm = raw.trim().toLowerCase(); // normalizo para comparar
+            if (!norm || seen.has(norm)) continue;
+            seen.add(norm);
+            out.push(raw.trim()); // guardo como vino (con mayúsculas originales)
+        }
+        return out;
+    })();
+    //console.log("arrayCategorias: ", arrayCategorias);
+
+    const counts = (arregloCompleto.listaObjetosPartidaInformacion ?? []).reduce((acc, e) => {
+        const k = (e?.categoria ?? '').trim().toLowerCase();
+        if (!k) return acc;
+        acc[k] = (acc[k] ?? 0) + 1;
+        return acc;
+    }, {});
+    //console.log("counts: ", counts); // { ciencia: 3, historia: 1, ... }
+
+    const categoriasConConteo = arrCats.map(cat => {
+        const norm = cat.trim().toLowerCase();
+        return {
+            categoria: cat,
+            count: counts[norm] ?? 0
+        };
+    });
+    //console.log("categoriasConConteo: ", categoriasConConteo);
+
+    const nuevoLabels = categoriasConConteo.map(e => e.categoria);
+    //const nuevoData = categoriasConConteo.map(e => e.count);
+    const nuevoData = (() => {
+        const base = categoriasConConteo.map(e => e.count);
+        const total = base.reduce((acc, n) => acc + n, 0);
+        return [...base, total];
+    })();
+
     // antes era barConfig
     const config = {
         type: 'bar',
         data: {
-            labels,
+            labels: nuevoLabels,
             datasets: [{
-                label: 'Categorias',                
-                data,
+                label: 'Categorias',
+                data: nuevoData,
                 //backgroundColor: 'rgba(54,162,235,0.6)', //color-mix(in oklab, var(--color-fuchsia-500) 95%, transparent)
                 backgroundColor: '#e12afbf2',
                 borderColor: '#e32afb',
@@ -48,13 +104,13 @@ export default function QCChartStable({
                 //     display: true,
                 //     text: "Chart.js Line Chart" //hace el titulo  
                 // }
-            },            
+            },
             scales: {
                 x: {
                     ticks: { color: 'white', autoSkip: false }, // preguntas (el color)
                     grid: {
                         display: true,                      // ON
-                        color: 'rgba(0, 0, 0, 0.432)',         // contraste de las lineas de fondo
+                        color: 'white',         // contraste de las lineas de fondo
                         lineWidth: 1,
                         drawOnChartArea: true,
                         drawTicks: true,
@@ -67,7 +123,7 @@ export default function QCChartStable({
                     ticks: { color: 'white' },
                     grid: {
                         display: true,
-                        color: 'rgba(0, 0, 0, 0.432)',
+                        color: 'white',
                         lineWidth: 1,
                         drawOnChartArea: true,
                         drawTicks: true,
@@ -78,7 +134,7 @@ export default function QCChartStable({
                         display: true,
                         text: 'Partidas realizadas',
                         color: 'white',
-                        padding: { top: 4, bottom: 4 },
+                        padding: { top: 2, bottom: 4 },
                         font: { size: 14, family: 'sans-serif', weight: 'light' },
                     },
                 },
@@ -101,8 +157,7 @@ export default function QCChartStable({
         <img
             src={src}
             alt={alt}
-            className={className}
-            // style={{ width: '100%', height: 'auto', display: 'block' }}
+            className={className}            
             loading="lazy"
         />
     );

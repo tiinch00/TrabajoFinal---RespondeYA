@@ -1495,7 +1495,8 @@ const Perfil = () => {
                 // 1) wrapper del modal: altura limitada + columna + oculta desborde externo
                 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
                   w-[95vw] max-w-5xl max-h-[900px] h-[600px] rounded-2xl
-                bg-indigo-900 text-white shadow-2xl p-3 
+                  bg-gradient-to-b from-violet-900 via-purple-700 to-purple-900
+                text-white shadow-2xl p-3 
                   flex flex-col overflow-hidden"
               >
 
@@ -1508,7 +1509,7 @@ const Perfil = () => {
                       <div className="flex flex-row gap-2 mb-2 w-fit text-2xl">
                         <button
                           type="button"
-                          className="bg-black/80 rounded w-48 p-2 hover:text-white/90"
+                          className="rounded text-fuchsia-500 [text-shadow:_0_4px_8px_#000000] w-48 p-2"
                         >
                           Resumen
                         </button>
@@ -1518,7 +1519,7 @@ const Perfil = () => {
                         <button
                           type="button"
                           onClick={() => { setSelectedEstRespuestas(true); setSelectedEstResumen(false); }}
-                          className="w-48 p-2 cursor-pointer hover:text-white/90"
+                          className="w-48 p-2 cursor-pointer hover:text-fuchsia-500 hover:drop-shadow-[0_4px_8px_#000000]"
                         >
                           Respuestas
                         </button>
@@ -1528,7 +1529,7 @@ const Perfil = () => {
                         <button
                           type="button"
                           onClick={() => { setSelectedEstGraficaDeRespuestas(true); setSelectedEstResumen(false); }}
-                          className="p-2 cursor-pointer hover:text-white/90"
+                          className="p-2 cursor-pointer hover:text-fuchsia-500 hover:drop-shadow-[0_4px_8px_#000000]"
                         >
                           Gráfica de respuestas
                         </button>
@@ -1538,7 +1539,9 @@ const Perfil = () => {
                       <button
                         type="button"
                         aria-label="Cerrar"
-                        className="ml-auto rounded-full w-9 h-9 grid place-items-center text-2xl cursor-pointer"
+                        className="ml-auto rounded-full w-9 h-9 grid place-items-center text-2xl cursor-pointer
+                        hover:text-fuchsia-500 hover:drop-shadow-[0_4px_8px_#000000]
+                        "
                         onClick={() => {
                           setSelectedEstadisticas(null);
                           setSelectedEstRespuestas(null);
@@ -1553,7 +1556,9 @@ const Perfil = () => {
                     </div>
 
                     {/* Informacion detallada */}
-                    <div className="bg-indigo-800/90 rounded p-4 mt-1 text-xl flex-1 min-h-0 text-[28px]">
+                    <div
+                      className="bg-gradient-to-b from-purple-800 via-purple-700 to-purple-800
+                      rounded-xl p-4 mt-1 text-xl flex-1 min-h-0 text-[28px]">
                       <p className="p-1"><strong>Modo:</strong> {listaObjetosPartidaInformacion[selectedEstadisticas]?.modo ?? "—"}</p>
                       {listaObjetosPartidaInformacion[selectedEstadisticas].posicion > 0 ? (
                         <p className="p-1"><strong>Posición:</strong> Ganaste</p>
@@ -1582,7 +1587,7 @@ const Perfil = () => {
                         <button
                           type="button"
                           onClick={() => { setSelectedEstResumen(true); setSelectedEstRespuestas(false); }}
-                          className="w-48 p-2 cursor-pointer hover:text-white/90"
+                          className="w-48 p-2 cursor-pointer hover:text-fuchsia-500 hover:drop-shadow-[0_4px_8px_#000000]"
                         >
                           Resumen
                         </button>
@@ -1591,7 +1596,7 @@ const Perfil = () => {
 
                         <button
                           type="button"
-                          className="bg-black/80 rounded w-48 p-2 hover:text-white/90">
+                          className="rounded w-48 p-2 text-fuchsia-500 [text-shadow:_0_4px_8px_#000000]">
                           Respuestas
                         </button>
 
@@ -1600,7 +1605,7 @@ const Perfil = () => {
                         <button
                           type="button"
                           onClick={() => { setSelectedEstGraficaDeRespuestas(true); setSelectedEstRespuestas(false); }}
-                          className="p-2 cursor-pointer hover:text-white/90"
+                          className="p-2 cursor-pointer hover:text-fuchsia-500 hover:drop-shadow-[0_4px_8px_#000000]"
                         >
                           Gráfica de respuestas
                         </button>
@@ -1610,7 +1615,8 @@ const Perfil = () => {
                       <button
                         type="button"
                         aria-label="Cerrar"
-                        className="ml-auto rounded-full w-9 h-9 grid place-items-center text-2xl cursor-pointer"
+                        className="ml-auto rounded-full w-9 h-9 grid place-items-center text-2xl cursor-pointer
+                        hover:text-fuchsia-500 hover:drop-shadow-[0_4px_8px_#000000]"
                         onClick={() => {
                           setSelectedEstadisticas(null);
                           setSelectedEstRespuestas(null);
@@ -1630,24 +1636,25 @@ const Perfil = () => {
                       <div
                         ref={listRef}
                         className="h-full overflow-y-auto overscroll-contain touch-pan-y pr-2
-                      bg-indigo-800/90 rounded"
+                      bg-gradient-to-b from-purple-800 via-purple-700 to-purple-800
+                      rounded-xl"
                       >
-                        {console.log("objetoPartidaCompleto: ", objetoPartidaCompleto)}
+                        {/*console.log("objetoPartidaCompleto: ", objetoPartidaCompleto)*/}
                         {/*console.log(objetoPartidaCompleto.respuestasDeLaPartida)*/}
 
-                        <div className="flex flex-row gap-2 mb-2 sticky top-0 bg-indigo-800 p-2">
+                        <div className="flex flex-row gap-2 mb-2 sticky top-0 p-2 bg-purple-800">
                           <button
                             onClick={() => setOpenPreguntaIds(new Set(
                               (objetoPartidaCompleto?.preguntasDeLaPartida ?? []).map(e => Number(e.pregunta_id ?? e.id))
                             ))}
-                            className="bg-black/60 hover:bg-black rounded p-2 cursor-pointer text-[20px]"
+                            className="hover:text-rose-600 rounded p-2 cursor-pointer text-[20px]"
                           >
                             Abrir todas las preguntas
                           </button>
 
                           <button
                             onClick={() => setOpenPreguntaIds(new Set())}
-                            className="bg-black/60 hover:bg-black rounded p-2 cursor-pointer text-[20px]"
+                            className="hover:text-rose-600 rounded p-2 cursor-pointer text-[20px]"
                           >
                             Cerrar todas las preguntas
                           </button>
@@ -1747,7 +1754,7 @@ const Perfil = () => {
                         <button
                           type="button"
                           onClick={() => { setSelectedEstResumen(true); setSelectedEstGraficaDeRespuestas(false); }}
-                          className="w-48 p-2 cursor-pointer hover:text-white/90"
+                          className="w-48 p-2 cursor-pointer hover:text-fuchsia-500 hover:drop-shadow-[0_4px_8px_#000000]"
                         >
                           Resumen
                         </button>
@@ -1757,7 +1764,7 @@ const Perfil = () => {
                         <button
                           type="button"
                           onClick={() => { setSelectedEstRespuestas(true); setSelectedEstGraficaDeRespuestas(false); }}
-                          className="w-48 p-2 cursor-pointer hover:text-white/90">
+                          className="w-48 p-2 cursor-pointer hover:text-fuchsia-500 hover:drop-shadow-[0_4px_8px_#000000]">
                           Respuestas
                         </button>
 
@@ -1766,7 +1773,10 @@ const Perfil = () => {
                         <button
                           type="button"
                           onClick={() => { setSelectedEstGraficaDeRespuestas(true); setSelectedEstRespuestas(false); }}
-                          className="bg-black/80 rounded p-2 hover:text-white/90"
+                          className="text-fuchsia-500 rounded p-2                            
+                            [text-shadow:_0_4px_8px_#000000]
+                          "
+                        // [text-shadow:_0_8px_8px_rgb(99_102_241_/_0.8)] 
                         >
                           Gráfica de respuestas
                         </button>
@@ -1784,7 +1794,7 @@ const Perfil = () => {
                           setOpenPreguntaIds(new Set());
                           setModalEstadisticaAbierto(null);
                         }}
-                        className="ml-auto rounded-full w-9 h-9 grid place-items-center text-2xl cursor-pointer"
+                        className="ml-auto rounded-full w-9 h-9 grid place-items-center text-2xl cursor-pointer hover:text-fuchsia-500 hover:drop-shadow-[0_4px_8px_#000000]"
                       >
                         ✕
                       </button>
@@ -1793,23 +1803,23 @@ const Perfil = () => {
                     {/* grafica lineal de respuestas */}
                     <div
                       //ref={listRef}
-                      className="text-xl bg-indigo-800/90 rounded p-1.5 mt-1 flex-1 min-h-0">
+                      className="text-xl rounded p-1.5 mt-1 flex-1 min-h-0">
                       {objetoPartidaCompleto.partida[0].modo == "individual" ? (
                         //<span className="p-2 text-[20px]">Grafica lineal de respuestas...</span>
                         //grafica de respuesta de simpleBarChart 
                         //<SimpleBarChart objPartidaIdInformacion={objetoPartidaCompleto}
 
                         //grafica de respuesta de la api quickchart.js                        
-                        <div>
+                        <div className="bg-gradient-to-b from-purple-800 via-purple-700 to-purple-800 rounded-xl">
                           {/* objetoPartidaCompleto */}
                           {/* <h3 className="mt-4">Vertical axis labels - indiviual</h3> */}
-                          <ChartVerticalLabels arregloCompleto={objetoPartidaCompleto} className="bg-white rounded" />
+                          <ChartVerticalLabels arregloCompleto={objetoPartidaCompleto} className=" mt-1 p-1" />
                         </div>
                       ) : (
                         <div>
                           {/* varias lineas - multijugador */}
                           {/* <h3 className="mt-4">Multiline labels - multijugador</h3>*/}
-                          <ChartMultilineLabels arregloCompleto={objetoPartidaCompleto} className="mt-4 bg-white" />
+                          <ChartMultilineLabels arregloCompleto={objetoPartidaCompleto} className=" bg-gradient-to-b from-purple-800 via-purple-700 to-purple-800 rounded-xl mt-4" />
                         </div>
                       )}
                     </div>
@@ -1832,7 +1842,7 @@ const Perfil = () => {
             <>
               {/* <h3 className="mt-4">QCChartStable</h3> */}
               {/* config={null} */}
-              <QCChartStable className="mt-4 bg-white/25 rounded" />
+              <QCChartStable arregloCompleto={{ listaObjetosPartidaInformacion, categorias }} className="bg-gradient-to-b from-purple-800 via-purple-700 to-purple-800  mt-4 rounded p-4 pl-1" />
             </>
           ) : (
             <>

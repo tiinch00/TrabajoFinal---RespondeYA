@@ -18,7 +18,7 @@ export default function ChartVerticalLabels({
         'pregunta 8',
         'pregunta 9',
         'pregunta 10'
-    ],    
+    ],
     width = "500px",
     height = '250px',
     format = 'png',
@@ -31,7 +31,7 @@ export default function ChartVerticalLabels({
     const tiemposMs = (arregloCompleto?.respuestasDeLaPartida ?? [])
         .map(e => Number(e.tiempo_respuesta_ms))
         .filter(Number.isFinite); // limpia null o NaN
-    
+
     const tiemposSeg = tiemposMs.map(ms => Math.round(ms / 1000));
 
     const data = tiemposSeg;
@@ -43,12 +43,12 @@ export default function ChartVerticalLabels({
             datasets: [{
                 label: 'Respuesta',
                 data,
-                borderColor: '#74a0fe',          // linea visible
+                borderColor: 'rgb(114, 33, 253)',          // linea visible
                 borderWidth: 2,
-                backgroundColor: 'rgba(71, 117, 217, 0.281)', // área bajo la línea
-                pointBackgroundColor: '#0049e8',
+                backgroundColor: "rgba(0, 25, 79, 0.6)", // área bajo la línea
+                pointBackgroundColor: 'rgb(3, 57, 172)',
                 pointBorderColor: '#08c2ecdb',
-                pointRadius: 3,            //  radio del punto
+                pointRadius: 4,            //  radio del punto
                 pointStyle: 'circle',      // estilo del punto (impacta en la leyenda si usePointStyle=true)
                 fill: false,
                 //tension: 0.3,
@@ -56,26 +56,26 @@ export default function ChartVerticalLabels({
         },
         options: {
             plugins: {
-                legend: { 
-                    labels: { 
-                        color: 'black', 
+                legend: {
+                    labels: {
+                        color: 'white',
                         usePointStyle: true,
                         // opcional: forzar círculo para todos los datasets:
                         pointStyle: 'circle',
-                        boxWidth: 8, boxHeight: 8, padding: 12 
-                    } 
+                        boxWidth: 8, boxHeight: 8, padding: 12
+                    }
                 },
                 title: {
                     //display: true, // true: habilita un titulo
                     //text: "Chart.js Line Chart" //hace el titulo                
                 },
             },
-            scales: {                
+            scales: {
                 x: {
-                    ticks: { color: 'black', autoSkip: false }, // preguntas (el color)
+                    ticks: { color: 'white', autoSkip: false }, // preguntas (el color)
                     grid: {
                         display: true,                      // ON
-                        color: 'rgba(0,0,0,0.2)',         // contraste de las lineas de fondo
+                        color: 'white',         // contraste de las lineas de fondo
                         lineWidth: 1,
                         drawOnChartArea: true,
                         drawTicks: true,
@@ -85,10 +85,10 @@ export default function ChartVerticalLabels({
                 },
                 y: {
                     beginAtZero: true,
-                    ticks: { color: 'black' },
+                    ticks: { color: 'white' },
                     grid: {
                         display: true,
-                        color: 'rgba(0,0,0,0.2)',
+                        color: 'white',
                         lineWidth: 1,
                         drawOnChartArea: true,
                         drawTicks: true,
@@ -98,7 +98,7 @@ export default function ChartVerticalLabels({
                     title: {
                         display: true,
                         text: 'Tiempo en segundos',
-                        color: 'rgba(0, 0, 0, 0.845)',
+                        color: 'white',
                         padding: { top: 4, bottom: 4 },
                         font: { size: 14, family: 'sans-serif', weight: 'bold' },
                     },
@@ -110,14 +110,14 @@ export default function ChartVerticalLabels({
     };
 
     // se crea la URL y se forza en version=4 para evitar ambigüedades
-    const baseUrl = buildQuickChartURL({ config, width, height, format, backgroundColor });
+    const baseUrl = buildQuickChartURL({ config, width, height, format, backgroundColor }); // backgroundColor
     const withVersion = `${baseUrl}`; // importante declarar version 4 (&version=4)
     const [src, setSrc] = useState(withVersion);
 
-    useEffect(() => {
+    useEffect(() => { //backgroundColor
         const url = buildQuickChartURL({ config, width, height, format, backgroundColor }) + '&version=4';
         setSrc(url);
-    }, [JSON.stringify(config), width, height, format, backgroundColor]);
+    }, [JSON.stringify(config), width, height, format, backgroundColor]); // backgroundColor
 
     return <img src={src} alt={alt} className={className} loading="lazy" />;
 }

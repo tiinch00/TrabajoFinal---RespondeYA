@@ -43,10 +43,11 @@ export default function ChartMultilineLabels({
                     label: 'Primer Jugador',
                     data: dataA,
                     borderColor: 'rgb(255, 99, 132)',
+                    borderWidth: 2,
                     backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                    pointBackgroundColor: 'rgb(255, 99, 132)',
+                    pointBackgroundColor: 'rgb(239, 20, 68)',
                     pointBorderColor: 'rgb(255, 99, 132)',
-                    pointRadius: 3,
+                    pointRadius: 3,            //  radio del punto
                     pointStyle: 'circle',
                     fill: false,
                 },
@@ -54,9 +55,10 @@ export default function ChartMultilineLabels({
                     label: 'Segundo Jugador',
                     data: dataB,
                     borderColor: 'rgb(54, 162, 235)',
+                    borderWidth: 2,
                     backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                    pointBackgroundColor: 'rgb(54, 162, 235)',
-                    pointBorderColor: 'rgb(54, 162, 235)',
+                    pointBackgroundColor: 'rgb(3, 57, 172)',
+                    pointBorderColor: '#08c2ecdb',
                     pointRadius: 3,
                     pointStyle: 'circle',
                     fill: false,
@@ -72,17 +74,19 @@ export default function ChartMultilineLabels({
                 },
                 legend: {
                     labels: {
-                        color: 'black',
+                        color: 'white',
                         usePointStyle: true,   // muestra círculo en la leyenda
+                        pointStyle: 'circle',
+                        boxWidth: 8, boxHeight: 8, padding: 12
                     },
                 },
             },
             scales: {
                 x: {
-                    ticks: { color: 'black', autoSkip: false },
+                    ticks: { color: 'white', autoSkip: false },
                     grid: {
                         display: true,
-                        color: 'rgba(0,0,0,0.2)',
+                        color: 'white',
                         lineWidth: 1,
                         drawOnChartArea: true,
                         drawTicks: true,
@@ -91,10 +95,10 @@ export default function ChartMultilineLabels({
                 },
                 y: {
                     beginAtZero: true,
-                    ticks: { color: 'black' },
+                    ticks: { color: 'white' },
                     grid: {
                         display: true,
-                        color: 'rgba(0,0,0,0.2)',
+                        color: 'white',
                         lineWidth: 1,
                         drawOnChartArea: true,
                         drawTicks: true,
@@ -104,7 +108,7 @@ export default function ChartMultilineLabels({
                     title: {
                         display: true,
                         text: 'Tiempo en segundos',
-                        color: 'rgba(0, 0, 0, 0.845)',
+                        color: 'white',
                         padding: { top: 4, bottom: 4 },
                         font: { size: 14, family: 'sans-serif', weight: 'bold' },
                     },
