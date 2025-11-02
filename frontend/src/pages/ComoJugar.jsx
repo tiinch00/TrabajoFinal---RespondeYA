@@ -5,7 +5,7 @@ const ComoJugar = () => {
   const { t } = useTranslation();
 
   return (
-    <div className='min-h-screen bg-gradient-to-b from-gray-900 via-purple-900 to-gray-900 pt-15'>
+    <div className='w-full h-full bg-gradient-to-b from-gray-900 via-purple-900 to-gray-900 pt-15'>
       <div className='relative z-20 text-center px-6 '>
         <h1 className='text-6xl md:text-7xl font-bold mb-6 text-white'>
           {t('howToPlay_welcome')}{' '}

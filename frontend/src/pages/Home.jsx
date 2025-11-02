@@ -49,7 +49,7 @@ const Home = () => {
                   {t('gameMode')}
                 </div>
 
-                <Link to='/crearPartida'>
+                <Link to='/crearIndividual'>
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
@@ -60,7 +60,7 @@ const Home = () => {
                   </motion.button>
                 </Link>
 
-                <Link to='*'>
+                <Link to='/salaPartidas'>
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}

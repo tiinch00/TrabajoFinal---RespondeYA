@@ -57,7 +57,7 @@ export default function HeaderPrivate() {
   return (
     <header className='bg-black px-6 py-4 font-semibold shadow sticky top-0 w-full z-50'>
       <nav className='flex items-center justify-between text-white'>
-        <Link to='/' className='h-14 flex items-center group'>
+        <Link to='/' className='h-14 pl-10 flex items-center group'>
           <div className='text-4xl font-black tracking-tight'>
             <span className='bg-gradient-to-r from-purple-400 via-pink-400 to-purple-500 text-transparent bg-clip-text hover:from-purple-300 hover:via-pink-300 hover:to-purple-400 transition-all duration-300'>
               Dev

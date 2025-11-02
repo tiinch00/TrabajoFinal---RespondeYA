@@ -21,6 +21,7 @@ import AbmCategorias from './pages/Admin/AbmCategorias.jsx';
 import AbmPreguntas from './pages/Admin/AbmPreguntas.jsx';
 import Ranking from './pages/Ranking.jsx';
 import './utils/i18n.js';
+import SalaPartidas from './pages/SalaPartidas.jsx';
 
 function LayoutSwitch() {
   const user = (() => {
@@ -34,7 +35,7 @@ function LayoutSwitch() {
   return user ? <PrivateLayout /> : <PublicLayout />;
 }
 
-// Componente que controla la música según autenticación y ruta
+// componente que controla la mssica segun autenticacion y ruta
 function MusicController() {
   const { audioRef } = useMusic();
   const location = useLocation();
@@ -43,10 +44,9 @@ function MusicController() {
   useEffect(() => {
     try {
       const user = JSON.parse(localStorage.getItem('user') || 'null');
-      const isGameRoute = location.pathname.startsWith('/jugarIndividual');
+      const isGameRoute = location.pathname.startsWith('/crearIndividual/');
       const isCurrentlyAuth = !!user;
 
-      // Reiniciar música solo si cambia el estado de autenticación
       if (isCurrentlyAuth !== prevAuthRef.current) {
         if (isCurrentlyAuth && !isGameRoute) {
           audioRef.current.currentTime = 0;
@@ -57,10 +57,10 @@ function MusicController() {
         }
         prevAuthRef.current = isCurrentlyAuth;
       } else if (isCurrentlyAuth && isGameRoute) {
-        // Si ya estaba autenticado pero entró a juego, pausa
+        // si ya estaba autenticado pero entro a juego, pausa
         audioRef.current?.pause();
       } else if (isCurrentlyAuth && !isGameRoute) {
-        // Si ya estaba autenticado y sale de juego, reproduce
+        // si ya estaba autenticado y sale de juego, reproduce
         audioRef.current?.play().catch(() => {});
       }
     } catch {
@@ -93,11 +93,13 @@ function AppRoutes() {
         <Route element={<PrivateLayout />}>
           <Route index element={<Home />} />
           <Route path='/bienvenido' element={<Bienvenido />} />
-          <Route path='/crearPartida' element={<CrearPartida />} />
+          <Route path='/salaPartidas' element={<SalaPartidas />} />
           <Route
-            path='/jugarIndividual/:categoria/:tiempo/:dificultad'
+            path='/crearIndividual/:categoria/:tiempo/:dificultad'
             element={<JugarIndividual />}
           />
+          <Route path='/crearIndividual' element={<CrearPartida modo='individual' />} />
+          <Route path='/crearMultijugador' element={<CrearPartida modo='multiplayer' />} />
           <Route path='/admin/categorias' element={<AbmCategorias />} />
           <Route path='/tienda' element={<Tienda />} />
           <Route path='/perfil' element={<Perfil />} />

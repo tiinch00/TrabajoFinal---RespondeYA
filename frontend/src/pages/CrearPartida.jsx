@@ -7,8 +7,8 @@ import pop from '/sounds/pop.mp3';
 import useSound from 'use-sound';
 import start from '/sounds/start.mp3';
 
-const CrearPartida = () => {
-  const { categorias, fetchCategorias, loading } = useGame();
+const CrearPartida = ({ modo }) => {
+  const { categorias, fetchCategorias, loading, crearPartida } = useGame();
   const { t } = useTranslation();
   const [categoria, setCategoria] = useState('');
   const [tiempo, setTiempo] = useState('');
@@ -19,15 +19,16 @@ const CrearPartida = () => {
   const [startButton] = useSound(start, { volume: 0.3 });
   const navigate = useNavigate();
 
-  const handleJugarIndividual = () => {
+  const handleJugar = () => {
     if (!categoria || !tiempo || !dificultad) {
       setAlerta('¡Completa todo antes de jugar! 🎮');
       return;
     }
     startButton();
     setAlerta('Mucha Suerte!');
+
     setTimeout(() => {
-      navigate(`/jugarIndividual/${categoria.toLowerCase()}/${tiempo}/${dificultad}`);
+      crearPartida(modo, { categoria, tiempo, dificultad }, navigate);
     }, 1500);
   };
 
@@ -44,13 +45,11 @@ const CrearPartida = () => {
   return (
     <div className='m-3 flex items-center justify-center'>
       <div className='p-6 rounded-3xl text-center text-white space-y-8 w-[520px] bg-gradient-to-br from-purple-900/30 via-purple-800/40 to-indigo-900/50 shadow-2xl'>
-        {/* TÍTULO CATEGORÍA */}
         <div className='space-y-4'>
           <h2 className='bg-gradient-to-r from-pink-500 to-yellow-500 text-transparent bg-clip-text text-2xl font-extrabold tracking-wider drop-shadow-lg'>
             🎯 {t('categoryType')}
           </h2>
           <div className='flex justify-center gap-3 flex-wrap'>
-            {/* Botón: Al Azar */}
             <button
               onClick={handleAlAzar}
               className='
@@ -177,7 +176,7 @@ const CrearPartida = () => {
           </div>
         </div>
         <button
-          onClick={handleJugarIndividual}
+          onClick={handleJugar}
           className='
             bg-gradient-to-r from-emerald-500 to-lime-600 
             w-full py-4 rounded-full font-extrabold text-xl text-white 
