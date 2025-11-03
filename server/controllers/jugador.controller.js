@@ -24,6 +24,24 @@ const show = async (req, res) => {
     res.status(500).send('Internal server error findByPk(id)');
   }
 };
+const showUser = async (req, res) => {
+  const { user_id } = req.params;
+
+  try {
+    const jugador = await Jugador.findOne({
+      where: { user_id },
+    });
+
+    if (!jugador) {
+      return res.status(404).json({ error: 'Jugador not found' });
+    }
+
+    res.json(jugador);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Internal server error findOne(user_id)');
+  }
+};
 
 const store = async (req, res) => {
   const { user_id } = req.body;
@@ -51,23 +69,23 @@ const update = async (req, res) => {
   try {
     // verificacion si es null o no una variable de tipo INT
     const toNullableNumber = (v) => {
-      if (v == null || v === '') return null;     // trata undefined, null y '' como null
+      if (v == null || v === '') return null; // trata undefined, null y '' como null
       const n = Number(v);
-      return Number.isNaN(n) ? null : n;          // si no es número válido → null
+      return Number.isNaN(n) ? null : n; // si no es número válido → null
     };
-    
+
     // parseo seguro
-    const jugador_id = Number(req.params.jugador_id);         // de params
-    const puntosGanados = toNullableNumber(Number(req.body.puntaje));     // del body
-    const puntosRestados = toNullableNumber(Number(req.body.puntajeRestado));     // del body
-    const ruleta_started_at = req.body.ruleta_started_at;     // del body
+    const jugador_id = Number(req.params.jugador_id); // de params
+    const puntosGanados = toNullableNumber(Number(req.body.puntaje)); // del body
+    const puntosRestados = toNullableNumber(Number(req.body.puntajeRestado)); // del body
+    const ruleta_started_at = req.body.ruleta_started_at; // del body
 
     //console.log("jugador_id:", jugador_id);
     //console.log("puntaje:", puntaje);
     //console.log({ t1: typeof req.body.ruleta_started_at });
 
     // Debug opcional para ver tipos/valores
-    // console.log({ jugador_id, puntaje, t1: typeof req.params.jugador_id, t2: typeof req.body?.puntaje });  
+    // console.log({ jugador_id, puntaje, t1: typeof req.params.jugador_id, t2: typeof req.body?.puntaje });
 
     // validaciones
     if (!Number.isFinite(jugador_id) && !(jugador_id > 0)) {
@@ -88,16 +106,16 @@ const update = async (req, res) => {
     }
 
     if (puntosGanados !== null && puntosGanados !== undefined) {
-      const puntaje = (jugador.puntaje + puntosGanados);
+      const puntaje = jugador.puntaje + puntosGanados;
       //console.log("PuntosGanados: ", puntosGanados);
       //console.log("PuntosGanados de jugador.puntaje: ", jugador.puntaje);
       await jugador.update({ puntaje });
     } else {
-      if (puntosRestados !== null && puntosRestados !== undefined){
-      const puntaje = (jugador.puntaje - puntosRestados);
-      //console.log("puntosRestados: ", puntosRestados);
-      //console.log("puntosRestados de jugador.puntaje: ", jugador.puntaje);
-      await jugador.update({ puntaje });
+      if (puntosRestados !== null && puntosRestados !== undefined) {
+        const puntaje = jugador.puntaje - puntosRestados;
+        //console.log("puntosRestados: ", puntosRestados);
+        //console.log("puntosRestados de jugador.puntaje: ", jugador.puntaje);
+        await jugador.update({ puntaje });
       }
     }
 
@@ -111,7 +129,6 @@ const update = async (req, res) => {
 
     await jugador.reload();
     res.json(jugador);
-
   } catch (error) {
     if (error.name === 'SequelizeUniqueConstraintError') {
       return res.status(400).json({ error: 'jugador_id already exists' });
@@ -140,6 +157,7 @@ const destroy = async (req, res) => {
 export default {
   index,
   show,
+  showUser,
   store,
   update,
   destroy,

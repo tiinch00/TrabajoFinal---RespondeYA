@@ -74,7 +74,7 @@ const Login = () => {
   };
 
   return (
-    <div className='w-90 h-fit bg-gradient-to-r from-purple-700 to-indigo-800 rounded-3xl p-6 mt-4 mb-4 text-center'>
+    <div className=' bg-gradient-to-r from-purple-700 to-indigo-800 rounded-3xl p-6 mb-10 text-center w-90 h-full '>
       <h2 className='text-5xl font-bold mb-4 text-center text-white'>{t('welcome')}</h2>
       <form onSubmit={handleSubmit}>
         <div className='bg-gradient-to-r from-indigo-700 to-purple-800 rounded-4xl flex flex-col text-center items-center justify-center text-black'>

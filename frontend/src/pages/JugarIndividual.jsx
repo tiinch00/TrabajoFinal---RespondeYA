@@ -40,13 +40,16 @@ const JugarIndividual = () => {
   const [contador, setContador] = useState(0);
   const [juegoTerminado, setJuegoTerminado] = useState(false);
   const [tiempoRestante, setTiempoRestante] = useState(pasarTiempo(tiempo));
-
+  const [jugador_id, setJugador_id] = useState('');
+  const [categoriaId, setCategoriaId] = useState('');
   const [contadorInicial, setContadorInicial] = useState(5);
   const [juegoIniciado, setJuegoIniciado] = useState(false);
   const [mostrarContador, setMostrarContador] = useState(false);
-
+  const [cronometroPausado, setCronometroPausado] = useState(false);
   const user = getStoredUser();
   const [foto] = useState(user.foto_perfil);
+
+  const timerRef = useRef(null);
 
   function pasarTiempo(tiempo) {
     if (tiempo === 'Facíl' || tiempo === 'Easy') return '15';
@@ -63,18 +66,17 @@ const JugarIndividual = () => {
     }
   }, [juegoTerminado, stop]);
 
-  // limpiar musica al desmontar el componente
   useEffect(() => {
     return () => {
       stop();
       stopFiveSeconds();
+      if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [stop]);
+  }, [stop, stopFiveSeconds]);
 
   useEffect(() => {
     if (!user) {
       navigate('/login');
-      return;
     }
     const categoriaDB = async () => {
       try {
@@ -87,12 +89,13 @@ const JugarIndividual = () => {
           dificultadTraducida = 'normal';
         if (dificultadTraducida === 'hard' || dificultadTraducida === 'dificíl')
           dificultadTraducida = 'dificil';
-        const res = await axios.get(
+        const { data } = await axios.get(
           `http://localhost:3006/preguntas/categoria/${categoria.toLowerCase()}/${dificultadTraducida.toLowerCase()}`
         );
 
-        if (res.data && res.data.length > 0) {
-          const preguntasAleatorias = res.data.sort(() => Math.random() - 0.5).slice(0, 10);
+        if (data && data.length > 0) {
+          const preguntasAleatorias = data.sort(() => Math.random() - 0.5).slice(0, 10);
+          setCategoriaId(data[0].categoria_id);
           setPreguntas(preguntasAleatorias);
           setPreguntaActual(preguntasAleatorias[0]);
           setMostrarContador(true);
@@ -111,6 +114,7 @@ const JugarIndividual = () => {
     categoriaDB();
   }, [categoria, dificultad]);
 
+  //contador inicial
   useEffect(() => {
     if (mostrarContador && contadorInicial > 0) {
       if (contadorInicial > 4) {
@@ -122,7 +126,6 @@ const JugarIndividual = () => {
       return () => clearTimeout(timer);
     } else if (mostrarContador && contadorInicial === 0 && !juegoIniciado && !juegoTerminado) {
       setJuegoIniciado(true);
-      // Iniciar música solo una vez
       if (!musicStartedRef.current) {
         playing();
         musicStartedRef.current = true;
@@ -130,15 +133,22 @@ const JugarIndividual = () => {
     }
   }, [contadorInicial, mostrarContador, juegoIniciado, juegoTerminado, playing]);
 
+  //manejar el cronometro
   useEffect(() => {
-    if (!preguntaActual || !juegoIniciado || juegoTerminado) return;
+    if (!preguntaActual || !juegoIniciado || juegoTerminado || cronometroPausado) {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+      return;
+    }
+    if (!cronometroPausado) {
+      setTiempoRestante(parseInt(pasarTiempo(tiempo)));
+    }
 
-    setTiempoRestante(pasarTiempo(tiempo));
-
-    const timer = setInterval(() => {
+    timerRef.current = setInterval(() => {
       setTiempoRestante((prev) => {
         if (prev <= 1) {
-          clearInterval(timer);
+          clearInterval(timerRef.current);
           handleGuardarRespuesta(null);
           return 0;
         }
@@ -146,10 +156,13 @@ const JugarIndividual = () => {
       });
     }, 1000);
 
-    return () => clearInterval(timer);
-  }, [preguntaActual, juegoIniciado, juegoTerminado]);
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [preguntaActual, juegoIniciado, juegoTerminado, cronometroPausado, tiempo]);
 
   const handleGuardarRespuesta = (opcion) => {
+    setCronometroPausado(true);
     if (!opcion) {
       setRespuestas((prev) => [...prev, { texto: 'Sin respuesta', es_correcta: false }]);
     } else {
@@ -172,14 +185,105 @@ const JugarIndividual = () => {
         setPreguntaActual(preguntas[siguiente]);
         setRespuestaSeleccionada(null);
         setRespuestaCorrecta(null);
+        setCronometroPausado(false);
       } else {
         setAlerta('Juego terminado ✅');
+        guardarPartidaEnBD();
         setTiempoRestante('0');
         setJuegoTerminado(true);
         setJuegoIniciado(false);
         playTimeout();
       }
-    }, 500);
+    }, 3000);
+  };
+
+  const guardarPartidaEnBD = async () => {
+    try {
+      const respuestasCorrectas = respuestas.filter((r) => r.es_correcta).length;
+      const respuestasIncorrectas = respuestas.length - respuestasCorrectas;
+      const datosPartida = {
+        sala_id: null,
+        categoria_id: categoriaId,
+        modo: 'individual',
+        total_preguntas: preguntas.length,
+        estado: 'finalizada',
+        created_at: new Date(),
+        started_at: null,
+        ended_at: null,
+        jugador_id: user.jugador_id,
+      };
+      //dificultad: dificultad,
+      //tiempo_por_pregunta: pasarTiempo(tiempo),
+      //respuestas_correctas: respuestasCorrectas,
+      //respuestas_incorrectas: respuestas.length - respuestasCorrectas,
+      //respuestas_detalle: respuestas,
+
+      // POST a la BD
+      const response = await axios.post('http://localhost:3006/partidas/create', datosPartida);
+      const partidaId = response.data.id;
+      console.log('Partida guardada:', response.data);
+      await enviarPreguntas(partidaId);
+      await guardarEstadisticas(partidaId, respuestasCorrectas, respuestasIncorrectas);
+
+      //  redirigir
+      // navigate('/resultados');
+    } catch (error) {
+      console.error('Error al guardar partida:', error);
+      setAlerta('Error al guardar la partida');
+    }
+  };
+
+  const enviarPreguntas = async (partidaId) => {
+    try {
+      // recorrer cada pregunta y su respuesta
+      const promesas = preguntas.map((pregunta, index) => {
+        return axios.post('http://localhost:3006/partida_preguntas/create', {
+          partida_id: partidaId,
+          pregunta_id: pregunta.id,
+          orden: index + 1, // orden empieza en 1
+          question_text_copy: pregunta.enunciado,
+          correct_option_id_copy: pregunta.Opciones.find((o) => o.es_correcta)?.id || null,
+          correct_option_text_copy: pregunta.Opciones.find((o) => o.es_correcta)?.texto || null,
+        });
+      });
+
+      // user_answer: respuestas[index]?.texto || 'Sin respuesta',
+      // user_answer_correct: respuestas[index]?.es_correcta || false,
+
+      // esperar a que todas las promesas se resuelvan
+      await Promise.all(promesas);
+
+      console.log('Todas las preguntas fueron guardadas');
+    } catch (error) {
+      console.error('Error al enviar preguntas:', error);
+      setAlerta('Error al guardar las preguntas');
+    }
+  };
+
+  const guardarEstadisticas = async (partidaId, respuestasCorrectas, respuestasIncorrectas) => {
+    try {
+      const tiempoTotalMs = preguntas.length * parseInt(pasarTiempo(tiempo)) * 1000; //hay q hacer la cuenta real
+
+      const datosEstadisticas = {
+        jugador_id: user.jugador_id,
+        partida_id: partidaId,
+        posicion: 1, // individual es 1
+        puntaje_total: respuestasCorrectas * 10, // 10 puntos por respuesta correcta , hay q definir los puntos
+        total_correctas: respuestasCorrectas,
+        total_incorrectas: respuestasIncorrectas,
+        tiempo_total_ms: tiempoTotalMs,
+      };
+
+      const responseEstadisticas = await axios.post(
+        'http://localhost:3006/estadisticas/create',
+        datosEstadisticas
+      );
+
+      console.log('Estadísticas guardadas:', responseEstadisticas.data);
+    } catch (error) {
+      console.error('Error al guardar estadísticas:', error);
+      setAlerta('Error al guardar las estadísticas');
+    }
   };
 
   if (mostrarContador && contadorInicial > 0) {
@@ -345,8 +449,6 @@ const JugarIndividual = () => {
             </div>
           )}
         </div>
-
-        {/* Panel derecho - Tiempo */}
         <div className='col-span-1 flex flex-col items-center justify-start'>
           <div
             className={`rounded-3xl px-6 py-4 text-center shadow-2xl border-4 w-full ${

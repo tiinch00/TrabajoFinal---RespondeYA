@@ -11,7 +11,7 @@ export default function PublicLayout() {
   return (
     <>
       <HeaderPublic />
-      <main className='relative w-full min-h-screen flex flex-col items-center bg-gray-900 justify-start pt-20'>
+      <main className='relative w-full min-h-screen flex flex-col items-center bg-gray-900 justify-start '>
         {/* Fondo animado */}
         {mostrarLogo && <FondoAnimado />}
 
