@@ -5,9 +5,10 @@ const wsdlUrl =
 
 const getSoap = async (req, res) => {
   try {
+    //creamos el cliente SOAP usando la url del servicio
     soap.createClient(wsdlUrl, (err, client) => {
       if (err) return res.status(500).json({ error: err.message });
-
+      // se utiliza el metodo SOAP 'ListOfCountryNamesByName' para obtener la lista de paises
       client.ListOfCountryNamesByName({}, (err, result) => {
         if (err) return res.status(500).json({ error: err.message });
 

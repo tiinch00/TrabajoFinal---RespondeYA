@@ -30,7 +30,7 @@ const LuzDetrasLogo = () => {
 
       draw() {
         const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
+        const centerY = canvas.height / 1.6;
 
         ctx.save();
         ctx.translate(centerX, centerY);

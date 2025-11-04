@@ -67,7 +67,7 @@ const AbmPreguntas = () => {
           </svg>
           Volver a categorías
         </Link>
-        <h1 className='text-2xl font-bold'>Categoría: {nombre}</h1>
+        <h1 className='text-2xl font-bold text-white'>Categoría: {nombre}</h1>
       </div>
       {alerta && (
         <div className='text-black'>

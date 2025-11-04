@@ -47,6 +47,7 @@ const JugarIndividual = () => {
   const [mostrarContador, setMostrarContador] = useState(false);
   const [cronometroPausado, setCronometroPausado] = useState(false);
   const user = getStoredUser();
+
   const [foto] = useState(user.foto_perfil);
 
   const timerRef = useRef(null);
@@ -78,6 +79,9 @@ const JugarIndividual = () => {
     if (!user) {
       navigate('/login');
     }
+  }, [user, navigate]);
+
+  useEffect(() => {
     const categoriaDB = async () => {
       try {
         setLoading(true);
@@ -198,6 +202,8 @@ const JugarIndividual = () => {
   };
 
   const guardarPartidaEnBD = async () => {
+    console.log('User object:', user); // 🔍 Ver qué contiene user
+    console.log('Jugador ID:', user?.jugador_id);
     try {
       const respuestasCorrectas = respuestas.filter((r) => r.es_correcta).length;
       const respuestasIncorrectas = respuestas.length - respuestasCorrectas;
@@ -210,7 +216,7 @@ const JugarIndividual = () => {
         created_at: new Date(),
         started_at: null,
         ended_at: null,
-        jugador_id: user.jugador_id,
+        jugador_id: user?.jugador_id,
       };
       //dificultad: dificultad,
       //tiempo_por_pregunta: pasarTiempo(tiempo),
