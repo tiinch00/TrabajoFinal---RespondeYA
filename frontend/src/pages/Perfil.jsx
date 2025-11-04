@@ -1197,6 +1197,7 @@ const Perfil = () => {
 
         )}
         <p className="mt-2 text-4xl text-white">{perfil.name}</p>
+        <p className="text-gray-400 text-xl mt-4">Puntos: {user.puntaje}</p>
       </div>
 
       {/* ====================================================================================== */}
@@ -1213,7 +1214,7 @@ const Perfil = () => {
         //aria-pressed={selectedAvatar}
         >
           Mis Avatares
-        </motion.button>
+        </motion.button>        
 
         {/* lista de avatares del jugador */}
         {inventarioAvataresDos().length === 0 && selectedAvatar ? (
@@ -1235,9 +1236,7 @@ const Perfil = () => {
                   className="absolute top-2 right-2 rounded-full w-9 h-9 
                               grid place-items-center hover:bg-black/5 active:scale-95 
                               cursor-pointer text-2xl"
-                  onClick={() => {
-                    setSelectedAvatar(false);
-                  }}
+                  onClick={() => setSelectedAvatar(null)}
                 >
                   ✕
                 </button>

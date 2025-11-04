@@ -3,6 +3,7 @@ import { Trans, useTranslation } from 'react-i18next';
 import { useEffect, useRef, useState } from 'react';
 
 import axios from 'axios';
+import { useAuth } from "../context/auth-context.jsx";
 
 const Tienda = () => {
   const [selected, setSelected] = useState(null); // indice o null
@@ -13,6 +14,7 @@ const Tienda = () => {
   const [confirmar, setConfirmar] = useState(false);
   const [comprado, setComprado] = useState(false);
   const compradoTimerRef = useRef(null);
+  const { user, updateUser } = useAuth(); 
 
   const { t, i18n } = useTranslation();
 
@@ -68,13 +70,13 @@ const Tienda = () => {
   };
 
   // obitne el usuario logueado desde localStorage (parseado)
-  const [user] = useState(() => {
+  /*const [user] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem('user') || 'null');
     } catch {
       return null;
     }
-  });
+  });*/
 
   const jugador_id = user?.jugador_id;
   const administrador = user?.role;
@@ -179,6 +181,10 @@ const Tienda = () => {
 
         // actualiza el puntaje del jugador
         setJugador(jUpdated ?? { ...jugador, puntaje: nuevoSaldo });
+        updateUser(jUpdated ?? {
+          ...user,
+          puntaje: nuevoSaldo,
+        });
       } catch (err) {
         console.log('@@@@ Error PUT jugadores/update\n', err.response?.data?.error || err.message);
       }
@@ -260,6 +266,8 @@ const Tienda = () => {
       >
         ✨ {t('store')} ✨
       </motion.h1>
+
+      <h2 className="text-white/80 text-3xl mt-8 mb-4 text-center">Puntos: {user.puntaje}</h2>
 
       {administrador && administrador === 'administrador' && (
         <div className='text-center mt-6'>
