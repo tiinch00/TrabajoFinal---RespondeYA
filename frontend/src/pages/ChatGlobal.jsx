@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 
-import { io } from 'socket.io-client';
+import { useGame } from '../context/ContextJuego.jsx';
 
-const SOCKET_URL = 'http://localhost:3006';
+//import { io } from 'socket.io-client';
+
+
+//const SOCKET_URL = 'http://localhost:3006';
 
 const getStoredUserName = () => {
   const raw = localStorage.getItem('user');
@@ -16,6 +19,8 @@ const getStoredUserName = () => {
 };
 
 export default function ChatGlobal() {
+  //const socketRef = useRef(null);
+  const { inicializarSocket, socket } = useGame();
   const socketRef = useRef(null);
   const seenIdsRef = useRef(new Set()); // para deduplicar mensajes
   const [messages, setMessages] = useState([]);
@@ -34,7 +39,7 @@ export default function ChatGlobal() {
   // Conexion socket.io
   useEffect(() => {
     // crear socket 1 sola vez
-    if (!socketRef.current) {
+    /*if (!socketRef.current) {
       socketRef.current = io(SOCKET_URL, {
         path: '/socket.io',
         withCredentials: false,
@@ -43,7 +48,11 @@ export default function ChatGlobal() {
       });
     }
 
-    const s = socketRef.current;
+    const s = socketRef.current;*/
+
+    // reusar el socket global del contexto (una sola conexión para toda la app)
+    const s = socket ?? inicializarSocket();
+    socketRef.current = s;
 
     // guarda los mensajes en el array messages (const)
     const onMessage = (msg) => {
@@ -59,7 +68,7 @@ export default function ChatGlobal() {
       s.off('chat:message', onMessage);
       s.off('connect');
     };
-  }, []);
+  }, [socket, inicializarSocket]);
 
   // funcion que envia el mensaje al sevidor para socket.io
   const handleSend = (e) => {

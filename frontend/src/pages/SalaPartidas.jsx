@@ -1,20 +1,28 @@
-import { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
+
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import axios from "axios";
 
 const SalaPartidas = () => {
-  const [games, setGames] = useState([
-    { id: 1, name: 'Partida 1', players: 2 },
-    { id: 2, name: 'Partida 2', players: 4 },
-    { id: 3, name: 'Partida 3', players: 3 },
-    { id: 4, name: 'Partida 4', players: 1 },
-    { id: 5, name: 'Partida 5', players: 5 },
-    { id: 6, name: 'Partida 6', players: 2 },
-    { id: 7, name: 'Partida 7', players: 3 },
-    { id: 8, name: 'Partida 8', players: 4 },
-    { id: 9, name: 'Partida 9', players: 1 },
-    { id: 10, name: 'Partida 10', players: 2 },
-  ]);
+  const [salas, setSalas] = useState([]);
+
+  const getSalas = async () => {
+    try {
+      const estado = "esperando";
+      const { data } = await axios.get(
+        "http://localhost:3006/salas/",
+        { params: { estado } }   // <-- params
+      );
+      setSalas(data);
+    } catch (e) {
+      console.error('GET /salas', e.response?.data?.error || e.message);
+    }
+  };
+
+  useEffect(() => {
+    getSalas();
+  }, []);
 
   const handleJoinGame = (gameId) => {
     alert(`Te uniste a la Partida ${gameId}`);
@@ -40,20 +48,32 @@ const SalaPartidas = () => {
         </h2>
 
         <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6'>
-          {games.map((game) => (
-            <button
-              key={game.id}
-              onClick={() => handleJoinGame(game.id)}
-              className='group cursor-pointer transform transition-transform duration-300 hover:scale-105'
-            >
-              <div className='bg-pink-200 rounded-3xl p-1 shadow-lg'>
-                <div className='bg-blue-300 rounded-2xl h-32 flex flex-col items-center justify-center group-hover:shadow-inner transition-shadow duration-300'>
-                  <p className='text-purple-900 font-semibold text-lg mb-2'>{game.name}</p>
-                  <p className='text-purple-700 text-sm'>{game.players} jugadores</p>
-                </div>
-              </div>
-            </button>
-          ))}
+          {salas.length > 0 ? (
+            <>              
+              {salas.map((sala) => (
+                <button
+                  key={sala.id}
+                  onClick={() => handleJoinGame(sala.id)}
+                  className='group cursor-pointer transform transition-transform duration-300 hover:scale-105'
+                >
+                  <Link to={`/salaEspera/${sala.codigo}`} className='bg-pink-200 rounded-3xl p-1 shadow-lg'>
+                    <div className='bg-blue-300 rounded-2xl h-32 flex flex-col items-center justify-center group-hover:shadow-inner transition-shadow duration-300'>
+                      <p className='text-purple-900 font-semibold text-lg mb-2'>{sala.id}</p>
+                      <p className='text-purple-900 font-semibold text-lg mb-2'>Categoria ID: {sala.categoria_id}</p>
+                      <p className='text-purple-700 text-sm'>Estado: {sala.estado}</p>
+                      <p className='text-purple-700 text-sm'>Codigo: {sala.codigo}</p>
+                    </div>
+                  </Link>
+                </button>
+              ))}
+            </>
+          ) : (
+            <div>
+              {console.log("salas.length :", salas.length)};
+              <span className='text-white'>No hay salas en "espera" disponibles...</span>
+            </div>
+          )}
+
         </div>
       </div>
     </div>

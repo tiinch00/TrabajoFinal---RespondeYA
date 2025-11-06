@@ -1,4 +1,5 @@
-import { createContext, useState, useEffect, useContext, useCallback } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+
 import axios from 'axios';
 import { io } from 'socket.io-client';
 
@@ -27,7 +28,7 @@ export const GameProvider = ({ children }) => {
   // Inicializar socket
   const inicializarSocket = useCallback(() => {
     if (!socket) {
-      const newSocket = io('http://localhost:3001');
+      const newSocket = io('http://localhost:3006', { path: '/socket.io' });
       setSocket(newSocket);
       return newSocket;
     }
@@ -51,7 +52,8 @@ export const GameProvider = ({ children }) => {
 
         socketInstance.emit('crear_partida', datosPartida, (response) => {
           if (response.success) {
-            navFunction(`/partida-multiplayer/${response.idPartida}`);
+            //navFunction(`/partida-multiplayer/${response.idPartida}`);
+            navFunction(`/salaEspera/${response.idPartida}`);
           } else {
             console.error('Error al crear partida:', response.error);
           }

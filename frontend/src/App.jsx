@@ -1,27 +1,30 @@
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import './utils/i18n.js';
+
 import { MusicProvider, useMusic } from './context/MusicContext';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useEffect, useRef } from 'react';
 
+import AbmCategorias from './pages/Admin/AbmCategorias.jsx';
+import AbmPreguntas from './pages/Admin/AbmPreguntas.jsx';
 import Bienvenido from './pages/Bienvenido.jsx';
 import ComoJugar from './pages/ComoJugar';
 import Contacto from './pages/Contacto';
 import CrearPartida from './pages/CrearPartida.jsx';
 import Home from './pages/Home';
 import JugarIndividual from './pages/JugarIndividual.jsx';
+import JugarMultijugador from './pages/JugarMultijugador.jsx';
 import Login from './pages/Login';
 import Perfil from './pages/Perfil';
 import PrivateLayout from './layouts/PrivateLayout';
 import ProtectedRoute from './routes/ProtectedRoute';
 import PublicLayout from './layouts/PublicLayout';
 import PublicRoute from './routes/PublicRoute';
+import Ranking from './pages/Ranking.jsx';
 import Register from './pages/Register';
 import Ruleta from './pages/Ruleta';
-import Tienda from './pages/Tienda';
-import AbmCategorias from './pages/Admin/AbmCategorias.jsx';
-import AbmPreguntas from './pages/Admin/AbmPreguntas.jsx';
-import Ranking from './pages/Ranking.jsx';
-import './utils/i18n.js';
+import SalaEspera from './pages/SalaEspera.jsx';
 import SalaPartidas from './pages/SalaPartidas.jsx';
+import Tienda from './pages/Tienda';
 
 function LayoutSwitch() {
   const user = (() => {
@@ -50,7 +53,7 @@ function MusicController() {
       if (isCurrentlyAuth !== prevAuthRef.current) {
         if (isCurrentlyAuth && !isGameRoute) {
           audioRef.current.currentTime = 0;
-          audioRef.current?.play().catch(() => {});
+          audioRef.current?.play().catch(() => { });
         } else {
           audioRef.current?.pause();
           audioRef.current.currentTime = 0;
@@ -61,7 +64,7 @@ function MusicController() {
         audioRef.current?.pause();
       } else if (isCurrentlyAuth && !isGameRoute) {
         // si ya estaba autenticado y sale de juego, reproduce
-        audioRef.current?.play().catch(() => {});
+        audioRef.current?.play().catch(() => { });
       }
     } catch {
       audioRef.current?.pause();
@@ -100,6 +103,8 @@ function AppRoutes() {
           />
           <Route path='/crearIndividual' element={<CrearPartida modo='individual' />} />
           <Route path='/crearMultijugador' element={<CrearPartida modo='multiplayer' />} />
+          <Route path='/salaEspera/:id' element={<SalaEspera />} />
+          <Route path='/jugarMultijugador/:id' element={<JugarMultijugador />} />
           <Route path='/admin/categorias' element={<AbmCategorias />} />
           <Route path='/tienda' element={<Tienda />} />
           <Route path='/perfil' element={<Perfil />} />

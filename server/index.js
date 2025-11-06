@@ -3,7 +3,6 @@
 import 'dotenv/config';
 import './models/associations.js';
 
-import { Server } from 'socket.io';
 import adminRoutes from './routes/adminRoutes.js';
 import amigoRoutes from './routes/amigoRoutes.js';
 import authRoutes from './routes/authRoutes.js';
@@ -12,6 +11,7 @@ import categoryRoutes from './routes/categoryRoutes.js';
 import contactRoutes from './routes/contactRoutes.js';
 import cors from 'cors';
 import crearPagoRoutes from './routes/crearPagoRoutes.js';
+import { crearSocketServer } from './sockets/index.js';
 import estadisticaRoutes from './routes/estadisticaRoutes.js';
 import express from 'express';
 import { fileURLToPath } from "url";
@@ -85,38 +85,10 @@ const PORT = process.env.PORT || 3006;
 
 // ⬇️ Crear servidor HTTP y Socket.IO sobre el mismo puerto
 const server = http.createServer(app);
-const io = new Server(server, {
-  path: '/socket.io',
-  cors: {
-    origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
-    methods: ['GET', 'POST'],
-    allowedHeaders: ['*'],
-    credentials: false, // ← simplifica en dev
-  },
-});
 
-// Eventos de Socket - y conexion con el socket
-io.on('connection', (socket) => {
-  console.log('🔌 socket conectado:', socket.id, 'conectados:', io.of('/').sockets.size);
+// Inicializa Socket.IO organizado por controllers
+crearSocketServer(server); // ← listo, Socket.IO queda inicializado y organizado por “controllers”
 
-  // obtiene el mensaje a traves de la variable "chat:message"
-  socket.on('chat:message', (msg, ack) => {
-    console.log('📩 recibido en server:', msg, 'conectados:', io.of('/').sockets.size);
-
-    // se almacena la info del propietario del mensaje en un objeto
-    const payload = {
-      id: msg?.clientId || Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
-      clientId: msg?.clientId || null,
-      username: String(msg?.username || 'anonymous'),
-      text: String(msg?.text || ''),
-      createdAt: new Date().toISOString(),
-    };
-
-    // se emite y todos los usuario puedes ver el mensaje de un usario y incluye al emisor
-    io.emit('chat:message', payload);
-    if (typeof ack === 'function') ack({ ok: true });
-  });
-});
 
 const bootstrap = async () => {
   try {

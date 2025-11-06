@@ -1,9 +1,17 @@
-import {Categoria, Sala, User} from '../models/associations.js';
+import { Categoria, Sala, User } from '../models/associations.js';
 
 const index = async (req, res) => {
   try {
-    const salas = await Sala.findAll();
-    res.json(salas);
+    const estado = req.params.estado ?? req.query.estado;
+    if (typeof estado === 'string') {
+      const salas = await Sala.findAll({
+        where: { estado: estado }
+      });
+      res.json(salas);
+    } else {
+      const salas = await Sala.findAll();
+      res.json(salas);
+    }
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: "Internal server error" });
@@ -42,9 +50,9 @@ const store = async (req, res) => {
       return res.status(400).json({ error: "Invalid categoria_id" });
     }
   }
- if (max_jugadores !== undefined && max_jugadores !== 2) {
-  return res.status(400).json({ error: "max_jugadores must be 2" });
-}
+  if (max_jugadores !== undefined && max_jugadores !== 2) {
+    return res.status(400).json({ error: "max_jugadores must be 2" });
+  }
   if (estado && !["esperando", "en_curso", "cancelada"].includes(estado)) {
     return res.status(400).json({ error: "Invalid estado value" });
   }
@@ -66,8 +74,8 @@ const store = async (req, res) => {
 const update = async (req, res) => {
   const { id } = req.params;
   const { codigo, creador_id, categoria_id, max_jugadores, estado } = req.body;
-  if (creador_id && !creador_id) { 
-    return res.status(400).json({ error: "creador_id cannot be changed" }); 
+  if (creador_id && !creador_id) {
+    return res.status(400).json({ error: "creador_id cannot be changed" });
   }
   if (creador_id) {
     const creador = await User.findByPk(creador_id);
@@ -82,8 +90,8 @@ const update = async (req, res) => {
     }
   }
   if (max_jugadores !== undefined && max_jugadores !== 2) {
-  return res.status(400).json({ error: "max_jugadores must be 2" });
-}
+    return res.status(400).json({ error: "max_jugadores must be 2" });
+  }
   if (estado && !["esperando", "en_curso", "cancelada"].includes(estado)) {
     return res.status(400).json({ error: "Invalid estado value" });
   }
