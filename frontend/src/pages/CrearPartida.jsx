@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGame } from '../context/ContextJuego.jsx';
 import { useTranslation } from 'react-i18next';
@@ -18,6 +18,10 @@ const CrearPartida = ({ modo }) => {
   const [touchButton] = useSound(pop, { volume: 0.3 });
   const [startButton] = useSound(start, { volume: 0.3 });
   const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchCategorias();
+  }, []);
 
   const handleJugar = () => {
     if (!categoria || !tiempo || !dificultad) {

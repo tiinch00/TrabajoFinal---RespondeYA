@@ -1,4 +1,4 @@
-import { Partida, User, Sala, Categoria, Jugador } from '../models/associations.js';
+import { Partida, Sala, Categoria } from '../models/associations.js';
 
 const index = async (req, res) => {
   try {
@@ -25,28 +25,13 @@ const show = async (req, res) => {
 };
 
 const store = async (req, res) => {
-  const {
-    jugador_id,
-    sala_id,
-    categoria_id,
-    modo,
-    total_preguntas,
-    estado,
-    created_at,
-    started_at,
-    ended_at,
-  } = req.body;
+  const { sala_id, categoria_id, modo, total_preguntas, estado, created_at, started_at, ended_at } =
+    req.body;
   if (!modo) {
     return res.status(400).json({ error: 'modo is required' });
   }
-  if (modo === 'multijugador' && (!sala_id || jugador_id !== undefined)) {
+  if (modo === 'multijugador' && !sala_id) {
     return res.status(400).json({ error: 'multijugador mode requires sala_id and no usuario_id' });
-  }
-  if (jugador_id) {
-    const usuario = await Jugador.findByPk(jugador_id);
-    if (!usuario) {
-      return res.status(400).json({ error: 'Invalid usuario_id' });
-    }
   }
   if (sala_id) {
     const sala = await Sala.findByPk(sala_id);
@@ -64,10 +49,10 @@ const store = async (req, res) => {
   if (!total_preguntas || total_preguntas < 1 || total_preguntas > 255) {
     return res.status(400).json({ error: 'total_preguntas must be between 1 and 255' });
   }
-  // // Validar estado
-  // if (estado && !['pendiente', 'en_curso', 'finalizada', 'abandonada'].includes(estado)) {
-  //   return res.status(400).json({ error: 'Invalid estado value' });
-  // }
+  // Validar estado
+  if (estado && !['pendiente', 'en_curso', 'finalizada', 'abandonada'].includes(estado)) {
+    return res.status(400).json({ error: 'Invalid estado value' });
+  }
   try {
     const partida = await Partida.create({
       sala_id,
@@ -78,7 +63,6 @@ const store = async (req, res) => {
       created_at,
       started_at,
       ended_at,
-      jugador_id,
     });
     res.status(201).json(partida);
   } catch (error) {

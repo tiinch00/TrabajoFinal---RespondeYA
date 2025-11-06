@@ -15,6 +15,11 @@ ALTER TABLE opciones AUTO_INCREMENT = 1;
 ALTER TABLE preguntas AUTO_INCREMENT = 1; 
 
 */
+/* ALTER TABLE respuestas AUTO_INCREMENT = 1;
+ALTER TABLE estadisticas AUTO_INCREMENT = 1;
+ALTER TABLE partidas AUTO_INCREMENT = 1; 
+ALTER TABLE partida_preguntas AUTO_INCREMENT = 1; 
+ALTER TABLE partida_jugadores AUTO_INCREMENT = 1;  */
 
 /* Categoria informatica es el id 4 */
 

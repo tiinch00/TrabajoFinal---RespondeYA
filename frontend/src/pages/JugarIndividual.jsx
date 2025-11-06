@@ -46,16 +46,21 @@ const JugarIndividual = () => {
   const [juegoIniciado, setJuegoIniciado] = useState(false);
   const [mostrarContador, setMostrarContador] = useState(false);
   const [cronometroPausado, setCronometroPausado] = useState(false);
+  const [mostrarEspera, setMostrarEspera] = useState(false);
+  const [partidaJugadorId, setPartidaJugadorId] = useState(0);
+  const [estadisticaId, setEstadisticaId] = useState(0);
   const user = getStoredUser();
 
   const [foto] = useState(user.foto_perfil);
+
+  const entrePreguntasRef = useRef(null);
 
   const timerRef = useRef(null);
 
   function pasarTiempo(tiempo) {
     if (tiempo === 'Facíl' || tiempo === 'Easy') return '15';
-    if (tiempo === 'Media' || tiempo === 'Medium') return '10';
-    if (tiempo === 'Dificíl' || tiempo === 'Hard') return '5';
+    if (tiempo === 'Media' || tiempo === 'Medium') return '12';
+    if (tiempo === 'Dificíl' || tiempo === 'Hard') return '8';
     return '';
   }
 
@@ -100,8 +105,12 @@ const JugarIndividual = () => {
         if (data && data.length > 0) {
           const preguntasAleatorias = data.sort(() => Math.random() - 0.5).slice(0, 10);
           setCategoriaId(data[0].categoria_id);
-          setPreguntas(preguntasAleatorias);
-          setPreguntaActual(preguntasAleatorias[0]);
+          const preguntasConOpcionesMezcladas = preguntasAleatorias.map((pregunta) => ({
+            ...pregunta, //copia todas las propiedades de la pregunta
+            Opciones: pregunta.Opciones.sort(() => Math.random() - 0.5), //sobrescribe Opciones mezcladas
+          }));
+          setPreguntas(preguntasConOpcionesMezcladas);
+          setPreguntaActual(preguntasConOpcionesMezcladas[0]);
           setMostrarContador(true);
         } else {
           setAlerta('No se encontraron preguntas para esta categoría o dificultad.');
@@ -149,6 +158,17 @@ const JugarIndividual = () => {
       setTiempoRestante(parseInt(pasarTiempo(tiempo)));
     }
 
+    // entrePreguntasRef.current = setInterval(() => {
+    //   setTiempoRestante((prev) => {
+    //     if (prev <= 1) {
+    //       clearInterval(timerRef.current);
+    //       handleGuardarRespuesta(null);
+    //       return 0;
+    //     }
+    //     return prev - 1;
+    //   });
+    // }, 1000);
+
     timerRef.current = setInterval(() => {
       setTiempoRestante((prev) => {
         if (prev <= 1) {
@@ -167,10 +187,13 @@ const JugarIndividual = () => {
 
   const handleGuardarRespuesta = (opcion) => {
     setCronometroPausado(true);
+    let nuevasRespuestas;
     if (!opcion) {
-      setRespuestas((prev) => [...prev, { texto: 'Sin respuesta', es_correcta: false }]);
+      nuevasRespuestas = [...respuestas, { texto: 'Sin respuesta', es_correcta: false }];
+      setRespuestas(nuevasRespuestas);
     } else {
-      setRespuestas((prev) => [...prev, opcion]);
+      nuevasRespuestas = [...respuestas, opcion];
+      setRespuestas(nuevasRespuestas);
       setRespuestaSeleccionada(opcion);
 
       if (opcion.es_correcta === true) {
@@ -185,6 +208,7 @@ const JugarIndividual = () => {
       const siguiente = contador + 1;
 
       if (siguiente < preguntas.length) {
+        setMostrarEspera(true);
         setContador(siguiente);
         setPreguntaActual(preguntas[siguiente]);
         setRespuestaSeleccionada(null);
@@ -192,7 +216,7 @@ const JugarIndividual = () => {
         setCronometroPausado(false);
       } else {
         setAlerta('Juego terminado ✅');
-        guardarPartidaEnBD();
+        guardarPartidaEnBD(nuevasRespuestas);
         setTiempoRestante('0');
         setJuegoTerminado(true);
         setJuegoIniciado(false);
@@ -201,12 +225,10 @@ const JugarIndividual = () => {
     }, 3000);
   };
 
-  const guardarPartidaEnBD = async () => {
-    console.log('User object:', user); // 🔍 Ver qué contiene user
-    console.log('Jugador ID:', user?.jugador_id);
+  const guardarPartidaEnBD = async (respuestasFinales) => {
     try {
-      const respuestasCorrectas = respuestas.filter((r) => r.es_correcta).length;
-      const respuestasIncorrectas = respuestas.length - respuestasCorrectas;
+      const respuestasCorrectas = respuestasFinales.filter((r) => r.es_correcta).length;
+      const respuestasIncorrectas = respuestasFinales.length - respuestasCorrectas;
       const datosPartida = {
         sala_id: null,
         categoria_id: categoriaId,
@@ -214,9 +236,8 @@ const JugarIndividual = () => {
         total_preguntas: preguntas.length,
         estado: 'finalizada',
         created_at: new Date(),
-        started_at: null,
-        ended_at: null,
-        jugador_id: user?.jugador_id,
+        started_at: new Date(),
+        ended_at: new Date(),
       };
       //dificultad: dificultad,
       //tiempo_por_pregunta: pasarTiempo(tiempo),
@@ -228,8 +249,16 @@ const JugarIndividual = () => {
       const response = await axios.post('http://localhost:3006/partidas/create', datosPartida);
       const partidaId = response.data.id;
       console.log('Partida guardada:', response.data);
-      await enviarPreguntas(partidaId);
-      await guardarEstadisticas(partidaId, respuestasCorrectas, respuestasIncorrectas);
+      await crearPartidaJugador(partidaId);
+      const partidaPregunta = await enviarPartidaPreguntas(partidaId);
+      const partidaPreguntaID = partidaPregunta?.id;
+      const estadisticasRes = await guardarEstadisticas(
+        partidaId,
+        respuestasCorrectas,
+        respuestasIncorrectas
+      );
+      const estadisticasResID = estadisticasRes?.id;
+      await guardarRespuesta(respuestasFinales, partidaId, estadisticasResID, partidaPreguntaID);
 
       //  redirigir
       // navigate('/resultados');
@@ -239,7 +268,22 @@ const JugarIndividual = () => {
     }
   };
 
-  const enviarPreguntas = async (partidaId) => {
+  const crearPartidaJugador = async (partidaId) => {
+    const id = user?.jugador_id;
+    const datosPartida = {
+      partida_id: partidaId,
+      jugador_id: id,
+    };
+    try {
+      const res = await axios.post('http://localhost:3006/partida_jugadores/create', datosPartida);
+      return res.data;
+    } catch (error) {
+      console.error('Error al crear partidaJugador:', error);
+      setAlerta('Error al crear partidaJugador');
+      throw error;
+    }
+  };
+  const enviarPartidaPreguntas = async (partidaId) => {
     try {
       // recorrer cada pregunta y su respuesta
       const promesas = preguntas.map((pregunta, index) => {
@@ -256,10 +300,10 @@ const JugarIndividual = () => {
       // user_answer: respuestas[index]?.texto || 'Sin respuesta',
       // user_answer_correct: respuestas[index]?.es_correcta || false,
 
-      // esperar a que todas las promesas se resuelvan
-      await Promise.all(promesas);
+      const resultados = await Promise.all(promesas);
+      console.log('Todas las preguntas fueron guardadas', resultados.data);
 
-      console.log('Todas las preguntas fueron guardadas');
+      return resultados[0]?.data;
     } catch (error) {
       console.error('Error al enviar preguntas:', error);
       setAlerta('Error al guardar las preguntas');
@@ -267,11 +311,12 @@ const JugarIndividual = () => {
   };
 
   const guardarEstadisticas = async (partidaId, respuestasCorrectas, respuestasIncorrectas) => {
+    const id = user?.jugador_id;
     try {
-      const tiempoTotalMs = preguntas.length * parseInt(pasarTiempo(tiempo)) * 1000; //hay q hacer la cuenta real
+      const tiempoTotalMs = preguntas.length + 1 * parseInt(pasarTiempo(tiempo)) * 1000; //hay q hacer la cuenta real
 
       const datosEstadisticas = {
-        jugador_id: user.jugador_id,
+        jugador_id: id,
         partida_id: partidaId,
         posicion: 1, // individual es 1
         puntaje_total: respuestasCorrectas * 10, // 10 puntos por respuesta correcta , hay q definir los puntos
@@ -284,11 +329,49 @@ const JugarIndividual = () => {
         'http://localhost:3006/estadisticas/create',
         datosEstadisticas
       );
-
       console.log('Estadísticas guardadas:', responseEstadisticas.data);
+      return responseEstadisticas.data;
     } catch (error) {
       console.error('Error al guardar estadísticas:', error);
       setAlerta('Error al guardar las estadísticas');
+    }
+  };
+  const guardarRespuesta = async (
+    respuestasFinales,
+    partidaId,
+    estadisticasResId,
+    partidaPreguntaId
+  ) => {
+    const id = user?.jugador_id;
+    try {
+      const promesas = respuestasFinales.map((respuesta, index) => {
+        console.log(`Respuesta ${index + 1}:`, {
+          respuesta_id: respuesta.id,
+          pregunta_id: preguntas[index]?.id,
+          es_correcta: respuesta.es_correcta,
+        });
+
+        return axios
+          .post('http://localhost:3006/respuestas/create', {
+            partida_id: partidaId,
+            jugador_id: id,
+            pregunta_id: preguntas[index].id,
+            partida_pregunta_id: partidaPreguntaId,
+            opcion_elegida_id: respuesta.texto === 'Sin respuesta' ? null : respuesta.id,
+            estadistica_id: estadisticasResId,
+            es_correcta: respuesta.texto === 'Sin respuesta' ? false : respuesta.es_correcta,
+            tiempo_respuesta_ms: parseInt(pasarTiempo(tiempo)) * 1000, //aca hay q poner el tiempo de respuesta.
+          })
+          .catch((error) => {
+            console.error(`❌ Error en respuesta ${index + 1}:`, error.response?.data);
+            return null;
+          });
+      });
+
+      const resultados = await Promise.allSettled(promesas);
+      console.log('Resultados:', resultados);
+    } catch (error) {
+      console.error('Error:', error);
     }
   };
 

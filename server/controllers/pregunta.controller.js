@@ -70,7 +70,6 @@ const preguntasByCategoria = async (req, res) => {
         },
       ],
       where: dificultad ? { dificultad: dificultad.toLowerCase() } : {},
-      logging: console.log, // Para depuración
     });
 
     console.log('Preguntas encontradas:', preguntas);
