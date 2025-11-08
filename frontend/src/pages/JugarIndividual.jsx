@@ -4,14 +4,14 @@ import useSound from 'use-sound';
 import incorrecta from '/sounds/incorrecta.wav';
 import correcta from '/sounds/correcta.wav';
 import finalDeJuego from '/sounds/finalDeJuego.wav';
-import ficeSeconds from '/sounds/fiveSeconds.mp3';
-import musicaPreguntas from '/sounds/musicaPreguntas.mp3';
+import fiveSeconds from '/sounds/fiveSeconds.mp3';
+import musicaPreguntas from '/sounds/musicaPreguntasEdit.mp3';
 
 import axios from 'axios';
 
 const JugarIndividual = () => {
   const navigate = useNavigate();
-  const musicStartedRef = useRef(false); // Ref para controlar si la musica ya inicio
+  const musicStartedRef = useRef(false);
 
   const getStoredUser = () => {
     const raw = localStorage.getItem('user');
@@ -26,7 +26,7 @@ const JugarIndividual = () => {
   const [playCorrect] = useSound(correcta, { volume: 0.6 });
   const [playWrong] = useSound(incorrecta, { volume: 0.6 });
   const [playTimeout] = useSound(finalDeJuego, { volume: 0.7 });
-  const [fiveSeconds, { stop: stopFiveSeconds }] = useSound(ficeSeconds, { volume: 0.7 });
+  const [fiveSecondsSound, { stop: stopFiveSeconds }] = useSound(fiveSeconds, { volume: 0.7 });
   const [playing, { stop }] = useSound(musicaPreguntas, { volume: 0.2, loop: true });
 
   const { categoria, tiempo, dificultad } = useParams();
@@ -34,33 +34,31 @@ const JugarIndividual = () => {
   const [preguntaActual, setPreguntaActual] = useState(null);
   const [loading, setLoading] = useState(true);
   const [alerta, setAlerta] = useState('');
-  const [respuestaSeleccionada, setRespuestaSeleccionada] = useState('');
+  const [respuestaSeleccionada, setRespuestaSeleccionada] = useState(null);
   const [respuestas, setRespuestas] = useState([]);
   const [respuestaCorrecta, setRespuestaCorrecta] = useState(false);
   const [contador, setContador] = useState(0);
   const [juegoTerminado, setJuegoTerminado] = useState(false);
-  const [tiempoRestante, setTiempoRestante] = useState(pasarTiempo(tiempo));
-  const [jugador_id, setJugador_id] = useState('');
+  const [tiempoRestante, setTiempoRestante] = useState(1);
   const [categoriaId, setCategoriaId] = useState('');
   const [contadorInicial, setContadorInicial] = useState(5);
   const [juegoIniciado, setJuegoIniciado] = useState(false);
   const [mostrarContador, setMostrarContador] = useState(false);
   const [cronometroPausado, setCronometroPausado] = useState(false);
   const [mostrarEspera, setMostrarEspera] = useState(false);
-  const [partidaJugadorId, setPartidaJugadorId] = useState(0);
-  const [estadisticaId, setEstadisticaId] = useState(0);
+  const [tiempoTotalJugado, setTiempoTotalJugado] = useState(0);
   const user = getStoredUser();
 
   const [foto] = useState(user.foto_perfil);
 
-  const entrePreguntasRef = useRef(null);
+  //const entrePreguntasRef = useRef(null);
 
   const timerRef = useRef(null);
-
+  const tiempoRestanteRef = useRef(pasarTiempo(tiempo));
   function pasarTiempo(tiempo) {
-    if (tiempo === 'Facíl' || tiempo === 'Easy') return '15';
-    if (tiempo === 'Media' || tiempo === 'Medium') return '12';
-    if (tiempo === 'Dificíl' || tiempo === 'Hard') return '8';
+    if (tiempo === 'Facíl' || tiempo === 'Easy') return 15;
+    if (tiempo === 'Media' || tiempo === 'Medium') return 12;
+    if (tiempo === 'Dificíl' || tiempo === 'Hard') return 8;
     return '';
   }
 
@@ -106,8 +104,8 @@ const JugarIndividual = () => {
           const preguntasAleatorias = data.sort(() => Math.random() - 0.5).slice(0, 10);
           setCategoriaId(data[0].categoria_id);
           const preguntasConOpcionesMezcladas = preguntasAleatorias.map((pregunta) => ({
-            ...pregunta, //copia todas las propiedades de la pregunta
-            Opciones: pregunta.Opciones.sort(() => Math.random() - 0.5), //sobrescribe Opciones mezcladas
+            ...pregunta,
+            Opciones: pregunta.Opciones.sort(() => Math.random() - 0.5),
           }));
           setPreguntas(preguntasConOpcionesMezcladas);
           setPreguntaActual(preguntasConOpcionesMezcladas[0]);
@@ -131,7 +129,7 @@ const JugarIndividual = () => {
   useEffect(() => {
     if (mostrarContador && contadorInicial > 0) {
       if (contadorInicial > 4) {
-        fiveSeconds();
+        fiveSecondsSound();
       }
       const timer = setTimeout(() => {
         setContadorInicial(contadorInicial - 1);
@@ -139,12 +137,21 @@ const JugarIndividual = () => {
       return () => clearTimeout(timer);
     } else if (mostrarContador && contadorInicial === 0 && !juegoIniciado && !juegoTerminado) {
       setJuegoIniciado(true);
+      setTiempoRestante(pasarTiempo(tiempo));
       if (!musicStartedRef.current) {
         playing();
         musicStartedRef.current = true;
       }
     }
-  }, [contadorInicial, mostrarContador, juegoIniciado, juegoTerminado, playing]);
+  }, [
+    contadorInicial,
+    mostrarContador,
+    juegoIniciado,
+    juegoTerminado,
+    playing,
+    fiveSecondsSound,
+    tiempo,
+  ]);
 
   //manejar el cronometro
   useEffect(() => {
@@ -154,23 +161,10 @@ const JugarIndividual = () => {
       }
       return;
     }
-    if (!cronometroPausado) {
-      setTiempoRestante(parseInt(pasarTiempo(tiempo)));
-    }
-
-    // entrePreguntasRef.current = setInterval(() => {
-    //   setTiempoRestante((prev) => {
-    //     if (prev <= 1) {
-    //       clearInterval(timerRef.current);
-    //       handleGuardarRespuesta(null);
-    //       return 0;
-    //     }
-    //     return prev - 1;
-    //   });
-    // }, 1000);
 
     timerRef.current = setInterval(() => {
       setTiempoRestante((prev) => {
+        tiempoRestanteRef.current = prev - 1;
         if (prev <= 1) {
           clearInterval(timerRef.current);
           handleGuardarRespuesta(null);
@@ -187,13 +181,20 @@ const JugarIndividual = () => {
 
   const handleGuardarRespuesta = (opcion) => {
     setCronometroPausado(true);
+    const tiempoTotal = pasarTiempo(tiempo);
+    const tiempoRestanteActual = tiempoTotal - tiempoRestanteRef.current;
+    const tiempoRespuesta = Math.max(tiempoRestanteActual, 1);
+
     let nuevasRespuestas;
+
     if (!opcion) {
-      nuevasRespuestas = [...respuestas, { texto: 'Sin respuesta', es_correcta: false }];
-      setRespuestas(nuevasRespuestas);
+      playWrong();
+      nuevasRespuestas = [
+        ...respuestas,
+        { texto: 'Sin respuesta', es_correcta: false, tiempoRespuesta },
+      ];
     } else {
-      nuevasRespuestas = [...respuestas, opcion];
-      setRespuestas(nuevasRespuestas);
+      nuevasRespuestas = [...respuestas, { ...opcion, tiempoRespuesta }];
       setRespuestaSeleccionada(opcion);
 
       if (opcion.es_correcta === true) {
@@ -203,29 +204,43 @@ const JugarIndividual = () => {
         playWrong();
       }
     }
+    setRespuestas(nuevasRespuestas);
+    setTiempoTotalJugado((prevTiempo) => prevTiempo + tiempoRespuesta);
+
+    const tiempoTotalAcumulado = tiempoTotalJugado + tiempoRespuesta;
 
     setTimeout(() => {
       const siguiente = contador + 1;
 
       if (siguiente < preguntas.length) {
         setMostrarEspera(true);
-        setContador(siguiente);
-        setPreguntaActual(preguntas[siguiente]);
-        setRespuestaSeleccionada(null);
-        setRespuestaCorrecta(null);
-        setCronometroPausado(false);
+
+        setTimeout(() => {
+          setContador(siguiente);
+          setPreguntaActual(preguntas[siguiente]);
+          setRespuestaSeleccionada(null);
+          setRespuestaCorrecta(null);
+          setCronometroPausado(false);
+          setMostrarEspera(false);
+
+          //reiniciar tiempo
+          const nuevoTiempo = pasarTiempo(tiempo);
+          tiempoRestanteRef.current = nuevoTiempo;
+          setTiempoRestante(nuevoTiempo);
+        }, 2000);
       } else {
+        // Fin del juego
         setAlerta('Juego terminado ✅');
-        guardarPartidaEnBD(nuevasRespuestas);
-        setTiempoRestante('0');
+        guardarPartidaEnBD(nuevasRespuestas, tiempoTotalAcumulado);
         setJuegoTerminado(true);
         setJuegoIniciado(false);
+        setTiempoRestante(0);
         playTimeout();
       }
-    }, 3000);
+    }, 1000);
   };
 
-  const guardarPartidaEnBD = async (respuestasFinales) => {
+  const guardarPartidaEnBD = async (respuestasFinales, tiempoTotal) => {
     try {
       const respuestasCorrectas = respuestasFinales.filter((r) => r.es_correcta).length;
       const respuestasIncorrectas = respuestasFinales.length - respuestasCorrectas;
@@ -239,13 +254,7 @@ const JugarIndividual = () => {
         started_at: new Date(),
         ended_at: new Date(),
       };
-      //dificultad: dificultad,
-      //tiempo_por_pregunta: pasarTiempo(tiempo),
-      //respuestas_correctas: respuestasCorrectas,
-      //respuestas_incorrectas: respuestas.length - respuestasCorrectas,
-      //respuestas_detalle: respuestas,
 
-      // POST a la BD
       const response = await axios.post('http://localhost:3006/partidas/create', datosPartida);
       const partidaId = response.data.id;
       console.log('Partida guardada:', response.data);
@@ -255,13 +264,11 @@ const JugarIndividual = () => {
       const estadisticasRes = await guardarEstadisticas(
         partidaId,
         respuestasCorrectas,
-        respuestasIncorrectas
+        respuestasIncorrectas,
+        tiempoTotal
       );
       const estadisticasResID = estadisticasRes?.id;
       await guardarRespuesta(respuestasFinales, partidaId, estadisticasResID, partidaPreguntaID);
-
-      //  redirigir
-      // navigate('/resultados');
     } catch (error) {
       console.error('Error al guardar partida:', error);
       setAlerta('Error al guardar la partida');
@@ -283,22 +290,19 @@ const JugarIndividual = () => {
       throw error;
     }
   };
+
   const enviarPartidaPreguntas = async (partidaId) => {
     try {
-      // recorrer cada pregunta y su respuesta
       const promesas = preguntas.map((pregunta, index) => {
         return axios.post('http://localhost:3006/partida_preguntas/create', {
           partida_id: partidaId,
           pregunta_id: pregunta.id,
-          orden: index + 1, // orden empieza en 1
+          orden: index + 1,
           question_text_copy: pregunta.enunciado,
           correct_option_id_copy: pregunta.Opciones.find((o) => o.es_correcta)?.id || null,
           correct_option_text_copy: pregunta.Opciones.find((o) => o.es_correcta)?.texto || null,
         });
       });
-
-      // user_answer: respuestas[index]?.texto || 'Sin respuesta',
-      // user_answer_correct: respuestas[index]?.es_correcta || false,
 
       const resultados = await Promise.all(promesas);
       console.log('Todas las preguntas fueron guardadas', resultados.data);
@@ -310,16 +314,21 @@ const JugarIndividual = () => {
     }
   };
 
-  const guardarEstadisticas = async (partidaId, respuestasCorrectas, respuestasIncorrectas) => {
+  const guardarEstadisticas = async (
+    partidaId,
+    respuestasCorrectas,
+    respuestasIncorrectas,
+    tiempoTotal
+  ) => {
     const id = user?.jugador_id;
     try {
-      const tiempoTotalMs = preguntas.length + 1 * parseInt(pasarTiempo(tiempo)) * 1000; //hay q hacer la cuenta real
+      const tiempoTotalMs = tiempoTotal * 1000;
 
       const datosEstadisticas = {
         jugador_id: id,
         partida_id: partidaId,
-        posicion: 1, // individual es 1
-        puntaje_total: respuestasCorrectas * 10, // 10 puntos por respuesta correcta , hay q definir los puntos
+        posicion: 1,
+        puntaje_total: respuestasCorrectas * 10,
         total_correctas: respuestasCorrectas,
         total_incorrectas: respuestasIncorrectas,
         tiempo_total_ms: tiempoTotalMs,
@@ -336,6 +345,7 @@ const JugarIndividual = () => {
       setAlerta('Error al guardar las estadísticas');
     }
   };
+
   const guardarRespuesta = async (
     respuestasFinales,
     partidaId,
@@ -345,11 +355,8 @@ const JugarIndividual = () => {
     const id = user?.jugador_id;
     try {
       const promesas = respuestasFinales.map((respuesta, index) => {
-        console.log(`Respuesta ${index + 1}:`, {
-          respuesta_id: respuesta.id,
-          pregunta_id: preguntas[index]?.id,
-          es_correcta: respuesta.es_correcta,
-        });
+        const tiempoUsado = respuesta.tiempoRespuesta ?? 15;
+        const tiempoRespuestaMs = tiempoUsado * 1000;
 
         return axios
           .post('http://localhost:3006/respuestas/create', {
@@ -360,7 +367,7 @@ const JugarIndividual = () => {
             opcion_elegida_id: respuesta.texto === 'Sin respuesta' ? null : respuesta.id,
             estadistica_id: estadisticasResId,
             es_correcta: respuesta.texto === 'Sin respuesta' ? false : respuesta.es_correcta,
-            tiempo_respuesta_ms: parseInt(pasarTiempo(tiempo)) * 1000, //aca hay q poner el tiempo de respuesta.
+            tiempo_respuesta_ms: tiempoRespuestaMs,
           })
           .catch((error) => {
             console.error(`❌ Error en respuesta ${index + 1}:`, error.response?.data);
@@ -472,6 +479,25 @@ const JugarIndividual = () => {
             <div className='bg-red-500/20 border-2 border-red-500 text-red-200 p-6 rounded-2xl text-xl font-bold text-center'>
               {alerta}
             </div>
+          ) : mostrarEspera ? (
+            <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-8 w-full max-w-2xl shadow-2xl text-center'>
+              <div className='flex flex-col items-center justify-center gap-4'>
+                <div className='flex justify-center gap-2'>
+                  <div className='w-3 h-3 bg-yellow-300 rounded-full animate-bounce'></div>
+                  <div
+                    className='w-3 h-3 bg-yellow-300 rounded-full animate-bounce'
+                    style={{ animationDelay: '0.2s' }}
+                  ></div>
+                  <div
+                    className='w-3 h-3 bg-yellow-300 rounded-full animate-bounce'
+                    style={{ animationDelay: '0.4s' }}
+                  ></div>
+                </div>
+                <p className='text-2xl font-bold text-yellow-300 animate-pulse'>
+                  Siguiente pregunta...
+                </p>
+              </div>
+            </div>
           ) : preguntaActual && juegoIniciado ? (
             <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-8 w-full max-w-2xl shadow-2xl'>
               <div className='mb-6'>
@@ -538,6 +564,7 @@ const JugarIndividual = () => {
             </div>
           )}
         </div>
+
         <div className='col-span-1 flex flex-col items-center justify-start'>
           <div
             className={`rounded-3xl px-6 py-4 text-center shadow-2xl border-4 w-full ${

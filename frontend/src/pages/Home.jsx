@@ -1,3 +1,7 @@
+// ============================================
+// HOME.JSX - RESPONSIVE COMPLETO
+// ============================================
+
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -13,25 +17,25 @@ const Home = () => {
   const { isMuted, toggleMute } = useMusic();
 
   return (
-    <div className='rounded-3xl text-center relative py-3 my-15 '>
-      <div className='w-90 mt-2 rounded-4xl flex flex-col text-center items-center justify-center text-white gap-5'>
-        <div className='flex flex-col items-center w-full max-w-md'>
+    <div className='rounded-2xl md:rounded-3xl text-center relative py-3 my-6 md:my-12 min-h-screen'>
+      <div className='w-full px-4 sm:px-6 md:px-8 rounded-2xl md:rounded-4xl flex flex-col text-center items-center justify-center text-white gap-4 md:gap-6'>
+        <div className='flex flex-col items-center w-full max-w-xs sm:max-w-sm'>
           <motion.button
             onClick={() => setMostrarJugarOptions(!mostrarJugarOptions)}
-            whileHover={{ scale: 1.05 }}
+            whileHover={{ scale: 1.15 }}
             whileTap={{ scale: 0.95 }}
-            className='relative bg-gradient-to-br from-yellow-100 via-orange-300 to-orange-400 w-full h-16 rounded-full cursor-pointer shadow-2xl hover:shadow-orange-500/50 transition-all duration-300 border-4 border-yellow-300'
+            className='relative bg-gradient-to-br from-yellow-100 via-orange-300 to-orange-400 w-full h-12 sm:h-14 md:h-16 rounded-full cursor-pointer shadow-2xl hover:shadow-orange-500/50 transition-all duration-300 border-2 sm:border-3 md:border-4 border-yellow-300'
           >
-            <div className='flex items-center justify-center gap-3'>
-              <Play className='w-6 h-6 fill-white stroke-white' />
-              <span className='text-2xl font-black tracking-wide text-white drop-shadow-lg'>
+            <div className='flex items-center justify-center gap-2 sm:gap-3'>
+              <Play className='w-5 h-5 sm:w-6 sm:h-6 fill-white stroke-white' />
+              <span className='text-lg sm:text-xl md:text-2xl font-black tracking-wide text-white drop-shadow-lg'>
                 {t('play')}
               </span>
               <motion.div
                 animate={{ rotate: mostrarJugarOptions ? 180 : 0 }}
                 transition={{ duration: 0.3 }}
               >
-                <ChevronDown className='w-6 h-6 text-white' />
+                <ChevronDown className='w-5 h-5 sm:w-6 sm:h-6 text-white' />
               </motion.div>
             </div>
           </motion.button>
@@ -43,31 +47,31 @@ const Home = () => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
-                className='flex flex-col gap-3 mt-4 w-full'
+                className='flex flex-col  items-center gap-2 sm:gap-3 mt-3 md:mt-4 w-full'
               >
-                <div className='bg-purple-600/90 backdrop-blur-sm py-2 rounded-xl text-lg font-bold text-white border-2 border-purple-400'>
-                  {t('gameMode')}
-                </div>
-
                 <Link to='/crearIndividual'>
                   <motion.button
-                    whileHover={{ scale: 1.05 }}
+                    whileHover={{ scale: 1.15 }}
                     whileTap={{ scale: 0.95 }}
-                    className='w-full cursor-pointer bg-gradient-to-br from-blue-400 to-blue-500 h-14 rounded-full shadow-xl hover:shadow-blue-500/50 transition-all duration-300 flex items-center justify-center gap-3 border-4 border-blue-300'
+                    className=' cursor-pointer bg-gradient-to-br from-blue-400 to-blue-500 h-11 sm:h-13 md:h-14 md:w-65 rounded-full shadow-xl hover:shadow-blue-500/50 transition-all duration-300 flex items-center justify-center gap-2 sm:gap-3 border-2 sm:border-3 md:border-4 border-blue-300'
                   >
-                    <User className='w-5 h-5 text-white' />
-                    <span className='text-xl font-bold text-white'>{t('singlePlayer')}</span>
+                    <User className='w-4 h-4 sm:w-5 sm:h-5 text-white' />
+                    <span className='text-base sm:text-lg md:text-xl font-bold text-white'>
+                      {t('singlePlayer')}
+                    </span>
                   </motion.button>
                 </Link>
 
                 <Link to='/salaPartidas'>
                   <motion.button
-                    whileHover={{ scale: 1.05 }}
+                    whileHover={{ scale: 1.15 }}
                     whileTap={{ scale: 0.95 }}
-                    className='w-full cursor-pointer bg-gradient-to-br from-green-400 to-green-500 h-14 rounded-full shadow-xl hover:shadow-green-500/50 transition-all duration-300 flex items-center justify-center gap-3 border-4 border-green-300'
+                    className=' cursor-pointer bg-gradient-to-br from-green-400 to-green-500 h-11 sm:h-13 md:h-14 md:w-65 rounded-full shadow-xl hover:shadow-green-500/50 transition-all duration-300 flex items-center justify-center gap-2 sm:gap-3 border-2 sm:border-3 md:border-4 border-green-300'
                   >
-                    <Users className='w-5 h-5 text-white' />
-                    <span className='text-xl font-bold text-white'>{t('multiPlayer')}</span>
+                    <Users className='w-4 h-4 sm:w-5 sm:h-5 text-white' />
+                    <span className='text-base sm:text-lg md:text-xl font-bold text-white'>
+                      {t('multiPlayer')}
+                    </span>
                   </motion.button>
                 </Link>
               </motion.div>
@@ -75,34 +79,34 @@ const Home = () => {
           </AnimatePresence>
         </div>
 
-        <Link to='/Ruleta' className='w-full max-w-md'>
+        <Link to='/Ruleta' className='w-full max-w-xs sm:max-w-sm'>
           <motion.button
-            whileHover={{ scale: 1.05 }}
+            whileHover={{ scale: 1.15 }}
             whileTap={{ scale: 0.95 }}
-            className='relative bg-gradient-to-br from-yellow-100 via-orange-300 to-orange-400 w-full h-16 rounded-full cursor-pointer shadow-2xl hover:shadow-orange-500/50 transition-all duration-300 border-4 border-yellow-300'
+            className='relative bg-gradient-to-br from-yellow-100 via-orange-300 to-orange-400 w-full h-12 sm:h-14 md:h-16 rounded-full cursor-pointer shadow-2xl hover:shadow-orange-500/50 transition-all duration-300 border-2 sm:border-3 md:border-4 border-yellow-300'
           >
-            <div className='flex items-center justify-center gap-3'>
+            <div className='flex items-center justify-center gap-2 sm:gap-3'>
               <motion.div whileHover={{ rotate: 360 }} transition={{ duration: 0.6 }}>
-                <Dice5 className='w-6 h-6 text-white' />
+                <Dice5 className='w-5 h-5 sm:w-6 sm:h-6 text-white' />
               </motion.div>
-              <span className='text-2xl font-black tracking-wide text-white drop-shadow-lg'>
+              <span className='text-lg sm:text-xl md:text-2xl font-black tracking-wide text-white drop-shadow-lg'>
                 {t('roulette')}
               </span>
             </div>
           </motion.button>
         </Link>
 
-        <Link to='/Ranking' className='w-full max-w-md'>
+        <Link to='/Ranking' className='w-full max-w-xs sm:max-w-sm'>
           <motion.button
-            whileHover={{ scale: 1.05 }}
+            whileHover={{ scale: 1.15 }}
             whileTap={{ scale: 0.95 }}
-            className='relative bg-gradient-to-br from-yellow-100 via-orange-300 to-orange-400 w-full h-16 rounded-full cursor-pointer shadow-2xl hover:shadow-orange-500/50 transition-all duration-300 border-4 border-yellow-300'
+            className='relative bg-gradient-to-br from-yellow-100 via-orange-300 to-orange-400 w-full h-12 sm:h-14 md:h-16 rounded-full cursor-pointer shadow-2xl hover:shadow-orange-500/50 transition-all duration-300 border-2 sm:border-3 md:border-4 border-yellow-300'
           >
-            <div className='flex items-center justify-center gap-3'>
+            <div className='flex items-center justify-center gap-2 sm:gap-3'>
               <motion.div whileHover={{ scale: 1.2, rotate: -10 }} transition={{ duration: 0.3 }}>
-                <Trophy className='w-6 h-6 text-white' />
+                <Trophy className='w-5 h-5 sm:w-6 sm:h-6 text-white' />
               </motion.div>
-              <span className='text-2xl font-black tracking-wide text-white drop-shadow-lg'>
+              <span className='text-lg sm:text-xl md:text-2xl font-black tracking-wide text-white drop-shadow-lg'>
                 {t('ranking')}
               </span>
             </div>
@@ -110,18 +114,31 @@ const Home = () => {
         </Link>
       </div>
 
-      <button
+      <motion.button
         onClick={toggleMute}
-        className='relative top-10 bg-gray-800 text-white p-3 rounded-full shadow-lg z-10 cursor-pointer'
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.95 }}
+        className='relative top-7 left-0 sm:top-7 sm:left-0 bg-gradient-to-br from-gray-700 to-gray-900 hover:from-gray-600 hover:to-gray-800 text-white p-3 sm:p-4 rounded-full shadow-lg z-20 cursor-pointer transition-all border-2 border-gray-600'
       >
-        {isMuted ? <VolumeX /> : <Volume2 />}
-      </button>
+        {isMuted ? (
+          <VolumeX className='w-5 h-5 sm:w-6 sm:h-6' />
+        ) : (
+          <Volume2 className='w-5 h-5 sm:w-6 sm:h-6' />
+        )}
+      </motion.button>
 
-      <button
+      <motion.button
         onClick={() => setChatAbierto(!chatAbierto)}
-        className='fixed top-65 right-5 bg-blue-600 hover:bg-blue-700 text-white p-4 cursor-pointer rounded-full shadow-2xl transition transform hover:scale-110'
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.95 }}
+        className='fixed bottom-25 right-2 bg-gradient-to-br from-blue-500 to-blue-700 hover:from-blue-400 hover:to-blue-600 text-white p-3 sm:p-4 cursor-pointer rounded-full shadow-2xl transition z-10 border-2 border-blue-400'
       >
-        <svg className='w-6 h-6' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+        <svg
+          className='w-5 h-5 sm:w-6 sm:h-6'
+          fill='none'
+          stroke='currentColor'
+          viewBox='0 0 24 24'
+        >
           <path
             strokeLinecap='round'
             strokeLinejoin='round'
@@ -129,7 +146,7 @@ const Home = () => {
             d='M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z'
           />
         </svg>
-      </button>
+      </motion.button>
 
       <AnimatePresence>
         {chatAbierto && (
@@ -139,7 +156,7 @@ const Home = () => {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', stiffness: 200, damping: 25 }}
-            className='fixed top-80 right-0 bg-white shadow-2xl z-40 flex flex-col rounded-2xl'
+            className='fixed  sm:p-2 sm:top-50 sm:w-50  lg:top-65 lg:w-81 lg:p-2  right-1 bg-white shadow-2xl z-40 flex flex-col rounded-2xl'
           >
             <ChatGlobal />
           </motion.div>

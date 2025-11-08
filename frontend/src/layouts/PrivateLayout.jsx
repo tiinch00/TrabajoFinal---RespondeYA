@@ -10,16 +10,16 @@ export default function PrivateLayout() {
   const mostrarLogo = location.pathname === '/comoJugar' ? false : true;
 
   return (
-    <>
+    <div className='flex flex-col min-h-screen bg-gray-900'>
       <HeaderPrivate />
-      <main className='relative w-full min-h-screen flex flex-col items-center justify-start '>
+      <main className='relative w-full flex-1 flex flex-col items-center justify-start'>
         {mostrarLogo && <FondoAnimado />}
-        <div className='z-10 w-full flex flex-col items-center'>
+        <div className='z-10 w-full flex flex-col items-center justify-start px-4 sm:px-6 md:px-8'>
           {mostrarLogo && <RespondeYaLogo />}
           <Outlet />
         </div>
       </main>
       <Footer />
-    </>
+    </div>
   );
 }

@@ -1,14 +1,17 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import axios from 'axios';
 import { useAuth } from '../context/auth-context';
+import axios from 'axios';
 import { useState } from 'react';
+import { Mail, Lock, Gamepad2, AlertCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const Login = () => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { login, setLoading } = useAuth();
   const [errores, setErrores] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
 
   const [values, setValues] = useState({
     email: '',
@@ -17,15 +20,21 @@ const Login = () => {
 
   const handleChanges = (e) => {
     setValues({ ...values, [e.target.name]: e.target.value });
+    // Limpiar error del campo cuando empieza a escribir
+    if (errores[e.target.name]) {
+      setErrores({ ...errores, [e.target.name]: '' });
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    setIsLoading(true);
+
     const cleanedValues = {
       email: values.email.trim(),
       password: values.password.trim(),
     };
+
     let newErrors = {};
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -33,24 +42,30 @@ const Login = () => {
     if (!cleanedValues.password) newErrors.password = t('errorPasswordRequired');
     if (cleanedValues.password && cleanedValues.password.length < 6)
       newErrors.password = t('errorPasswordMin');
-    if (!emailRegex.test(cleanedValues.email)) newErrors.emailValido = t('errorEmailInvalid');
+    if (cleanedValues.email && !emailRegex.test(cleanedValues.email))
+      newErrors.emailValido = t('errorEmailInvalid');
 
     setErrores(newErrors);
-    if (Object.keys(newErrors).length > 0) return;
+    if (Object.keys(newErrors).length > 0) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const { data } = await axios.post('http://localhost:3006/auth/login', cleanedValues);
       const token = data.token;
       let user = data.user;
+
       if (!user && token) {
         const meRes = await axios.get('http://localhost:3006/auth/me', {
           headers: { Authorization: `Bearer ${token}` },
         });
         user = meRes.data;
       }
+
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user || { name: 'anonymous' }));
-      login(data.user, data.token); // <- dispara re-render global
+      login(data.user, data.token);
       navigate('/bienvenido', { replace: true });
     } catch (err) {
       const backendError = err.response?.data?.error;
@@ -69,64 +84,149 @@ const Login = () => {
         setErrores({ general: t('errorServer') });
       }
 
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
+  const containerVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.5, staggerChildren: 0.1 },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 10 },
+    visible: { opacity: 1, y: 0 },
+  };
+
   return (
-    <div className=' bg-gradient-to-r from-purple-700 to-indigo-800 rounded-3xl p-6 mb-10 text-center w-90 h-full '>
-      <h2 className='text-5xl font-bold mb-4 text-center text-white'>{t('welcome')}</h2>
-      <form onSubmit={handleSubmit}>
-        <div className='bg-gradient-to-r from-indigo-700 to-purple-800 rounded-4xl flex flex-col text-center items-center justify-center text-black'>
-          <div className='flex-col items-center justify-center mb-1 p-1'>
-            <label htmlFor='email'>
-              <strong className='text-white/90'>{t('insertEmail')}</strong>
+    <div className='flex items-start w-full justify-center min-h-screen  md:py-0'>
+      <motion.div
+        variants={containerVariants}
+        initial='hidden'
+        animate='visible'
+        className='w-full max-w-md md:max-w-lg bg-gradient-to-br from-purple-900/40 via-purple-800/50 to-indigo-900/70 backdrop-blur-sm rounded-2xl md:rounded-3xl p-6 md:p-8 border border-purple-500/30 shadow-2xl'
+      >
+        <motion.div variants={itemVariants} className='text-center mb-6 md:mb-8'>
+          <div className='flex items-center justify-center mb-4'>
+            <Gamepad2 className='w-8 h-8 md:w-10 md:h-10 text-cyan-400 mr-2' />
+            <h2 className='text-3xl md:text-4xl font-black bg-gradient-to-r from-cyan-400 via-pink-400 to-purple-400 text-transparent bg-clip-text'>
+              {t('welcome')}
+            </h2>
+            <Gamepad2 className='w-8 h-8 md:w-10 md:h-10 text-pink-400 ml-2' />
+          </div>
+          <p className='text-purple-200 text-sm md:text-base font-medium'>
+            {t('loginDescription')}
+          </p>
+        </motion.div>
+
+        <form onSubmit={handleSubmit} className='space-y-5 md:space-y-6'>
+          <motion.div variants={itemVariants} className='relative'>
+            <label
+              htmlFor='email'
+              className=' text-white font-semibold text-sm md:text-base mb-2 flex items-center gap-2'
+            >
+              <Mail className='w-4 h-4 md:w-5 md:h-5 text-cyan-400' />
+              {t('insertEmail')}
             </label>
             <input
-              type='text'
-              required
+              type='email'
               name='email'
-              placeholder={t('insertEmail')}
+              value={values.email}
               onChange={handleChanges}
-              className='w-70 h-15 rounded-4xl text-center bg-amber-50 hover:bg-amber-100 placeholder-gray-500/50 text-black'
+              placeholder={t('email') || 'tu@email.com'}
+              className={`w-full px-4 md:px-6 py-3 md:py-4 rounded-xl bg-white/10 border-2 backdrop-blur-sm text-white placeholder-gray-400 text-sm md:text-base focus:outline-none transition-all duration-300 ${
+                errores.email || errores.emailValido
+                  ? 'border-red-500 focus:border-red-400'
+                  : 'border-purple-400/50 focus:border-cyan-400 focus:bg-white/20'
+              }`}
             />
-          </div>
+            {(errores.email || errores.emailValido) && (
+              <p className='text-red-400 text-xs md:text-sm mt-1 flex items-center gap-1'>
+                <AlertCircle className='w-3 h-3 md:w-4 md:h-4' />
+                {errores.email || errores.emailValido}
+              </p>
+            )}
+          </motion.div>
 
-          <div className='flex-col items-center justify-center m-1 p-1'>
-            <label htmlFor='password'>
-              <strong className='text-white/90'>{t('insertPass')}</strong>
+          <motion.div variants={itemVariants} className='relative'>
+            <label
+              htmlFor='password'
+              className='block text-white font-semibold text-sm md:text-base mb-2 flex items-center gap-2'
+            >
+              <Lock className='w-4 h-4 md:w-5 md:h-5 text-pink-400' />
+              {t('insertPass')}
             </label>
             <input
               type='password'
-              required
               name='password'
-              placeholder={t('insertPass')}
+              value={values.password}
               onChange={handleChanges}
-              className='w-70 h-15 rounded-4xl text-center bg-amber-50 hover:bg-amber-100 placeholder-gray-500/50 text-black'
+              placeholder={t('pass') || '••••••••'}
+              className={`w-full px-4 md:px-6 py-3 md:py-4 rounded-xl bg-white/10 border-2 backdrop-blur-sm text-white placeholder-gray-400 text-sm md:text-base focus:outline-none transition-all duration-300 ${
+                errores.password
+                  ? 'border-red-500 focus:border-red-400'
+                  : 'border-purple-400/50 focus:border-pink-400 focus:bg-white/20'
+              }`}
             />
-          </div>
+            {errores.password && (
+              <p className='text-red-400 text-xs md:text-sm mt-1 flex items-center gap-1'>
+                <AlertCircle className='w-3 h-3 md:w-4 md:h-4' />
+                {errores.password}
+              </p>
+            )}
+          </motion.div>
 
-          <div className='w-50 h-10 bg-green-600 hover:bg-green-700 rounded-4xl text-white flex items-center justify-center mb-1 mt-4 p-1 cursor-pointer'>
-            <button type='submit' className='cursor-pointer'>
-              {t('sesion')}
-            </button>
-          </div>
+          {errores.general && (
+            <motion.div
+              variants={itemVariants}
+              className='bg-red-500/20 border-2 border-red-500 rounded-xl p-3 md:p-4 flex items-start gap-2'
+            >
+              <AlertCircle className='w-5 h-5 md:w-6 md:h-6 text-red-400 flex-shrink-0 mt-0.5' />
+              <p className='text-red-300 text-sm md:text-base'>{errores.general}</p>
+            </motion.div>
+          )}
 
-          <div className='text-center mb-4'>
-            <span className='text-white font-semibold'>{t('noAccount')}</span>
-            <Link to='/register' className='text-amber-300 hover:text-yellow-400 ml-1'>
-              {t('register')}
-            </Link>
-          </div>
+          <motion.button
+            variants={itemVariants}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            type='submit'
+            disabled={isLoading}
+            className='w-full py-3 cursor-pointer md:py-4 mt-6 md:mt-8 bg-gradient-to-r from-green-500 via-emerald-500 to-teal-600 hover:from-green-400 hover:via-emerald-400 hover:to-teal-500 disabled:from-gray-600 disabled:via-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed text-white font-bold text-base md:text-lg rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 flex items-center justify-center gap-2'
+          >
+            {isLoading ? (
+              <>
+                <div className='w-4 h-4 md:w-5 md:h-5 border-2 border-white border-t-transparent rounded-full animate-spin' />
+                {t('logging')}...
+              </>
+            ) : (
+              <>{t('sesion')}</>
+            )}
+          </motion.button>
 
-          <div>
-            {errores.email && <p className='text-red-600 mt-1'>{errores.email}</p>}
-            {errores.emailValido && <p className='text-red-600 mt-1'>{errores.emailValido}</p>}
-            {errores.password && <p className='text-red-600 mt-1'>{errores.password}</p>}
-            {errores.general && <p className='text-red-600 mt-1'>{errores.general}</p>}
-          </div>
-        </div>
-      </form>
+          <motion.div
+            variants={itemVariants}
+            className='text-center pt-4 md:pt-6 border-t border-purple-500/30'
+          >
+            <p className='text-gray-300 text-sm md:text-base'>
+              {t('noAccount')}{' '}
+              <Link
+                to='/register'
+                className='font-bold text-transparent bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text hover:from-yellow-300 hover:to-orange-300 transition-all duration-300'
+              >
+                {t('register')}
+              </Link>
+            </p>
+          </motion.div>
+        </form>
+
+        <div className='absolute top-0 right-0 w-40 h-40 bg-purple-600/20 rounded-full -z-10 blur-3xl' />
+        <div className='absolute bottom-0 left-0 w-40 h-40 bg-pink-600/20 rounded-full -z-10 blur-3xl' />
+      </motion.div>
     </div>
   );
 };

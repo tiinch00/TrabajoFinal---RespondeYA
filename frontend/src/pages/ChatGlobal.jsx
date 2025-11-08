@@ -4,7 +4,6 @@ import { useGame } from '../context/ContextJuego.jsx';
 
 //import { io } from 'socket.io-client';
 
-
 //const SOCKET_URL = 'http://localhost:3006';
 
 const getStoredUserName = () => {
@@ -107,7 +106,7 @@ export default function ChatGlobal() {
 
   return (
     <div>
-      <div className='flex flex-col h-[55vh] max-w-[900px] mx-auto border rounded-lg bg-white text-black'>
+      <div className='flex flex-col lg:h-110 lg:w-76 sm:w-45 sm:h-60 mx-auto border rounded-lg bg-white text-black'>
         {/* título */}
         <div className='px-4 py-2 border-b flex items-center justify-between h-12'>
           <div className='font-semibold text-md'>Chat Comunidad</div>
@@ -118,7 +117,7 @@ export default function ChatGlobal() {
         </div>
 
         {/* mensajes */}
-        <div ref={listRef} className='flex-1 overflow-y-auto p-4 space-y-3'>
+        <div ref={listRef} className='flex-1 overflow-y-auto text-left p-4 space-y-3'>
           {messages.length === 0 && (
             <div className='text-md text-gray-800'>No hay mensajes todavía.</div>
           )}
@@ -161,10 +160,10 @@ export default function ChatGlobal() {
         </div>
 
         {/* input */}
-        <form onSubmit={handleSend} className='p-3 border-t rounded-b-lg bg-white'>
+        <form onSubmit={handleSend} className='p-2 border-t rounded-b-lg bg-white'>
           <div className='flex gap-2'>
             <input
-              className='border rounded bg-amber-100 text-black px-3 py-2 flex-1'
+              className='border rounded bg-amber-100 w-full text-black px-3 py-2 flex-1'
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder='Escribí un mensaje…'

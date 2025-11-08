@@ -3,7 +3,7 @@ import { Trans, useTranslation } from 'react-i18next';
 import { useEffect, useRef, useState } from 'react';
 
 import axios from 'axios';
-import { useAuth } from "../context/auth-context.jsx";
+import { useAuth } from '../context/auth-context.jsx';
 
 const Tienda = () => {
   const [selected, setSelected] = useState(null); // indice o null
@@ -14,7 +14,7 @@ const Tienda = () => {
   const [confirmar, setConfirmar] = useState(false);
   const [comprado, setComprado] = useState(false);
   const compradoTimerRef = useRef(null);
-  const { user, updateUser } = useAuth(); 
+  const { user, updateUser } = useAuth();
 
   const { t, i18n } = useTranslation();
 
@@ -181,10 +181,12 @@ const Tienda = () => {
 
         // actualiza el puntaje del jugador
         setJugador(jUpdated ?? { ...jugador, puntaje: nuevoSaldo });
-        updateUser(jUpdated ?? {
-          ...user,
-          puntaje: nuevoSaldo,
-        });
+        updateUser(
+          jUpdated ?? {
+            ...user,
+            puntaje: nuevoSaldo,
+          }
+        );
       } catch (err) {
         console.log('@@@@ Error PUT jugadores/update\n', err.response?.data?.error || err.message);
       }
@@ -267,7 +269,7 @@ const Tienda = () => {
         ✨ {t('store')} ✨
       </motion.h1>
 
-      <h2 className="text-white/80 text-3xl mt-8 mb-4 text-center">Puntos: {user.puntaje}</h2>
+      <h2 className='text-white/80 text-3xl mt-8 mb-4 text-center'>Puntos: {user.puntaje}</h2>
 
       {administrador && administrador === 'administrador' && (
         <div className='text-center mt-6'>
@@ -358,7 +360,7 @@ const Tienda = () => {
       {/* div overlay absoluto en toda la pantalla) */}
       {selected !== null && (
         <div
-          className='fixed inset-0 z-50 bg-black/50 backdrop-blur-sm'
+          className='fixed inset-0 z-20  bg-black/50 backdrop-blur-sm'
           onClick={() => setSelected(null)}
         >
           <motion.div
@@ -366,8 +368,8 @@ const Tienda = () => {
             initial={{ opacity: 0, y: 10, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10 }}
-            className='absolute left-1/2 top-125 -translate-x-1/2 -translate-y-1/2
-                      w-150 max-w-8/12 h-195 rounded-2xl bg-indigo-900 text-white p-6 shadow-2xl'
+            className='absolute left-1/2 top-120 -translate-x-1/2 -translate-y-1/2
+                      w-120 h-195 sm:h-190 sm:w-120  rounded-2xl bg-indigo-900 text-white p-6 shadow-2xl'
           >
             {/* Boton X */}
             <button
@@ -380,7 +382,6 @@ const Tienda = () => {
               ✕
             </button>
 
-            {/* Imagen */}
             <img
               src={avatares[selected].preview_url}
               alt={`Avatar ${selected + 1}`}
@@ -389,10 +390,8 @@ const Tienda = () => {
 
             <hr className='my-7 border-1 border-sky-500' />
 
-            {/* Nombre */}
             <div className='text-6xl text-center mt-6'>{avatares[selected].nombre}</div>
 
-            {/* Division */}
             <div className='text-2xl text-center mt-4 mb-4'>{avatares[selected].division}</div>
 
             <div className='text-center mt-4'>
@@ -403,7 +402,6 @@ const Tienda = () => {
               <p className='text-2xl font-semibold text-green-400'>$1000 ARS {t('mp')} </p>
             </div>
 
-            {/* boton de compra */}
             {administrador === 'administrador' ? (
               // 💼 Modo Administrador → solo mostrar eliminar
               <div className='text-center mt-6'>
@@ -470,7 +468,6 @@ const Tienda = () => {
                   </div>
                 )}
 
-                {/* Botón de Mercado Pago */}
                 <div className='flex items-center justify-center'>
                   <button
                     onClick={() => crearPago(avatares[selected].nombre)}
