@@ -69,7 +69,7 @@ const SalaPartidas = () => {
             </>
           ) : (
             <div>
-              {console.log("salas.length :", salas.length)};
+              {/* {console.log("salas.length :", salas.length)}; */}
               <span className='text-white'>No hay salas en "espera" disponibles...</span>
             </div>
           )}

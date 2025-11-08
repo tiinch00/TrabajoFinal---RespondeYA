@@ -6,7 +6,7 @@ import correcta from '/sounds/correcta.wav';
 import ficeSeconds from '/sounds/fiveSeconds.mp3';
 import finalDeJuego from '/sounds/finalDeJuego.wav';
 import incorrecta from '/sounds/incorrecta.wav';
-import musicaPreguntas from '/sounds/musicaPreguntas.mp3';
+import musicaPreguntas from '/sounds/musicaPreguntasEdit.mp3';
 import { useGame } from '../context/ContextJuego.jsx';
 import useSound from 'use-sound';
 
@@ -82,6 +82,8 @@ export default function JugarMultijugador() {
     const [mostrarContador, setMostrarContador] = useState(true);
     const [cronometroPausado, setCronometroPausado] = useState(false);
 
+    console.log("config: ", config);
+
     // cleanup de sonidos/timers
     useEffect(() => {
         return () => {
@@ -90,6 +92,15 @@ export default function JugarMultijugador() {
             if (timerRef.current) clearInterval(timerRef.current);
         };
     }, [stop, stopFiveSeconds]);
+
+    // NEW: identificar al usuario actual (desde localStorage)
+    const currentUserId = (() => {
+        try {
+            return JSON.parse(localStorage.getItem('user') || 'null')?.id ?? null;
+        } catch {
+            return null;
+        }
+    })();
 
     // 0) Inicializar config desde state o localStorage
     useEffect(() => {
@@ -143,6 +154,20 @@ export default function JugarMultijugador() {
     const creador = ordenados[0] || null;
     const invitado = ordenados[1] || null;
 
+    // NEW: si hay más de dos o si el usuario actual no está entre los dos habilitados → a SalaPartidas
+    useEffect(() => {
+        if (!Array.isArray(jugadores) || jugadores.length === 0) return;
+
+        const top2 = ordenados.slice(0, 2);
+        const allowedIds = new Set(top2.map(j => j?.userId).filter(id => id != null));
+
+        if (!allowedIds.has(currentUserId)) {
+            navigate('/salaPartidas', {
+                replace: true,
+                state: { msg: 'La partida ya tiene 2 jugadores. Te llevamos a la lista de salas.' },
+            });
+        }
+    }, [jugadores, ordenados, currentUserId, navigate, salaId]);
 
     // 2) Con config lista, traer preguntas y prepararlas con shuffle determinístico
     useEffect(() => {
@@ -322,7 +347,24 @@ export default function JugarMultijugador() {
 
     return (
         <div className='w-full h-full text-white pt-5'>
-            <div className='grid grid-cols-5 gap-6 h-screen pt-15'>
+            
+            <div className='w-full h-full text-white flex items-center justify-center'>
+                {/* Reloj */}
+                <div
+                    className={`rounded-3xl px-6 py-4 text-center shadow-2xl border-4 w-40 ${tiempoRestante <= 5 && tiempoRestante > 0
+                        ? 'bg-gradient-to-b from-red-500 to-orange-600 border-red-300/30 animate-pulse'
+                        : 'bg-gradient-to-b from-yellow-300/80 to-yellow-400/80 border-yellow-400'
+                        }`}
+                >
+                    <p className='text-sm font-bold text-gray-800 mb-2'>⏱️ TIEMPO</p>
+                    <p className={`text-5xl font-black ${tiempoRestante <= 5 && tiempoRestante > 0 ? 'text-white' : 'text-red-600'}`}>
+                        {tiempoRestante}
+                    </p>
+                    <p className='text-xs font-bold text-gray-800 mt-2'>segundos</p>
+                </div>
+            </div>
+
+            <div className='grid grid-cols-5 gap-6 h-screen pt-10'>
 
                 {/* Panel izquierdo - (podés mostrar al usuario local si querés) */}
                 <div className='col-span-1 flex flex-col items-center justify-start'>
@@ -354,8 +396,6 @@ export default function JugarMultijugador() {
                 </div>
 
                 {/* {console.log(jugadores)} */}
-
-
 
                 {/* Centro - Pregunta */}
                 <div className='col-span-3 flex flex-col items-center justify-start'>
@@ -438,26 +478,8 @@ export default function JugarMultijugador() {
                     )}
                 </div>
 
-                {/* Derecha - Tiempo (el que estaba solo) */}
-                {/* <div className='col-span-1 flex flex-col items-center justify-start'>
-                    <div
-                        className={`rounded-3xl px-6 py-4 text-center shadow-2xl border-4 w-full ${tiempoRestante <= 5 && tiempoRestante > 0
-                            ? 'bg-gradient-to-b from-red-500 to-orange-600 border-red-300/30 animate-pulse'
-                            : 'bg-gradient-to-b from-yellow-300/80 to-yellow-400/80 border-yellow-400'
-                            }`}
-                    >
-                        <p className='text-sm font-bold text-gray-800 mb-2'>⏱️ TIEMPO</p>
-                        <p
-                            className={`text-5xl font-black ${tiempoRestante <= 5 && tiempoRestante > 0 ? 'text-white' : 'text-red-600'
-                                }`}
-                        >
-                            {tiempoRestante}
-                        </p>
-                        <p className='text-xs font-bold text-gray-800 mt-2'>segundos</p>
-                    </div>
-                </div> */}
-
                 <div className='col-span-1 flex flex-col items-center justify-start gap-4'>
+                    {/* Jugador invitado */}
                     <div className='bg-gradient-to-b from-green-600/40 to-green-700/70 rounded-2xl p-6 shadow-xl w-full'>
                         <div className='flex flex-col items-center'>
                             {invitado ? (
@@ -482,20 +504,6 @@ export default function JugarMultijugador() {
                                 <div className='w-24 h-24 rounded-full bg-white/20' />
                             )}
                         </div>
-                    </div>
-
-                    {/* Reloj debajo (queda igual que lo tenías) */}
-                    <div
-                        className={`rounded-3xl px-6 py-4 text-center shadow-2xl border-4 w-full ${tiempoRestante <= 5 && tiempoRestante > 0
-                            ? 'bg-gradient-to-b from-red-500 to-orange-600 border-red-300/30 animate-pulse'
-                            : 'bg-gradient-to-b from-yellow-300/80 to-yellow-400/80 border-yellow-400'
-                            }`}
-                    >
-                        <p className='text-sm font-bold text-gray-800 mb-2'>⏱️ TIEMPO</p>
-                        <p className={`text-5xl font-black ${tiempoRestante <= 5 && tiempoRestante > 0 ? 'text-white' : 'text-red-600'}`}>
-                            {tiempoRestante}
-                        </p>
-                        <p className='text-xs font-bold text-gray-800 mt-2'>segundos</p>
                     </div>
                 </div>
 

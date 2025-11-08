@@ -3,9 +3,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
+import axios from "axios";
 import { useGame } from '../context/ContextJuego.jsx';
 
 export default function SalaEspera() {
+    const [redirIn, setRedirIn] = useState(null); // null | 3..0
+    const redirIntervalRef = useRef(null);
+    const redirTimerRef = useRef(null);
     const goingToGameRef = useRef(false);
     const API = "http://localhost:3006";
     const { id } = useParams();             // id de sala
@@ -26,20 +30,6 @@ export default function SalaEspera() {
         const s = inicializarSocket();
         if (!s) return;
 
-        /*const getFoto = () => {
-            if (user?.foto_perfil == null) {
-                return null;
-            } else {
-                const f = user?.foto_perfil || user?.avatar_url;
-                return typeof f === 'string' && f.trim() ? f : '/uploads/default.png';
-            }
-        };
-        const datosUsuario = {
-            userId: user?.id ?? null,
-            nombre: (user?.name || user?.username || (user?.email?.split('@')[0]) || 'Jugador').trim(),
-            foto_perfil: getFoto(),
-        };*/
-
         // Fallback rápido a localStorage para evitar la carrera del Context
         const fromLS = (() => {
             try {
@@ -56,6 +46,7 @@ export default function SalaEspera() {
             userId: u.id ?? null,
             nombre: (u.name || u.username || (u.email?.split?.('@')[0]) || 'Jugador').trim(),
             foto_perfil: foto,
+            jugador_id: u.jugador_id
         };
 
         const onSalaActualizada = (estado) => {
@@ -65,6 +56,29 @@ export default function SalaEspera() {
 
         const onSalaLlena = () => {
             setMensaje('La sala ya está completa (máximo 2 jugadores).');
+
+            // limpiar timers previos si los hubiera
+            if (redirIntervalRef.current) clearInterval(redirIntervalRef.current);
+            if (redirTimerRef.current) clearTimeout(redirTimerRef.current);
+
+            setRedirIn(3); // 3 segundos
+            redirIntervalRef.current = setInterval(() => {
+                setRedirIn((prev) => {
+                    if (prev <= 1) {
+                        clearInterval(redirIntervalRef.current);
+                        redirIntervalRef.current = null;
+
+                        // mensaje final y pequeño delay para que se vea
+                        setMensaje('Redirigiendo a la lista de sala de espera…');
+                        redirTimerRef.current = setTimeout(() => {
+                            navigate('/salaPartidas');
+                        }, 800);
+
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
         };
 
         const onListoParaJugar = ({ kickoffAt, config } = {}) => {
@@ -108,8 +122,15 @@ export default function SalaEspera() {
         s.emit('obtener_sala', { salaId: id }, (estado) => {
             if (!estado?.ok) {
                 setMensaje(estado?.error || 'Sala no encontrada');
+                // cancela un timer previo si existiera
+                if (redirTimerRef.current) clearTimeout(redirTimerRef.current);
+                // espera 2s y redirige
+                redirTimerRef.current = setTimeout(() => {
+                    navigate('/salaPartidas');
+                }, 3000); // para una sala que no existe, 3 segundos
                 return;
             }
+
             setJugadores(estado.jugadores || []);
             setMensaje(estado.jugadores?.length === 1 ? 'Esperando jugador 2...' : '');
             if (estado?.config) {
@@ -117,18 +138,8 @@ export default function SalaEspera() {
                 localStorage.setItem('ultima_config_multijugador', JSON.stringify(estado.config));
             }
 
-            /*if (user?.id) {
-                s.emit('unirse_sala', { salaId: id, ...datosUsuario }, (resp) => {
-                    if (!resp?.ok) setMensaje(resp?.error || 'No se pudo entrar a la sala');
-                    else setSocketReady(true);
-                });
-            } else {
-                setMensaje('Iniciá sesión para unirte a la sala.');
-                return;
-            }*/
-
             // Emitimos SIEMPRE con datos defensivos (el server ya enriquece si viene userId)
-            s.emit('unirse_sala', { salaId: id, ...datosUsuario }, (resp) => {
+            s.emit('unirse_sala', { salaId: id, ...datosUsuario}, (resp) => {
                 if (!resp?.ok) setMensaje(resp?.error || 'No se pudo entrar a la sala');
                 else setSocketReady(true);
             });
@@ -136,7 +147,6 @@ export default function SalaEspera() {
 
         // cleanup
         return () => {
-            //s.emit('salir_sala', { salaId: id });
             if (!goingToGameRef.current) {
                 s.emit('salir_sala', { salaId: id }); // solo si NO estamos yendo al juego
             }
@@ -145,14 +155,16 @@ export default function SalaEspera() {
             s.off('listo_para_jugar', onListoParaJugar);
             s.off('jugador_se_fue', onDesconexionOtro);
             s.off('sala:comenzar', onComenzar);
+
+            if (redirIntervalRef.current) clearInterval(redirIntervalRef.current);
+            if (redirTimerRef.current) clearTimeout(redirTimerRef.current);
         };
-    }, [id, inicializarSocket, user]);
+    }, [id, inicializarSocket, user, navigate]);
 
     // cuenta regresiva
     useEffect(() => {
         if (cuenta === null) return;
         if (cuenta === 0) {
-            //navigate(`/jugarMultijugador/${id}`, { state: { config } });
             const cfg = configJuego || (() => {
                 try { return JSON.parse(localStorage.getItem('ultima_config_multijugador') || 'null'); }
                 catch { return null; }
@@ -167,7 +179,10 @@ export default function SalaEspera() {
     const jugador1 = jugadores[0] || null;
     const jugador2 = jugadores[1] || null;
 
-    //console.log("jugador2: ", jugador2);
+    // console.log("configJuego: ", configJuego);
+    // console.log("jugador1: ", jugador1);
+    // console.log("jugador2: ", jugador2);
+    // console.log("jugadores: ", jugadores);    
 
     return (
         <div className='m-3 flex items-center justify-center'>
@@ -206,6 +221,23 @@ export default function SalaEspera() {
                             <p className='text-xl font-bold'>
                                 {mensaje || (jugadores.length < 2 ? 'Esperando jugador 2...' : 'Listo para empezar')}
                             </p>
+                        )}
+
+                        {/* Banner de cuenta regresiva / redirección */}
+                        {redirIn !== null && (
+                            <div className="mt-4 text-center">
+                                {redirIn > 0 ? (
+                                    <div className="inline-flex items-center gap-3 bg-black/60 text-white px-4 py-2 rounded-xl">
+                                        <span>La sala está completa. Redirigiendo en</span>
+                                        <span className="text-2xl font-extrabold">{redirIn}</span>
+                                        <span>…</span>
+                                    </div>
+                                ) : (
+                                    <div className="inline-flex items-center bg-black/60 text-white px-4 py-2 rounded-xl">
+                                        Redirigiendo a la lista de sala de espera…
+                                    </div>
+                                )}
+                            </div>
                         )}
                     </div>
 

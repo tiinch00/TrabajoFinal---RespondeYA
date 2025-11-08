@@ -8,10 +8,17 @@ const ContextJuego = createContext();
 
 // crear un provider (componente que envuelve toda la app)
 export const GameProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
   const [categorias, setCategorias] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !localStorage.getItem('user'));
   const [socket, setSocket] = useState(null);
+  const [user, setUser] = useState(() => {
+    try {
+      const raw = localStorage.getItem('user');
+      return raw ? JSON.parse(raw) : null;   // ya no es null si existe en localStorage
+    } catch {
+      return null;
+    }
+  });
 
   // fetch de categorias
   const fetchCategorias = async () => {
@@ -24,6 +31,31 @@ export const GameProvider = ({ children }) => {
       setLoading(false);
     }
   };
+
+  // cargar datos iniciales al logear
+  useEffect(() => {
+    const userLocal = localStorage.getItem('user');
+    if (userLocal) {
+      setUser(JSON.parse(userLocal));
+      fetchCategorias();
+    } else {
+      setLoading(false);
+    }
+  }, []);
+
+  // efectos
+  useEffect(() => {
+    if (user) {
+      fetchCategorias()?.finally(() => setLoading(false));
+    } else {
+      setLoading(false);
+    }
+  }, [user]);
+
+  // si querés log cuando cambie user:
+  useEffect(() => {
+    console.log('user ->', user);
+  }, [user]);
 
   // Inicializar socket
   const inicializarSocket = useCallback(() => {
@@ -48,6 +80,8 @@ export const GameProvider = ({ children }) => {
           tiempo,
           dificultad,
           timestamp: Date.now(),
+          user_id: user.id,
+          jugador_id: user.jugador_id,
         };
 
         socketInstance.emit('crear_partida', datosPartida, (response) => {
@@ -68,17 +102,6 @@ export const GameProvider = ({ children }) => {
     const socketInstance = inicializarSocket();
     socketInstance.emit('unirse_lobby');
   }, [socket, inicializarSocket]);
-
-  // cargar datos iniciales al logear
-  useEffect(() => {
-    const userLocal = localStorage.getItem('user');
-    if (userLocal) {
-      setUser(JSON.parse(userLocal));
-      fetchCategorias();
-    } else {
-      setLoading(false);
-    }
-  }, []);
 
   // valor que comparten todos los componentes
   const value = {

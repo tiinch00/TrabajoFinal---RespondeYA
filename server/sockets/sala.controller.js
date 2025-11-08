@@ -2,11 +2,12 @@
 
 import { Categoria, Jugador, Partida, Sala, SalaJugador } from '../models/associations.js'
 
+import { DATE } from 'sequelize';
 import { User } from '../models/associations.js';
 
 // Estado en memoria de salas
 const salas = new Map();
-// idSala -> { jugadores: [{socketId, userId, nombre, foto_perfil, esCreador}], createdAt }
+// idSala -> { jugadores: [{socketId, userId, nombre, foto_perfil, jugador_id, esCreador}], createdAt }
 
 // timers por sala para el comienzo sincronizado
 const salaTimers = new Map(); // salaId -> timeoutId
@@ -37,11 +38,12 @@ function crearIdSala() {
 }
 
 function formatearTimestampParaMySQL(timestampEnMilisegundos) {
-    const fecha = new Date(timestampEnMilisegundos);
+    const MS_3HS = 3 * 60 * 60 * 1000;
+    const fecha = new Date(Number(timestampEnMilisegundos) - MS_3HS);
 
     // Usamos métodos para construir el string en formato 'YYYY-MM-DD HH:MM:SS'
     const anio = fecha.getFullYear();
-    const mes = String(fecha.getMonth() + 1).padStart(2, '0'); // Los meses son de 0-11
+    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
     const dia = String(fecha.getDate()).padStart(2, '0');
     const horas = String(fecha.getHours()).padStart(2, '0');
     const minutos = String(fecha.getMinutes()).padStart(2, '0');
@@ -59,17 +61,19 @@ export default function registrarEventosSala(io, socket) {
 
     socket.on('crear_partida', (datos, ack) => {
         try {
-            const idPartida = crearIdSala();
-            const sala = {
-                jugadores: [], createdAt: Date.now(), config: {
-                    categoria: datos.categoria,
-                    dificultad: datos.dificultad,
-                    tiempo: datos.tiempo
-                }
-            };
-            salas.set(idPartida, sala);
+            const jugador_id = Number(datos.jugador_id);
+            const id = Number(datos.user_id);
 
-            //console.log("socket crear_partida, datos: ", datos);
+            /*
+            console.log({ idJugador: typeof datos.jugador_id });
+            console.log({ idUser: typeof datos.user_id })
+            console.log({ jugador_id: typeof jugador_id });
+            console.log({ user_id: typeof id })
+            console.log("socket crear_partida, datos: ", datos);            
+            console.log("socket crear_partida, datos.timestamp: ", formatearTimestampParaMySQL(datos.timestamp));
+            */
+
+            const idPartida = crearIdSala();
 
             (async () => {
                 // 1) se crea el obj Categoria
@@ -87,27 +91,54 @@ export default function registrarEventosSala(io, socket) {
                                 categoria_id: objCategoria.id,
                                 max_jugadores: 2,
                                 estado: "esperando",
-                                created_at: formatearTimestampParaMySQL(datos)
+                                created_at: formatearTimestampParaMySQL(datos.timestamp)
                             });
                             //console.log("Sala creada en la DB para nuevaSala: ", nuevaSala);
                             if (nuevaSala) {
-                                // 3) se crea el obj Partida
+                                // 3) se crea el obj sala_jugadores para jugador - creador
                                 try {
-                                    const nuevaPartida = await Partida.create({
+                                    const nuevaSala_jugadores = await SalaJugador.create({
                                         sala_id: nuevaSala.id,
-                                        categoria_id: objCategoria.id,
-                                        modo: "multijugador",
-                                        total_preguntas: 10,
-                                        estado: "pendiente",
-                                        created_at: formatearTimestampParaMySQL(datos)
+                                        jugador_id: jugador_id,
+                                        joined_at: formatearTimestampParaMySQL(datos.timestamp)
                                     });
-                                    //console.log("@@@ Sala creada en la DB para nuevaPartida: ", nuevaPartida);
-                                    // envia el socket con success del primer try
-                                    ack?.({ success: true, idPartida });
+                                    // 4) se crea el obj Partida
+                                    if (nuevaSala_jugadores) {
+                                        try {
+                                            const nuevaPartida = await Partida.create({
+                                                sala_id: nuevaSala.id,
+                                                categoria_id: objCategoria.id,
+                                                modo: "multijugador",
+                                                total_preguntas: 10,
+                                                estado: "pendiente",
+                                                created_at: formatearTimestampParaMySQL(datos.timestamp),
+                                                started_at: null,
+                                                ended_at: null
+                                            });
+                                            //console.log("@@@ Sala creada en la DB para nuevaPartida: ", nuevaPartida);
+
+                                            // config de la sala creador - IMPORTANTE: NO BORRAR LAS SIGUIENTES 8 ORACIONES DE CODIGO                                            
+                                            const sala = {
+                                                jugadores: [], createdAt: Date.now(), config: {
+                                                    categoria: datos.categoria,
+                                                    dificultad: datos.dificultad,
+                                                    tiempo: formatearTimestampParaMySQL(datos.timestamp),
+                                                    partida_id: nuevaPartida.id,
+                                                    sala_id: nuevaSala.id,
+                                                }
+                                            };
+                                            salas.set(idPartida, sala);
+
+                                            // envia el socket con success del primer try
+                                            ack?.({ success: true, idPartida }); // idPartida es el codigo de sala
+                                        } catch (err) {
+                                            console.error("Error al crear obj nuevaPartida en sala en la DB: ", err);
+                                        }
+                                    }  // fin tercer if
                                 } catch (err) {
                                     console.error("Error al crear obj nuevaPartida en sala en la DB: ", err);
                                 }
-                            }  // fin segundo if
+                            } // fin segundo if
                         } catch (dbError) {
                             console.error("Error al crear sala en la DB: ", dbError);
                             // Opcional: puedes decidir cómo manejar este error específico de DB
@@ -117,6 +148,7 @@ export default function registrarEventosSala(io, socket) {
                     console.error("Error al crear sala en la DB: ", dbError);
                 }
             })(); // fin funcion anonima            
+
         } catch {
             ack?.({ success: false, error: 'No se pudo crear la sala' });
         }
@@ -129,19 +161,18 @@ export default function registrarEventosSala(io, socket) {
         ack?.({ ok: true, jugadores: sala.jugadores.map(({ socketId, ...r }) => r), config: sala.config });
     });
 
-    socket.on('unirse_sala', async ({ salaId, userId, nombre, foto_perfil }, ack) => {
+    socket.on('unirse_sala', async ({ salaId, userId, nombre, foto_perfil, jugador_id }, ack) => {
         const sala = salas.get(salaId);
         if (!sala) return ack?.({ ok: false, error: 'Sala inexistente' });
-        if (sala.jugadores.length >= 2) {
+        if (sala.jugadores.length > 2) { // >=
             socket.emit('sala_llena');
             return ack?.({ ok: false, error: 'Sala completa' });
         }
 
-        const yaEsta = sala.jugadores.some(j => j.socketId === socket.id);
+        //console.log("jugador_id: ", jugador_id);
+        //console.log({ jugador_id: typeof jugador_id });
 
-        // NUEVO: si ya hay alguien con ese userId en la sala, lo actualizamos (reconexión)
-        // NOTA: si no manejás userId (ej. invitados), podés usar nombre como fallback.
-        const idxMismoUser = userId ? sala.jugadores.findIndex(j => j.userId === userId) : -1;
+        const yaEsta = sala.jugadores.some(j => j.socketId === socket.id);
 
         if (!yaEsta) {
             // ===== D) ENRIQUECER DESDE BD (opcional) ===== (tu código igual)
@@ -158,23 +189,27 @@ export default function registrarEventosSala(io, socket) {
             }
             // ===== FIN D) =====
 
-            if (idxMismoUser >= 0) {
+            //console.log("sala: ", sala);            
+            //console.log("sala.jugadores: ", sala.jugadores);
+            if (sala.jugadores.length > 1 && sala.jugadores.length < 3) {
                 // Actualizamos el socketId y datos (reconexión del mismo usuario)
-                sala.jugadores[idxMismoUser] = {
-                    ...sala.jugadores[idxMismoUser],
+                sala.jugadores[1] = {
+                    ...sala.jugadores[1],
                     socketId: socket.id,
-                    userId: userId ?? null,
-                    nombre: String((nombre && String(nombre).trim()) || sala.jugadores[idxMismoUser].nombre || 'Jugador'),
+                    userId: userId || null,
+                    nombre: String((nombre && String(nombre).trim()) || 'Jugador 2'),
                     foto_perfil: toAbs(foto_perfil),
+                    jugador_id: jugador_id || null,
                     // esCreador se conserva
                 };
             } else {
                 const esCreador = sala.jugadores.length === 0;
                 sala.jugadores.push({
                     socketId: socket.id,
-                    userId: userId ?? null,
-                    nombre: String((nombre && String(nombre).trim()) || 'Jugador'),
+                    userId: userId || null,
+                    nombre: String((nombre && String(nombre).trim()) || 'Jugador 1'),
                     foto_perfil: toAbs(foto_perfil),
+                    jugador_id: jugador_id || null,
                     esCreador,
                 });
             }
@@ -182,9 +217,27 @@ export default function registrarEventosSala(io, socket) {
             socket.join(salaId);
         }
 
+        //console.log("jugadores: sala.jugadores: ", sala.jugadores);
+
+
+        if (sala.jugadores.length === 2) {
+            (async () => {
+                try {
+                    const nuevaSala_jugadores = await SalaJugador.create({
+                        sala_id: sala.config.sala_id,
+                        jugador_id: jugador_id,
+                        joined_at: formatearTimestampParaMySQL(Date.now())
+                    });
+
+                    console.log("@@@ se pudo, nuevaSala_jugadores: ", nuevaSala_jugadores);
+                } catch (error) {
+                    console.error("Error al crear sala_jugadores en la DB: ", error);
+                }
+            })(); // fin funcion anonima
+        }
+
         const payload = { jugadores: sala.jugadores.map(({ socketId, ...r }) => r) };
         io.to(salaId).emit('sala_actualizada', payload);
-        //if (sala.jugadores.length === 2) io.to(salaId).emit('listo_para_jugar');
         if (sala.jugadores.length === 2) {
             const kickoffAt = Date.now() + 10_000;
             io.to(salaId).emit('listo_para_jugar', { kickoffAt, config: sala.config });

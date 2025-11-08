@@ -26,6 +26,7 @@ const SalaJugador = sequelize.define("SalaJugador", {
   timestamps: false,
   indexes: [
     {
+      name: 'uc_sj_unico',
       unique: true,
       fields: ["sala_id", "jugador_id"], // UC (sala_id, jugador_id) Para que no este mismo jugador 2 veces en la misma sala.
     },
