@@ -25,6 +25,7 @@ import Ruleta from './pages/Ruleta';
 import SalaEspera from './pages/SalaEspera.jsx';
 import SalaPartidas from './pages/SalaPartidas.jsx';
 import Tienda from './pages/Tienda';
+import AbmEstadisticas from './pages/Admin/AbmEstadisticas.jsx';
 
 function LayoutSwitch() {
   const user = (() => {
@@ -53,7 +54,7 @@ function MusicController() {
       if (isCurrentlyAuth !== prevAuthRef.current) {
         if (isCurrentlyAuth && !isGameRoute) {
           audioRef.current.currentTime = 0;
-          audioRef.current?.play().catch(() => { });
+          audioRef.current?.play().catch(() => {});
         } else {
           audioRef.current?.pause();
           audioRef.current.currentTime = 0;
@@ -64,7 +65,7 @@ function MusicController() {
         audioRef.current?.pause();
       } else if (isCurrentlyAuth && !isGameRoute) {
         // si ya estaba autenticado y sale de juego, reproduce
-        audioRef.current?.play().catch(() => { });
+        audioRef.current?.play().catch(() => {});
       }
     } catch {
       audioRef.current?.pause();
@@ -106,6 +107,7 @@ function AppRoutes() {
           <Route path='/salaEspera/:id' element={<SalaEspera />} />
           <Route path='/jugarMultijugador/:id' element={<JugarMultijugador />} />
           <Route path='/admin/categorias' element={<AbmCategorias />} />
+          <Route path='/admin/estadisticas' element={<AbmEstadisticas />} />
           <Route path='/tienda' element={<Tienda />} />
           <Route path='/perfil' element={<Perfil />} />
           <Route path='/Ruleta' element={<Ruleta />} />

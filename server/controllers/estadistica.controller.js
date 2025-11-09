@@ -28,6 +28,16 @@ const index = async (req, res) => {
   }
 };
 
+const index2 = async (req, res) => {
+  try {
+    const data = await Estadistica.findAll();
+    return res.json(data);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send('Internal server error');
+  }
+};
+
 const show = async (req, res) => {
   const { id } = req.params;
   try {
@@ -120,6 +130,7 @@ const destroy = async (req, res) => {
 
 export default {
   index,
+  index2,
   show,
   store,
   update,

@@ -10,7 +10,27 @@ const Ranking = () => {
   const [ranking, setRanking] = useState([]);
   const [buscador, setBuscador] = useState('');
   const [mostrarInput, setMostrarInput] = useState(false);
+  const [paginaActual, setPaginaActual] = useState(0);
+  const [rankingPaginado, setRankingPaginado] = useState(0);
+  let itemsPorPagina = 5;
+  const totalPaginas = Math.ceil(ranking.length / itemsPorPagina);
+  const handleNext = () => {
+    if (paginaActual < totalPaginas - 1) {
+      setPaginaActual(paginaActual + 1);
+    }
+  };
 
+  const handlePreview = () => {
+    if (paginaActual > 0) {
+      setPaginaActual(paginaActual - 1);
+    }
+  };
+  useEffect(() => {
+    const inicio = paginaActual * itemsPorPagina;
+    const fin = inicio + itemsPorPagina;
+    setRankingPaginado(ranking.slice(inicio, fin));
+  }, [ranking, paginaActual]);
+  console.log(rankingPaginado);
   const getData = async () => {
     try {
       const [resUsuarios, resJugadores] = await Promise.all([
@@ -63,7 +83,7 @@ const Ranking = () => {
   };
 
   return (
-    <div className='w-150 mt-6 px-4 pb-4'>
+    <div className='w-150 h-full mt-6 px-4 pb-4'>
       <div className='flex justify-center  items-center mb-4'>
         <Link
           to='/'
@@ -95,7 +115,9 @@ const Ranking = () => {
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
-          onClick={() => setMostrarInput((prev) => !prev)}
+          onClick={() => {
+            setMostrarInput((prev) => !prev), setBuscador('');
+          }}
           className='bg-gradient-to-br from-yellow-400 to-orange-500 text-white p-3 rounded-full hover:shadow-lg transition-all duration-300 border-2 border-yellow-300'
         >
           {mostrarInput ? <X size={24} /> : <Search size={24} />}
@@ -119,7 +141,6 @@ const Ranking = () => {
         </AnimatePresence>
       </div>
 
-      {/* Tabla de Ranking */}
       {jugadoresFiltrados.length > 0 ? (
         <motion.div
           initial={{ opacity: 0 }}
@@ -136,7 +157,7 @@ const Ranking = () => {
               </tr>
             </thead>
             <tbody>
-              {jugadoresFiltrados.map((jugador, index) => (
+              {rankingPaginado.map((jugador, index) => (
                 <motion.tr
                   key={jugador.id}
                   initial={{ opacity: 0, x: -20 }}
@@ -167,6 +188,33 @@ const Ranking = () => {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className='text-center py-12'>
           <p className='text-gray-400 text-xl'>{t('playersNotFound')}</p>
         </motion.div>
+      )}
+
+      {rankingPaginado.length >= 1 && (
+        <div className='flex place-content-between m-2 p-2'>
+          <button
+            className={`cursor-pointer border-1 rounded-full p-1  bg-blue-500  ${
+              paginaActual === 0 ? 'invisible' : ''
+            }`}
+            onClick={handlePreview}
+          >
+            {t('preview')}
+          </button>
+
+          <h2 className='text-white'>
+            {t('page')}: {1 + paginaActual}
+          </h2>
+
+          <button
+            className={`cursor-pointer border-1 rounded-full p-1 bg-orange-300/80 text-white transition ${
+              paginaActual >= totalPaginas - 1 ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+            onClick={handleNext}
+            disabled={paginaActual >= totalPaginas - 1}
+          >
+            {t('next')}
+          </button>
+        </div>
       )}
     </div>
   );

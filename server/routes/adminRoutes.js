@@ -2,7 +2,8 @@ import express from 'express';
 import categoriasController from '../controllers/categoria.controller.js';
 import preguntaController from '../controllers/pregunta.controller.js';
 import opcionController from '../controllers/opcion.controller.js';
-
+import partidaController from '../controllers/partida.controller.js';
+import estadisticaController from '../controllers/estadistica.controller.js';
 const router = express.Router();
 //categorias
 router.get('/categorias', categoriasController.index);
@@ -35,5 +36,11 @@ router.put(
   '/categoria/:nombre/:categoria_id/pregunta/:pregunta_id/opciones/edit',
   opcionController.update
 );
+
+//partidas
+router.get('/partidas', partidaController.index);
+
+//estadisticas
+router.get('/estadisticas', estadisticaController.index2);
 
 export default router;

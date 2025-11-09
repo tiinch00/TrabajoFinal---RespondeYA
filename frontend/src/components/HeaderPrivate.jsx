@@ -64,6 +64,7 @@ export default function HeaderPrivate() {
     { to: '/', label: t('home') },
     { to: '/admin/categorias', label: t('admCategory') },
     { to: '/tienda', label: t('admStore') },
+    { to: '/admin/estadisticas', label: t('admStadistics') },
   ];
 
   const userLinks = [
