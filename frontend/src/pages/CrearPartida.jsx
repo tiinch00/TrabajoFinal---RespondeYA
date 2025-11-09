@@ -19,17 +19,25 @@ const CrearPartida = ({ modo }) => {
   const [startButton] = useSound(start, { volume: 0.3 });
   const navigate = useNavigate();
 
+  const categoryTranslations = {
+    Cine: t('cinema'),
+    Historia: t('history'),
+    'Conocimiento General': t('generalKnowLedge'),
+    Geografía: t('geography'),
+    Informatica: t('informatic'),
+  };
+
   useEffect(() => {
     fetchCategorias();
   }, []);
 
   const handleJugar = () => {
     if (!categoria || !tiempo || !dificultad) {
-      setAlerta('¡Completa todo antes de jugar! 🎮');
+      setAlerta(t('alert'));
       return;
     }
     startButton();
-    setAlerta('Mucha Suerte!');
+    setAlerta(t('goodLuck'));
 
     setTimeout(() => {
       crearPartida(modo, { categoria, tiempo, dificultad }, navigate);
@@ -54,13 +62,13 @@ const CrearPartida = ({ modo }) => {
   const nivelesOptions = [t('easy'), t('medium'), t('hard')];
 
   return (
-    <div className='m-2 sm:m-3 md:m-4 flex items-center justify-center px-2 sm:px-4'>
-      <div className='p-4 sm:p-6 md:p-8 rounded-2xl md:rounded-3xl text-center text-white space-y-6 md:space-y-8 w-full max-w-xs sm:max-w-sm md:max-w-lg bg-gradient-to-br from-purple-900/30 via-purple-800/40 to-indigo-900/50 shadow-2xl'>
+    <div className='mt-2 sm:mt-3 md:mt-4 flex items-center justify-center   w-full h-full'>
+      <div className='p-4 sm:p-6 md:p-8 lg:p-8 rounded-2xl md:rounded-3xl text-center text-white space-y-6  md:mb-5 lg:mb-5 bg-gradient-to-br from-purple-900/30 via-purple-800/40 to-indigo-900/50 shadow-2xl'>
         <div className='space-y-3 md:space-y-4'>
           <h2 className='bg-gradient-to-r from-pink-500 to-yellow-500 text-transparent bg-clip-text text-lg sm:text-xl md:text-2xl font-extrabold tracking-wider drop-shadow-lg'>
             🎯 {t('categoryType')}
           </h2>
-          <div className='flex justify-center gap-2 sm:gap-3 flex-wrap'>
+          <div className='flex justify-center gap-2 sm:gap-3 flex-wrap w-full'>
             <button
               onClick={handleAlAzar}
               className='bg-gradient-to-r from-cyan-500 to-blue-600 px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 md:py-3 rounded-full font-bold text-sm sm:text-base text-white shadow-lg transform transition-all duration-200 cursor-pointer hover:scale-105 hover:shadow-xl hover:from-cyan-400 hover:to-blue-500 active:scale-95 flex items-center gap-1 sm:gap-2 whitespace-nowrap'
@@ -74,11 +82,14 @@ const CrearPartida = ({ modo }) => {
                   setShowDropdown(!showDropdown);
                   touchButton();
                 }}
-                className={`w-full bg-gradient-to-r from-indigo-500 to-purple-600 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-full font-bold text-sm sm:text-base text-white shadow-lg transform transition-all duration-200 hover:scale-105 hover:shadow-xl cursor-pointer active:scale-95 flex justify-center items-center gap-1 sm:gap-2 ${
+                className={`w-60 bg-gradient-to-r from-indigo-500 to-purple-600 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-full font-bold text-sm sm:text-base text-white shadow-lg transform transition-all duration-200 hover:scale-105 hover:shadow-xl cursor-pointer active:scale-95 flex justify-center items-center gap-1 sm:gap-2 ${
                   categoria ? 'ring-2 sm:ring-4 ring-yellow-400 ring-opacity-70' : ''
                 }`}
               >
-                <span className='truncate'>{categoria || t('choose')}</span>
+                <span className='truncate'>
+                  {categoria ? categoryTranslations[categoria] || categoria : t('choose')}
+                </span>
+
                 <ChevronDown className='w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0' />
               </button>
 
@@ -94,7 +105,7 @@ const CrearPartida = ({ modo }) => {
                       }}
                       className='block w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 text-purple-800 hover:bg-purple-100 font-medium text-sm sm:text-base transition'
                     >
-                      {cat.nombre}
+                      {categoryTranslations[cat.nombre] || cat.nombre}
                     </button>
                   ))}
                 </div>

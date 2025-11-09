@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'motion/react';
-import { Trans, useTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 import { useEffect, useRef, useState } from 'react';
 
 import axios from 'axios';
@@ -16,8 +16,18 @@ const Tienda = () => {
   const compradoTimerRef = useRef(null);
   const { user, updateUser } = useAuth();
 
-  const { t, i18n } = useTranslation();
-
+  const { t } = useTranslation();
+  const modeTranslations = {
+    Humano: t('human'),
+    Humana: t('human'),
+    Soldado: t('soldier'),
+    Master: t('master'),
+    Mago: t('mage'),
+    Computo: t('computo'),
+    Maga: t('mage'),
+    Ingeniero: t('ingenier'),
+    Principal: t('main'),
+  };
   // todo lo usado para agregar avatar a la tienda.
   const [mostrarModal, setMostrarModal] = useState(false);
   const [modalConfirmarEliminar, setModalConfirmarEliminar] = useState(false);
@@ -392,7 +402,9 @@ const Tienda = () => {
 
             <div className='text-6xl text-center mt-6'>{avatares[selected].nombre}</div>
 
-            <div className='text-2xl text-center mt-4 mb-4'>{avatares[selected].division}</div>
+            <div className='text-2xl text-center mt-4 mb-4'>
+              {modeTranslations[avatares[selected].division]}
+            </div>
 
             <div className='text-center mt-4'>
               <p className='text-3xl font-bold text-yellow-400'>

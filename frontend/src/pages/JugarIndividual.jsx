@@ -6,13 +6,14 @@ import correcta from '/sounds/correcta.wav';
 import finalDeJuego from '/sounds/finalDeJuego.wav';
 import fiveSeconds from '/sounds/fiveSeconds.mp3';
 import musicaPreguntas from '/sounds/musicaPreguntasEdit.mp3';
+import { useTranslation } from 'react-i18next';
 
 import axios from 'axios';
 
 const JugarIndividual = () => {
   const navigate = useNavigate();
   const musicStartedRef = useRef(false);
-
+  const { t } = useTranslation();
   const getStoredUser = () => {
     const raw = localStorage.getItem('user');
     if (!raw) return null;
@@ -28,6 +29,14 @@ const JugarIndividual = () => {
   const [playTimeout] = useSound(finalDeJuego, { volume: 0.7 });
   const [fiveSecondsSound, { stop: stopFiveSeconds }] = useSound(fiveSeconds, { volume: 0.7 });
   const [playing, { stop }] = useSound(musicaPreguntas, { volume: 0.2, loop: true });
+
+  const categoryTranslations = {
+    cine: t('cinema'),
+    historia: t('history'),
+    'conocimiento general': t('generalKnowLedge'),
+    geografía: t('geography'),
+    informatica: t('informatic'),
+  };
 
   const { categoria, tiempo, dificultad } = useParams();
   const [preguntas, setPreguntas] = useState([]);
@@ -96,6 +105,14 @@ const JugarIndividual = () => {
           dificultadTraducida = 'normal';
         if (dificultadTraducida === 'hard' || dificultadTraducida === 'dificíl')
           dificultadTraducida = 'dificil';
+
+        // let categoriaTraducida = categoria;
+        // if (categoriaTraducida === 'Geography') dificultadTraducida = 'Geografía';
+        // if (categoriaTraducida === 'Histoy') dificultadTraducida = 'Historia';
+        // if (categoriaTraducida === 'Informatic') categoriaTraducida = 'Informatica';
+        // if (categoriaTraducida === 'Cinema') categoriaTraducida = 'Cine';
+        // if (categoriaTraducida === 'General Knowledge') categoriaTraducida = 'General Knowledge';
+
         const { data } = await axios.get(
           `http://localhost:3006/preguntas/categoria/${categoria.toLowerCase()}/${dificultadTraducida.toLowerCase()}`
         );
@@ -230,7 +247,7 @@ const JugarIndividual = () => {
         }, 2000);
       } else {
         // Fin del juego
-        setAlerta('Juego terminado ✅');
+        setAlerta(t('gameOver'));
         guardarPartidaEnBD(nuevasRespuestas, tiempoTotalAcumulado);
         setJuegoTerminado(true);
         setJuegoIniciado(false);
@@ -271,7 +288,7 @@ const JugarIndividual = () => {
       await guardarRespuesta(respuestasFinales, partidaId, estadisticasResID, partidaPreguntaID);
     } catch (error) {
       console.error('Error al guardar partida:', error);
-      setAlerta('Error al guardar la partida');
+      //setAlerta('Error al guardar la partida');
     }
   };
 
@@ -286,7 +303,7 @@ const JugarIndividual = () => {
       return res.data;
     } catch (error) {
       console.error('Error al crear partidaJugador:', error);
-      setAlerta('Error al crear partidaJugador');
+      //setAlerta('Error al crear partidaJugador');
       throw error;
     }
   };
@@ -310,7 +327,7 @@ const JugarIndividual = () => {
       return resultados[0]?.data;
     } catch (error) {
       console.error('Error al enviar preguntas:', error);
-      setAlerta('Error al guardar las preguntas');
+      //setAlerta('Error al guardar las preguntas');
     }
   };
 
@@ -342,7 +359,7 @@ const JugarIndividual = () => {
       return responseEstadisticas.data;
     } catch (error) {
       console.error('Error al guardar estadísticas:', error);
-      setAlerta('Error al guardar las estadísticas');
+      //setAlerta('Error al guardar las estadísticas');
     }
   };
 
@@ -387,26 +404,31 @@ const JugarIndividual = () => {
       <div className='min-h-screen flex items-start justify-center relative overflow-hidden'>
         <div className='relative z-10 text-center'>
           <h1 className='text-5xl md:text-6xl font-black text-white mb-8 drop-shadow-lg'>
-            ¡Prepárate!
+            {t('beReady')}
           </h1>
 
           <div className='bg-gradient-to-r from-purple-600 to-purple-700 px-4 py-4 rounded-3xl text-white text-2xl font-bold mb-6 shadow-2xl border-2 border-purple-400'>
-            🎮 Categoría: <span className='text-yellow-300'>{categoria?.toUpperCase()}</span>
+            🎮 {t('category')}:{' '}
+            <span className='text-yellow-300'>
+              {' '}
+              {categoryTranslations[categoria]?.toUpperCase()}
+            </span>
           </div>
 
           <div className='space-y-5 mb-4 bg-black/30 p-4 rounded-2xl backdrop-blur-sm border border-purple-400/50'>
             <p className='text-white text-xl flex items-center justify-center gap-3'>
               <span className='text-2xl'>⏱️</span>
-              Tiempo por pregunta:{' '}
+              {t('timeQuestion')}:{' '}
               <span className='font-bold text-yellow-300'>{pasarTiempo(tiempo)}s</span>
             </p>
             <p className='text-white text-xl flex items-center justify-center gap-3'>
               <span className='text-2xl'>📊</span>
-              Dificultad: <span className='font-bold text-orange-400 capitalize'>{dificultad}</span>
+              {t('dificulty')}:{' '}
+              <span className='font-bold text-orange-400 capitalize'>{dificultad}</span>
             </p>
             <p className='text-white text-xl flex items-center justify-center gap-3'>
               <span className='text-2xl'>❓</span>
-              Total de preguntas: <span className='font-bold text-green-400'>10</span>
+              {t('questionTotal')}: <span className='font-bold text-green-400'>10</span>
             </p>
           </div>
 
@@ -416,9 +438,7 @@ const JugarIndividual = () => {
             </div>
           </div>
 
-          <div className='text-white text-2xl font-bold animate-bounce'>
-            El juego comenzará en...
-          </div>
+          <div className='text-white text-2xl font-bold animate-bounce'>{t('gameStarting')}</div>
         </div>
 
         <style>{`
@@ -439,7 +459,7 @@ const JugarIndividual = () => {
             <div className='absolute inset-0 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full animate-spin'></div>
             <div className='absolute inset-2 bg-gradient-to-b from-indigo-950 to-purple-900 rounded-full'></div>
           </div>
-          <p className='text-white text-3xl font-bold'>Cargando preguntas...</p>
+          <p className='text-white text-3xl font-bold'>{t('loadingQuestions')}</p>
         </div>
       </div>
     );
@@ -472,7 +492,7 @@ const JugarIndividual = () => {
 
         <div className='col-span-3 flex flex-col items-center justify-start'>
           <div className='bg-gradient-to-r from-orange-500 to-pink-500 rounded-full px-8 py-3 mb-8 text-2xl font-black shadow-lg'>
-            {categoria?.toUpperCase()}
+            {categoryTranslations[categoria]?.toUpperCase()}
           </div>
 
           {alerta ? (
@@ -494,7 +514,7 @@ const JugarIndividual = () => {
                   ></div>
                 </div>
                 <p className='text-2xl font-bold text-yellow-300 animate-pulse'>
-                  Siguiente pregunta...
+                  {t('nextQuestion')}
                 </p>
               </div>
             </div>
@@ -535,12 +555,12 @@ const JugarIndividual = () => {
               </div>
             </div>
           ) : (
-            <p className='text-xl text-gray-300'>No hay preguntas disponibles.</p>
+            <p className='text-xl text-gray-300'>{t('noAvaliableQuestions')}.</p>
           )}
 
           {juegoTerminado && (
             <div className='bg-black/50 rounded-2xl p-8 mt-8 w-full max-w-2xl'>
-              <h2 className='text-2xl font-bold text-yellow-300 mb-6'>Resumen de Respuestas</h2>
+              <h2 className='text-2xl font-bold text-yellow-300 mb-6'>{t('resumeAnswer')}</h2>
               <div className='space-y-3 max-h-64 overflow-y-auto'>
                 {respuestas.map((respuesta, index) => (
                   <div
@@ -573,7 +593,7 @@ const JugarIndividual = () => {
                 : 'bg-gradient-to-b from-yellow-300/80 to-yellow-400/80 border-yellow-400'
             }`}
           >
-            <p className='text-sm font-bold text-gray-800 mb-2'>⏱️ TIEMPO</p>
+            <p className='text-sm font-bold text-gray-800 mb-2'>⏱️ {t('timer')}</p>
             <p
               className={`text-5xl font-black ${
                 tiempoRestante <= 5 && tiempoRestante > 0 ? 'text-white' : 'text-red-600'
@@ -581,7 +601,7 @@ const JugarIndividual = () => {
             >
               {tiempoRestante}
             </p>
-            <p className='text-xs font-bold text-gray-800 mt-2'>segundos</p>
+            <p className='text-xs font-bold text-gray-800 mt-2'>{t('seconds')}</p>
           </div>
         </div>
       </div>
