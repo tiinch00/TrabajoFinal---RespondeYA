@@ -112,7 +112,7 @@ const Register = () => {
     } else if (!paisSeleccionado) {
       newErrors.pais = t('errorCountryRequired');
     } else if (!estaElPais) {
-      newErrors.pais = 'Debes seleccionar un pais real';
+      newErrors.pais = t('countryReal');
     } else if (!cleanedValues.password) {
       newErrors.password = t('errorPasswordRequired');
     } else if (cleanedValues.password.length < 6) {
@@ -137,16 +137,19 @@ const Register = () => {
         setMensaje('✅ ' + t('registerSuccess'));
         setTimeout(() => {
           navigate('/login');
-        }, 4000);
+        }, 3000);
       }
     } catch (err) {
-      if (err.response?.data?.error) {
-        setErrores({ general: err.response.data.error });
+      if (err.response?.data?.type === 'usuario') {
+        setErrores({ general: t('nameAlreadyUser') });
+      } else if (err.response?.data?.type === 'email') {
+        setErrores({ general: t('emailAlreadyUser') });
       } else {
         setErrores({ general: t('errorServer') });
       }
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   const containerVariants = {

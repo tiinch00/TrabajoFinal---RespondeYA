@@ -20,7 +20,10 @@ router.post('/register', async (req, res) => {
     if (!email) return res.status(400).json({ error: 'El email es obligatorio' });
     if (!password) return res.status(400).json({ error: 'La contraseña es obligatoria' });
     const exists = await User.findOne({ where: { email } });
-    if (exists) return res.status(409).json({ error: 'Email ya registrado' });
+    if (exists) return res.status(409).json({ type: 'email', error: 'email ' });
+
+    const existsName = await User.findOne({ where: { name: usuario } });
+    if (existsName) return res.status(409).json({ type: 'usuario', error: 'usuario' });
 
     // crea el obj User
     const newUser = await User.create({
@@ -66,7 +69,7 @@ router.post('/login', async (req, res) => {
       return res.status(500).json({ error: 'JWT_KEY no configurada en el servidor' });
 
     const token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: '3h' });
-    const { id, name, email: mail, foto_perfil} = user;
+    const { id, name, email: mail, foto_perfil } = user;
 
     const user_id = user.id;
     // validacion de role jugador
@@ -78,7 +81,15 @@ router.post('/login', async (req, res) => {
       } else {
         return res.status(200).json({
           token,
-          user: { id, name, email: mail, role: user.role, jugador_id: jugador_id, foto_perfil, puntaje: jugador.puntaje },
+          user: {
+            id,
+            name,
+            email: mail,
+            role: user.role,
+            jugador_id: jugador_id,
+            foto_perfil,
+            puntaje: jugador.puntaje,
+          },
         });
       }
     } else {

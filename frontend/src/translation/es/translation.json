@@ -217,5 +217,8 @@
   "timer": "Tiempo",
   "resumeAnswer": "Resumen de Respuestas",
   "noAvaliableQuestions": "No hay preguntas disponibles",
-  "createMatch": "Crear Partida"
+  "createMatch": "Crear Partida",
+  "nameAlreadyUser": "Nombre de usuario ya resgistrado.",
+  "emailAlreadyUser": "Email ya registrado.",
+  "countryReal": "Debes seleccionar un pais real"
 }

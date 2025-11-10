@@ -60,6 +60,7 @@ const Ranking = () => {
         posicion: index + 1,
       }));
       setRanking(rankingConPosicion);
+      setPaginaActual(0);
     } catch (err) {
       console.error('Error al obtener ranking:', err);
     }
@@ -70,11 +71,18 @@ const Ranking = () => {
   }, []);
 
   const handleBuscador = (e) => setBuscador(e.target.value);
-
+  // Filtrar jugadores según búsqueda
   const jugadoresFiltrados = !buscador.trim()
     ? ranking
     : ranking.filter((dato) => dato.name.toLowerCase().includes(buscador.toLowerCase()));
 
+  // Calcular total de páginas
+  const totalPaginasFiltradas = Math.ceil(jugadoresFiltrados.length / itemsPorPagina);
+
+  // Paginar los datos filtrados
+  const inicio = paginaActual * itemsPorPagina;
+  const fin = inicio + itemsPorPagina;
+  const jugadoresPaginados = jugadoresFiltrados.slice(inicio, fin);
   const getMedalIcon = (posicion) => {
     if (posicion === 1) return <Trophy className='w-6 h-6 text-yellow-400' />;
     if (posicion === 2) return <Medal className='w-6 h-6 text-gray-400' />;
@@ -83,7 +91,7 @@ const Ranking = () => {
   };
 
   return (
-    <div className='w-150 h-full mt-6 px-4 pb-4'>
+    <div className='w-150 min-h-screen mt-6 px-4 pb-4 '>
       <div className='flex justify-center  items-center mb-4'>
         <Link
           to='/'
@@ -145,9 +153,9 @@ const Ranking = () => {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className=' rounded-2xl shadow-2xl overflow-hidden border-4 border-yellow-400/50'
+          className=' rounded-2xl shadow-2xl overflow-hidden border-4 border-yellow-400/50 min-h-100'
         >
-          <table className='w-full text-white'>
+          <table className='w-full text-white text-start'>
             <thead>
               <tr className='bg-gradient-to-r from-yellow-500 via-orange-500 to-yellow-600 text-white'>
                 <th className='p-4 text-center font-black text-lg'>{t('position')}</th>
@@ -157,13 +165,13 @@ const Ranking = () => {
               </tr>
             </thead>
             <tbody>
-              {rankingPaginado.map((jugador, index) => (
+              {jugadoresPaginados.map((jugador, index) => (
                 <motion.tr
                   key={jugador.id}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className={`border-t border-yellow-500/20 hover:bg-yellow-500/10 transition-colors ${
+                  className={`border-t border-yellow-500/20' hover:bg-yellow-500/10 transition-colors ${
                     jugador.posicion <= 3 ? 'bg-yellow-500/5' : ''
                   }`}
                 >
@@ -185,36 +193,55 @@ const Ranking = () => {
           </table>
         </motion.div>
       ) : (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className='text-center py-12'>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className='text-center py-12 min-h-100 '
+        >
           <p className='text-gray-400 text-xl'>{t('playersNotFound')}</p>
         </motion.div>
       )}
 
-      {rankingPaginado.length >= 1 && (
-        <div className='flex place-content-between m-2 p-2'>
-          <button
-            className={`cursor-pointer border-1 rounded-full p-1  bg-blue-500  ${
-              paginaActual === 0 ? 'invisible' : ''
+      {totalPaginasFiltradas > 1 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className='flex flex-wrap justify-between items-center gap-2 sm:gap-4 mt-4 sm:mt-6 p-2 sm:p-4'
+        >
+          <motion.button
+            whileHover={paginaActual > 0 ? { scale: 1.05 } : {}}
+            whileTap={paginaActual > 0 ? { scale: 0.95 } : {}}
+            disabled={paginaActual === 0}
+            className={`px-4 sm:px-6 py-2 sm:py-3 rounded-full font-semibold transition-all duration-300 text-xs sm:text-base ${
+              paginaActual === 0
+                ? 'bg-gray-500 text-gray-300 cursor-not-allowed opacity-50'
+                : 'bg-gradient-to-r from-orange-400 to-orange-600 text-white hover:shadow-lg border-2 border-orange-300'
             }`}
             onClick={handlePreview}
           >
             {t('preview')}
-          </button>
+          </motion.button>
 
-          <h2 className='text-white'>
-            {t('page')}: {1 + paginaActual}
+          <h2 className='text-white font-semibold text-xs sm:text-base'>
+            {t('page')}: <span className='text-yellow-400 font-black'>{1 + paginaActual}</span> /{' '}
+            {totalPaginasFiltradas}
           </h2>
 
-          <button
-            className={`cursor-pointer border-1 rounded-full p-1 bg-orange-300/80 text-white transition ${
-              paginaActual >= totalPaginas - 1 ? 'opacity-50 cursor-not-allowed' : ''
+          <motion.button
+            whileHover={paginaActual < totalPaginasFiltradas - 1 ? { scale: 1.05 } : {}}
+            whileTap={paginaActual < totalPaginasFiltradas - 1 ? { scale: 0.95 } : {}}
+            disabled={paginaActual >= totalPaginasFiltradas - 1}
+            className={`px-4 sm:px-6 py-2 sm:py-3 rounded-full font-semibold transition-all duration-300 text-xs sm:text-base ${
+              paginaActual >= totalPaginasFiltradas - 1
+                ? 'bg-gray-500 text-gray-300 cursor-not-allowed opacity-50'
+                : 'bg-gradient-to-r from-orange-400 to-orange-600 text-white hover:shadow-lg border-2 border-orange-300'
             }`}
             onClick={handleNext}
-            disabled={paginaActual >= totalPaginas - 1}
           >
             {t('next')}
-          </button>
-        </div>
+          </motion.button>
+        </motion.div>
       )}
     </div>
   );

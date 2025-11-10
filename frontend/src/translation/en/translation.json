@@ -217,5 +217,8 @@
   "timer": "Time",
   "resumeAnswer": "Answer resume",
   "noAvaliableQuestions": "There's not are questions available",
-  "createMatch": "Match Create"
+  "createMatch": "Match Create",
+  "nameAlreadyUser": "Name user is already in use",
+  "emailAlreadyUser": "Email already in use",
+  "countryReal": "Must be a real Country"
 }
