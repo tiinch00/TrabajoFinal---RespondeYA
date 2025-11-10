@@ -1,13 +1,14 @@
 // server/sockets/sala.controller.js
 
-import { Categoria, Jugador, Partida, Sala, SalaJugador } from '../models/associations.js'
+import { Categoria, Estadistica, Jugador, Partida, PartidaJugador, PartidaPregunta, Respuesta, Sala, SalaJugador, User } from '../models/associations.js'
 
-import { DATE } from 'sequelize';
-import { User } from '../models/associations.js';
+import { Op } from 'sequelize';
 
 // Estado en memoria de salas
 const salas = new Map();
 // idSala -> { jugadores: [{socketId, userId, nombre, foto_perfil, jugador_id, esCreador}], createdAt }
+
+const tablasCreadasPorSala = new Set(); // guarda keys de salas ya procesadas
 
 // timers por sala para el comienzo sincronizado
 const salaTimers = new Map(); // salaId -> timeoutId
@@ -96,48 +97,48 @@ export default function registrarEventosSala(io, socket) {
                             //console.log("Sala creada en la DB para nuevaSala: ", nuevaSala);
                             if (nuevaSala) {
                                 // 3) se crea el obj sala_jugadores para jugador - creador
+                                // try {
+                                //     const nuevaSala_jugadores = await SalaJugador.create({
+                                //         sala_id: nuevaSala.id,
+                                //         jugador_id: jugador_id,
+                                //         joined_at: formatearTimestampParaMySQL(datos.timestamp)
+                                //     });
+                                // 4) se crea el obj Partida
+                                //if (nuevaSala_jugadores) {
                                 try {
-                                    const nuevaSala_jugadores = await SalaJugador.create({
+                                    const nuevaPartida = await Partida.create({
                                         sala_id: nuevaSala.id,
-                                        jugador_id: jugador_id,
-                                        joined_at: formatearTimestampParaMySQL(datos.timestamp)
+                                        categoria_id: objCategoria.id,
+                                        modo: "multijugador",
+                                        total_preguntas: 10,
+                                        estado: "pendiente",
+                                        created_at: formatearTimestampParaMySQL(datos.timestamp),
+                                        started_at: null,
+                                        ended_at: null
                                     });
-                                    // 4) se crea el obj Partida
-                                    if (nuevaSala_jugadores) {
-                                        try {
-                                            const nuevaPartida = await Partida.create({
-                                                sala_id: nuevaSala.id,
-                                                categoria_id: objCategoria.id,
-                                                modo: "multijugador",
-                                                total_preguntas: 10,
-                                                estado: "pendiente",
-                                                created_at: formatearTimestampParaMySQL(datos.timestamp),
-                                                started_at: null,
-                                                ended_at: null
-                                            });
-                                            //console.log("@@@ Sala creada en la DB para nuevaPartida: ", nuevaPartida);
+                                    //console.log("@@@ Sala creada en la DB para nuevaPartida: ", nuevaPartida);
 
-                                            // config de la sala creador - IMPORTANTE: NO BORRAR LAS SIGUIENTES 8 ORACIONES DE CODIGO                                            
-                                            const sala = {
-                                                jugadores: [], createdAt: Date.now(), config: {
-                                                    categoria: datos.categoria,
-                                                    dificultad: datos.dificultad,
-                                                    tiempo: formatearTimestampParaMySQL(datos.timestamp),
-                                                    partida_id: nuevaPartida.id,
-                                                    sala_id: nuevaSala.id,
-                                                }
-                                            };
-                                            salas.set(idPartida, sala);
-
-                                            // envia el socket con success del primer try
-                                            ack?.({ success: true, idPartida }); // idPartida es el codigo de sala
-                                        } catch (err) {
-                                            console.error("Error al crear obj nuevaPartida en sala en la DB: ", err);
+                                    // config de la sala creador - IMPORTANTE: NO BORRAR LAS SIGUIENTES 8 ORACIONES DE CODIGO                                            
+                                    const sala = {
+                                        jugadores: [], createdAt: Date.now(), config: {
+                                            categoria: datos.categoria,
+                                            dificultad: datos.dificultad,
+                                            tiempo: formatearTimestampParaMySQL(datos.timestamp),
+                                            partida_id: nuevaPartida.id,
+                                            sala_id: nuevaSala.id,
                                         }
-                                    }  // fin tercer if
+                                    };
+                                    salas.set(idPartida, sala);
+
+                                    // envia el socket con success del primer try
+                                    ack?.({ success: true, idPartida }); // idPartida es el codigo de sala
                                 } catch (err) {
                                     console.error("Error al crear obj nuevaPartida en sala en la DB: ", err);
                                 }
+                                //}  // fin tercer if
+                                //} catch (err) {
+                                //    console.error("Error al crear obj nuevaPartida en sala en la DB: ", err);
+                                //}
                             } // fin segundo if
                         } catch (dbError) {
                             console.error("Error al crear sala en la DB: ", dbError);
@@ -157,25 +158,31 @@ export default function registrarEventosSala(io, socket) {
     socket.on('obtener_sala', ({ salaId }, ack) => {
         const sala = salas.get(salaId);
         if (!sala) return ack?.({ ok: false, error: 'Sala inexistente' });
-        //ack?.({ ok: true, jugadores: sala.jugadores.map(({ socketId, ...r }) => r) });
         ack?.({ ok: true, jugadores: sala.jugadores.map(({ socketId, ...r }) => r), config: sala.config });
     });
 
     socket.on('unirse_sala', async ({ salaId, userId, nombre, foto_perfil, jugador_id }, ack) => {
-        const sala = salas.get(salaId);
+        const sala = salas.get(salaId) || salas.get(String(salaId)) || salas.get(Number(salaId));
+        const toAbs = (p) => (typeof p === 'string') ? p : `/uploads/default.png`;
+        const norm = (s) => (s || '').toString().trim().toLowerCase();
+
         if (!sala) return ack?.({ ok: false, error: 'Sala inexistente' });
-        if (sala.jugadores.length > 2) { // >=
-            socket.emit('sala_llena');
-            return ack?.({ ok: false, error: 'Sala completa' });
-        }
 
-        //console.log("jugador_id: ", jugador_id);
-        //console.log({ jugador_id: typeof jugador_id });
+        // ¿ya hay dos? -> sólo permitir reconexión del mismo user, si no: sala_llena
+        if (sala.jugadores.length >= 2) {
+            // Intento de reconexión: ¿coincide con alguno?
+            const idx = sala.jugadores.findIndex(j =>
+                (userId != null && j.userId != null && j.userId === userId) ||
+                (jugador_id != null && j.jugador_id != null && j.jugador_id === jugador_id) ||
+                (norm(nombre) && norm(j.nombre) && norm(nombre) === norm(j.nombre))
+            );
 
-        const yaEsta = sala.jugadores.some(j => j.socketId === socket.id);
+            if (idx === -1) {
+                socket.emit('sala_llena');
+                return ack?.({ ok: false, error: 'Sala completa' });
+            }
 
-        if (!yaEsta) {
-            // ===== D) ENRIQUECER DESDE BD (opcional) ===== (tu código igual)
+            // Es reconexión del mismo jugador: sólo actualizar socketId y datos visibles
             try {
                 if (userId) {
                     const u = await User.findByPk(userId);
@@ -187,65 +194,168 @@ export default function registrarEventosSala(io, socket) {
             } catch (e) {
                 console.warn('No se pudo enriquecer usuario desde BD:', e?.message);
             }
-            // ===== FIN D) =====
 
-            //console.log("sala: ", sala);            
-            //console.log("sala.jugadores: ", sala.jugadores);
-            if (sala.jugadores.length > 1 && sala.jugadores.length < 3) {
-                // Actualizamos el socketId y datos (reconexión del mismo usuario)
-                sala.jugadores[1] = {
-                    ...sala.jugadores[1],
-                    socketId: socket.id,
-                    userId: userId || null,
-                    nombre: String((nombre && String(nombre).trim()) || 'Jugador 2'),
-                    foto_perfil: toAbs(foto_perfil),
-                    jugador_id: jugador_id || null,
-                    // esCreador se conserva
-                };
-            } else {
-                const esCreador = sala.jugadores.length === 0;
-                sala.jugadores.push({
-                    socketId: socket.id,
-                    userId: userId || null,
-                    nombre: String((nombre && String(nombre).trim()) || 'Jugador 1'),
-                    foto_perfil: toAbs(foto_perfil),
-                    jugador_id: jugador_id || null,
-                    esCreador,
-                });
-            }
+            sala.jugadores[idx] = {
+                ...sala.jugadores[idx],
+                socketId: socket.id,
+                userId: userId ?? sala.jugadores[idx].userId ?? null,
+                nombre: String((nombre && String(nombre).trim()) || sala.jugadores[idx].nombre || 'Jugador'),
+                foto_perfil: toAbs(foto_perfil || sala.jugadores[idx].foto_perfil),
+                jugador_id: jugador_id ?? sala.jugadores[idx].jugador_id ?? null,
+                // esCreador se conserva
+            };
 
             socket.join(salaId);
+
+            //console.log("sala.jugadores: ", sala.jugadores);
+
+            const payload = { jugadores: sala.jugadores.map(({ socketId, ...r }) => r) };
+            io.to(salaId).emit('sala_actualizada', payload);
+            // si ya estaban 2, no toquemos countdown (ya lo habrá disparado el primer join).
+            return ack?.({ ok: true, reconectado: true });
         }
 
-        //console.log("jugadores: sala.jugadores: ", sala.jugadores);
+        // Hay lugar (0 o 1 jugador): ingreso normal
+        const yaEsta = sala.jugadores.some(j => j.socketId === socket.id);
+        if (!yaEsta) {
+            // Enriquecer desde BD (opcional)
+            try {
+                if (userId) {
+                    const u = await User.findByPk(userId);
+                    if (u) {
+                        nombre = (nombre && String(nombre).trim()) || u.name || u.username || u.email?.split('@')[0] || 'Jugador';
+                        foto_perfil = (foto_perfil && String(foto_perfil).trim()) || u.foto_perfil || u.avatar_url || '/uploads/default.png';
+                    }
+                }
+            } catch (e) {
+                console.warn('No se pudo enriquecer usuario desde BD:', e?.message);
+            }
 
+            const esCreador = sala.jugadores.length === 0;
+            sala.jugadores.push({
+                socketId: socket.id,
+                userId: userId || null,
+                nombre: String((nombre && String(nombre).trim()) || (esCreador ? 'Jugador 1' : 'Jugador 2')),
+                foto_perfil: toAbs(foto_perfil),
+                jugador_id: jugador_id || null,
+                esCreador,
+            });
 
-        if (sala.jugadores.length === 2) {
+            socket.join(salaId);
+
+            // Registrar en DB solo cuando INGRESA (no en reconexión)
             (async () => {
                 try {
-                    const nuevaSala_jugadores = await SalaJugador.create({
+                    const sala_jugador = await SalaJugador.create({
                         sala_id: sala.config.sala_id,
-                        jugador_id: jugador_id,
-                        joined_at: formatearTimestampParaMySQL(Date.now())
+                        jugador_id: jugador_id ?? null,
+                        joined_at: formatearTimestampParaMySQL(Date.now()),
                     });
-
-                    console.log("@@@ se pudo, nuevaSala_jugadores: ", nuevaSala_jugadores);
+                    //console.log("sala_jugador: ", sala_jugador, "jugador_id: ", jugador_id);
                 } catch (error) {
-                    console.error("Error al crear sala_jugadores en la DB: ", error);
+                    console.error('Error al crear sala_jugadores en la DB: ', error);
                 }
-            })(); // fin funcion anonima
+            })();
         }
 
         const payload = { jugadores: sala.jugadores.map(({ socketId, ...r }) => r) };
         io.to(salaId).emit('sala_actualizada', payload);
+
+        // Si ahora hay 2, arrancamos countdown una sola vez
         if (sala.jugadores.length === 2) {
             const kickoffAt = Date.now() + 10_000;
             io.to(salaId).emit('listo_para_jugar', { kickoffAt, config: sala.config });
             programarComienzo(io, salaId, 10_000);
         }
-
-        ack?.({ ok: true });
+        //console.log("ultimo sala.jugadores: ", sala.jugadores);
+        return ack?.({ ok: true });
     });
+
+    socket.on('crear_tablas_faltantes', (datos, ack) => {
+        // clave única por sala (podés reforzarla con partida_id si querés)
+        const salaKey = String(datos?.salaId ?? '');
+        const partidaKey = String(datos?.config?.partida_id ?? '');
+        const key = `${salaKey}::${partidaKey}`;
+
+        // si ya se procesó, ignoramos el duplicado
+        if (tablasCreadasPorSala.has(key)) {
+            return ack?.({ success: true, msg: 'Duplicado ignorado (ya procesado)' });
+        }
+
+        // marcamos como procesado antes de ejecutar la lógica para evitar condiciones de carrera
+        tablasCreadasPorSala.add(key);
+
+        //console.log("############ -> crear_tablas_faltantes de datos: ", datos);
+
+        // TODO: acá va tu lógica real de creación de tablas/rows necesarias
+
+        (async () => {
+            try {
+                const { config, jugadores = [], partida_preguntas_tabla = [] } = datos || {};
+                const partidaId = Number(config?.partida_id);
+
+                if (!partidaId || jugadores.length === 0) {
+                    return ack?.({ success: false, msg: "Faltan datos: partida_id o jugadores." });
+                }
+
+                // 1) Tomo jugador_id válidos y únicos
+                const jugadorIds = Array.from(new Set(
+                    jugadores
+                        .map(j => Number(j?.jugador_id))
+                        .filter(n => Number.isFinite(n))
+                ));
+                if (jugadorIds.length === 0) {
+                    return ack?.({ success: false, msg: "No hay jugador_id válidos." });
+                }
+
+                // 2) Creo PartidaJugador + Estadistica para cada jugador (en paralelo)
+                await Promise.all(jugadorIds.map(async (jugadorId) => {
+                    await PartidaJugador.create({ partida_id: partidaId, jugador_id: jugadorId });
+                    await Estadistica.create({ jugador_id: jugadorId, partida_id: partidaId, posicion: 0 });
+                }));
+
+                // 3) Inserto las 10 filas de PartidaPregunta (mapeando propiedades correctas)
+                //    Si querés evitar duplicados, podés usar bulkCreate con ignoreDuplicates.
+                const filasPP = (partida_preguntas_tabla || []).map(pp => ({
+                    partida_id: Number(pp?.partida_id) || partidaId,
+                    pregunta_id: Number(pp?.pregunta_id) || null,
+                    orden: Number(pp?.orden) || null,
+                    question_text_copy: String(pp?.question_text_copy ?? ''),
+                    correct_option_id_copy: (pp?.correct_option_id_copy != null)
+                        ? Number(pp.correct_option_id_copy)
+                        : null,
+                    correct_option_text_copy: String(pp?.correct_option_text_copy ?? ''),
+                })).filter(r => Number.isFinite(r.pregunta_id) && Number.isFinite(r.orden));
+
+                if (filasPP.length === 0) {
+                    return ack?.({ success: false, msg: "partida_preguntas_tabla vacío o inválido." });
+                }
+
+                // Opción A: create uno por uno
+                // for (const row of filasPP) {
+                //   await PartidaPregunta.create(row);
+                // }
+
+                // Opción B (recomendada): bulkCreate
+                await PartidaPregunta.bulkCreate(filasPP, {
+                    validate: true,
+                    // ignoreDuplicates: true, // si tenés unique(partida_id, pregunta_id) y querés saltar duplicados
+                });
+
+                return ack?.({
+                    success: true,
+                    msg: "Salió bien",
+                    jugadores_creados: jugadorIds.length,
+                    preguntas_insertadas: filasPP.length
+                });
+            } catch (e) {
+                console.error('Error en crear_tablas_faltantes:', e);
+                return ack?.({ success: false, msg: "Error en servidor", error: String(e?.message || e) });
+            }
+        })();
+
+    });
+
 
     socket.on('salir_sala', ({ salaId }) => {
         const sala = salas.get(salaId);
@@ -279,6 +389,116 @@ export default function registrarEventosSala(io, socket) {
                     });
                 }
             }
+        }
+    });
+
+    // === NUEVO: rebroadcast de respuestas dentro de la sala ===
+    // El cliente emite: sala:respuesta { salaId, userId, nombre, indice, respuesta }
+    socket.on('sala:respuesta', ({ salaId, userId, nombre, indice, respuesta }) => {
+        // Normalizamos la clave por si viene numérica o string
+        const sala = salas.get(salaId) || salas.get(String(salaId)) || salas.get(Number(salaId));
+        if (!sala) {
+            // Sala no existe: ignoramos silenciosamente (también podrías ack con error si quisieras)
+            return;
+        }
+
+        //console.log("@@@@@@@@@@{ salaId, userId, nombre, indice, respuesta }: ", { salaId, userId, nombre, indice, respuesta });
+
+        // Validaciones mínimas
+        if (typeof indice !== 'number' || !respuesta) return;
+
+        // Re-emitimos a todos los sockets de la sala (incluye a quien respondió)
+        io.to(salaId).emit('sala:respuesta', {
+            userId: userId ?? null,
+            nombre: (nombre && String(nombre)) || 'Jugador',
+            indice,                // índice de la pregunta
+            respuesta,             // { texto, es_correcta, tiempo_respuesta_ms, ... }
+        });
+    });
+
+    socket.on('guardar_respuestas', async (datos, ack) => {
+        try {
+            const { partida_id, respuestas = [] } = datos || {};
+            const partidaId = Number(partida_id);
+
+            if (!Number.isFinite(partidaId) || !Array.isArray(respuestas) || respuestas.length === 0) {
+                return ack?.({ success: false, msg: 'Payload inválido (partida_id o respuestas).' });
+            }
+
+            // 1) Cargo todas las Estadisticas de la partida y mapeo por jugador_id
+            const ests = await Estadistica.findAll({ where: { partida_id: partidaId } });
+            const estByJugadorId = new Map(ests.map(e => [Number(e.jugador_id), Number(e.id)]));
+
+            // 2) Cargo PartidaPregunta de la partida y mapeo por pregunta_id
+            const pps = await PartidaPregunta.findAll({ where: { partida_id: partidaId } });
+            const ppIdByPreguntaId = new Map(pps.map(pp => [Number(pp.pregunta_id), Number(pp.id)]));
+
+            // 3) Armo filas a insertar
+            const filas = [];
+            for (const r of respuestas) {
+                const jugadorId = Number(r?.jugador_id);
+                const preguntaId = Number(r?.pregunta_id);
+                const opcionElegidaId = (r?.opcion_elegida_id == null) ? null : Number(r.opcion_elegida_id);
+                const esCorrecta = r?.es_correcta ? 1 : 0;
+                const tms = (r?.tiempo_respuesta_ms == null) ? null : Number(r.tiempo_respuesta_ms);
+
+                if (!Number.isFinite(jugadorId) || !Number.isFinite(preguntaId)) continue;
+
+                // estadistica_id: uso el que vino o busco por (partida, jugador)
+                let estadisticaId = (r?.estadistica_id != null) ? Number(r.estadistica_id) : null;
+                if (!Number.isFinite(estadisticaId)) {
+                    estadisticaId = estByJugadorId.get(jugadorId) ?? null;
+                }
+
+                // partida_pregunta_id: uso el que vino o busco por (partida, pregunta)
+                let partidaPreguntaId = (r?.partida_pregunta_id != null) ? Number(r.partida_pregunta_id) : null;
+                if (!Number.isFinite(partidaPreguntaId)) {
+                    partidaPreguntaId = ppIdByPreguntaId.get(preguntaId) ?? null;
+                }
+
+                filas.push({
+                    partida_id: partidaId,
+                    jugador_id: jugadorId,
+                    pregunta_id: preguntaId,
+                    partida_pregunta_id: partidaPreguntaId, // puede quedar null si no existe
+                    opcion_elegida_id: opcionElegidaId,     // null si “Sin respuesta”
+                    estadistica_id: estadisticaId,          // null si no hay (podés forzar NOT NULL a futuro)
+                    es_correcta: esCorrecta,                // 1/0
+                    tiempo_respuesta_ms: tms,               // null permitido
+                });
+            }
+
+            if (filas.length === 0) {
+                return ack?.({ success: false, msg: 'No hay filas válidas para insertar.' });
+            }
+
+            console.log("*******filas: ", filas);
+
+            // 1) (opcional pero útil) quito duplicados dentro del MISMO payload
+            const seen = new Set();
+            const filasUnicas = [];
+            for (const f of filas) {
+                const k = `${f.partida_id}-${f.jugador_id}-${f.pregunta_id}`;
+                if (seen.has(k)) continue;
+                seen.add(k);
+                filasUnicas.push(f);
+            }
+
+            // 2) Upsert masivo: si ya existe (por tu índice único uc_r_unica) lo actualiza.
+            await Respuesta.bulkCreate(filasUnicas, {
+                updateOnDuplicate: [
+                    'opcion_elegida_id',
+                    'es_correcta',
+                    'tiempo_respuesta_ms',
+                    'partida_pregunta_id',
+                    'estadistica_id',
+                ],
+            });
+
+            return ack?.({ success: true, msg: 'Respuestas guardadas (upsert)', insertadas: filasUnicas.length });
+        } catch (e) {
+            console.error('guardar_respuestas error:', e);
+            return ack?.({ success: false, msg: 'Error en servidor', error: String(e?.message || e) });
         }
     });
 }

@@ -1659,12 +1659,12 @@ const Perfil = () => {
                         <strong>{t('scoreGeneral')}:</strong>{' '}
                         {listaObjetosPartidaInformacion[selectedEstadisticas].puntaje_total}
                       </p>
-                      <p className='p-1'>
+                      {/* <p className='p-1'>
                         <strong>{t('category')}:</strong>{' '}
                         {categoryTranslations[
                           listaObjetosPartidaInformacion[selectedEstadisticas]?.categoria
                         ].trim() ?? '—'}
-                      </p>
+                      </p> */}
                       <p className='p-1'>
                         <strong>{t('date')}:</strong>{' '}
                         {formatDateDMYLocal(

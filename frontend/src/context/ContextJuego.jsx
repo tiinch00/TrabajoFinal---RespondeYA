@@ -53,9 +53,9 @@ export const GameProvider = ({ children }) => {
   }, [user]);
 
   // si querés log cuando cambie user:
-  useEffect(() => {
-    console.log('user ->', user);
-  }, [user]);
+  // useEffect(() => {
+  //   console.log('user ->', user);
+  // }, [user]);
 
   // Inicializar socket
   const inicializarSocket = useCallback(() => {

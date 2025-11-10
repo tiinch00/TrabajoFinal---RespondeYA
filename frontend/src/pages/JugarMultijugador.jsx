@@ -1,3 +1,5 @@
+// src/pages/JugarMultijugador.jsx
+
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
@@ -51,12 +53,14 @@ export default function JugarMultijugador() {
     const { id: salaId } = useParams(); // salaId
     const { inicializarSocket } = useGame();
 
+    //console.log("useParams(): ", useParams());
+
     const musicStartedRef = useRef(false);
     const timerRef = useRef(null);
 
     const [jugadores, setJugadores] = useState([]); // [{userId, nombre, foto_perfil, esCreador}]
-    const abs = (p) => (typeof p === 'string' && p.startsWith('http') ? p : `${API}${p || '/uploads/default.png'}`);
-
+    const abs = (p) =>
+        typeof p === 'string' && p.startsWith('http') ? p : `${API}${p || '/uploads/default.png'}`;
 
     // sonidos
     const [playCorrect] = useSound(correcta, { volume: 0.6 });
@@ -81,8 +85,27 @@ export default function JugarMultijugador() {
     const [juegoIniciado, setJuegoIniciado] = useState(false);
     const [mostrarContador, setMostrarContador] = useState(true);
     const [cronometroPausado, setCronometroPausado] = useState(false);
+    const questionStartRef = useRef(null); // tiempo en responder por respuesta
 
-    console.log("config: ", config);
+    // === NUEVO: socket y buffer de respuestas por jugador ===
+    const socketRef = useRef(null);
+    const [respuestasPorJugador, setRespuestasPorJugador] = useState({}); // { [userId]: Respuesta[] }
+    // === NUEVO: socket dispara "crear_tablas_faltantes" una sola vez
+    const crearTablasEnviadoRef = useRef(false);
+    // === NUEVO: guardar respuestas para poder guardar en la bd
+    const ppIdByPreguntaIdRef = useRef({});        // { [pregunta_id]: partida_pregunta_id }
+    const estadisticaIdByJugadorIdRef = useRef({}); // { [jugador_id]: estadistica_id }
+
+    // 1.1
+    // Para identificar nombre local (sólo para payload informativo)
+    const currentUserName = (() => {
+        try {
+            const u = JSON.parse(localStorage.getItem('user') || 'null') || {};
+            return u.name || u.username || (u.email?.split?.('@')[0]) || 'Jugador';
+        } catch {
+            return 'Jugador';
+        }
+    })();
 
     // cleanup de sonidos/timers
     useEffect(() => {
@@ -93,7 +116,7 @@ export default function JugarMultijugador() {
         };
     }, [stop, stopFiveSeconds]);
 
-    // NEW: identificar al usuario actual (desde localStorage)
+    // === NEW: identificar al usuario actual (desde localStorage) ===
     const currentUserId = (() => {
         try {
             return JSON.parse(localStorage.getItem('user') || 'null')?.id ?? null;
@@ -101,6 +124,8 @@ export default function JugarMultijugador() {
             return null;
         }
     })();
+
+    //console.log("currentUserId: ", currentUserId);
 
     // 0) Inicializar config desde state o localStorage
     useEffect(() => {
@@ -118,17 +143,21 @@ export default function JugarMultijugador() {
         } catch { }
     }, [config, location.state]);
 
+    //console.log("config: ", config);
 
+    // 1) Socket: traer/escuchar jugadores (con dedupe)
     useEffect(() => {
         const s = inicializarSocket();
         if (!s) return;
 
+        // >>> NUEVO: conservar referencia del socket
+        socketRef.current = s;
+
         function dedupeJugadores(arr = []) {
-            // Prioriza userId; si falta, usa nombre como clave de último recurso
             const byKey = new Map();
             for (const j of arr) {
-                const key = (j.userId != null) ? `u:${j.userId}` : `n:${(j.nombre || '').toLowerCase()}`;
-                byKey.set(key, j); // si llega duplicado, se queda con el último
+                const key = j?.userId != null ? `u:${j.userId}` : `n:${(j?.nombre || '').toLowerCase()}`;
+                byKey.set(key, j);
             }
             return Array.from(byKey.values());
         }
@@ -136,31 +165,56 @@ export default function JugarMultijugador() {
         const onSalaActualizada = (estado) => setJugadores(dedupeJugadores(estado?.jugadores));
         const onJugadorSeFue = (estado) => setJugadores(dedupeJugadores(estado?.jugadores));
 
+        // >>> NUEVO: cuando otro jugador emite su respuesta
+        const onRespuestaSala = ({ userId, nombre, indice, respuesta }) => {
+            if (userId == null || typeof indice !== 'number' || !respuesta) return;
+            setRespuestasPorJugador(prev => {
+                const arr = prev[userId] ? [...prev[userId]] : [];
+                arr[indice] = respuesta; // guardamos por índice de pregunta
+                return { ...prev, [userId]: arr };
+            });
+        };
+
         s.emit('obtener_sala', { salaId }, (estado) => {
             if (estado?.ok) setJugadores(dedupeJugadores(estado.jugadores));
+            else {
+                navigate('/salaPartidas', {
+                    replace: true,
+                    state: { msg: estado?.error || 'Sala no encontrada.' },
+                });
+            }
         });
 
         s.on('sala_actualizada', onSalaActualizada);
         s.on('jugador_se_fue', onJugadorSeFue);
 
+        // >>> NUEVO: listener para respuestas del otro jugador
+        s.on('sala:respuesta', onRespuestaSala);
+
         return () => {
             s.off('sala_actualizada', onSalaActualizada);
             s.off('jugador_se_fue', onJugadorSeFue);
-        };
-    }, [salaId, inicializarSocket]);
 
-    // ordenar siempre creador primero
-    const ordenados = [...jugadores].sort((a, b) => (a.esCreador === b.esCreador ? 0 : a.esCreador ? -1 : 1));
+            // >>> NUEVO: cleanup del listener
+            s.off('sala:respuesta', onRespuestaSala);
+        };
+    }, [salaId, inicializarSocket, navigate]);
+
+    //console.log("jugadores: ", jugadores);
+
+    // ordenar siempre: creador primero
+    const ordenados = [...jugadores].sort((a, b) =>
+        a?.esCreador === b?.esCreador ? 0 : a?.esCreador ? -1 : 1
+    );
+    //console.log("ordenados: ", ordenados);
     const creador = ordenados[0] || null;
     const invitado = ordenados[1] || null;
 
-    // NEW: si hay más de dos o si el usuario actual no está entre los dos habilitados → a SalaPartidas
+    // === NEW: Máximo 2 jugadores. Si el actual NO está entre los 2, redirige a SalaPartidas ===
     useEffect(() => {
         if (!Array.isArray(jugadores) || jugadores.length === 0) return;
-
         const top2 = ordenados.slice(0, 2);
-        const allowedIds = new Set(top2.map(j => j?.userId).filter(id => id != null));
-
+        const allowedIds = new Set(top2.map((j) => j?.userId).filter((id) => id != null));
         if (!allowedIds.has(currentUserId)) {
             navigate('/salaPartidas', {
                 replace: true,
@@ -169,7 +223,7 @@ export default function JugarMultijugador() {
         }
     }, [jugadores, ordenados, currentUserId, navigate, salaId]);
 
-    // 2) Con config lista, traer preguntas y prepararlas con shuffle determinístico
+    // 2) Cargar preguntas (seed determinístico)
     useEffect(() => {
         if (!config) return;
         (async () => {
@@ -185,7 +239,6 @@ export default function JugarMultijugador() {
                     return;
                 }
 
-                // Mezcla determinística (misma seed = mismo orden en ambos clientes)
                 const seed =
                     [...String(salaId)].reduce((acc, ch) => acc + ch.charCodeAt(0), 0) ^
                     [...String(config.categoria)].reduce((acc, ch) => acc + ch.charCodeAt(0), 0) ^
@@ -211,7 +264,97 @@ export default function JugarMultijugador() {
         })();
     }, [config, salaId]);
 
-    // 3) Contador inicial (breve) y música
+    //console.log("preguntas: ", preguntas);
+    //console.log("preguntaActual: ", preguntaActual);
+
+    // enviar jugadores a un nuevo socket para inicializar tablas:
+    // estadisticas, partida_jugadores y partida_preguntas
+    useEffect(() => {
+        if (crearTablasEnviadoRef.current) return;   // ya se envió
+        if (!socketRef.current) return;              // socket aún no listo
+        if (!config) return;                         // todavía no cargó config
+        if (!creador || !invitado) return;           // esperamos a tener 2 jugadores
+        if (!Array.isArray(preguntas) || preguntas.length === 0) return; // ✅
+
+        // (Opcional) compactar preguntas para payload liviano
+        // const preguntasCompactas = preguntas.map(p => ({
+        //     id: p.id ?? null,
+        //     enunciado: p.enunciado ?? '',
+        //     opciones: (p.Opciones || []).map(o => ({
+        //         id: o.id ?? null,
+        //         texto: o.texto ?? '',
+        //     })),
+        // }));
+
+        // traigo la última config guardada
+        let ultimaCfg = null;
+        try {
+            ultimaCfg = JSON.parse(localStorage.getItem('ultima_config_multijugador') || 'null');
+        } catch { }
+
+        //console.log("@@@@preguntas antes de payload: ", preguntas);
+
+        // 1) Tomo el partida_id de la config efectiva que vas a enviar
+        const cfgEfectiva = ultimaCfg || config;
+        const partidaId = Number(cfgEfectiva?.partida_id) || null;
+
+        // 2) Construyo el array pedido a partir de las 10 preguntas en orden
+        const partida_preguntas_tabla = (preguntas || []).map((p, idx) => {
+            const opciones = Array.isArray(p.Opciones) ? p.Opciones : [];
+            const correcta = opciones.find(o => o?.es_correcta === true) || null;
+
+            return {
+                partida_id: partidaId,
+                pregunta_id: Number(p?.id) || null,
+                orden: idx + 1, // arranca en 1 ✅
+                question_text_copy: String(p?.enunciado ?? ''),
+                correct_option_id_copy: correcta ? Number(correcta.id) || null : null,
+                correct_option_text_copy: correcta ? String(correcta.texto ?? '') : '',
+            };
+        });
+
+        const payload = {
+            salaId,
+            config: ultimaCfg || config,
+            jugadores: [creador, invitado].map(j => ({
+                userId: j?.userId ?? null,
+                jugador_id: j?.jugador_id ?? null,
+                nombre: j?.nombre ?? 'Jugador',
+                foto_perfil: j?.foto_perfil ?? '/uploads/default.png',
+                esCreador: !!j?.esCreador,
+            })),
+            partida_preguntas_tabla, // reemplazo solicitado            
+            // (no enviamos `preguntas`)  // ← si querés enviar todo
+
+            //preguntas: preguntasCompactas,  // ← o este compacto
+        };
+
+        //console.log("####payload: ", payload);
+
+        socketRef.current.emit('crear_tablas_faltantes', payload, (ack) => {
+            console.log('crear_tablas_faltantes → ack:', ack);
+            // Si el server devuelve mapeos, los guardamos. Si no, no pasa nada.
+            if (ack?.partida_preguntas_mapeo) {
+                // Espera algo como [{pregunta_id, partida_pregunta_id, orden}, ...]
+                const map = {};
+                for (const r of ack.partida_preguntas_mapeo) {
+                    if (Number.isFinite(r?.pregunta_id) && Number.isFinite(r?.partida_pregunta_id)) {
+                        map[Number(r.pregunta_id)] = Number(r.partida_pregunta_id);
+                    }
+                }
+                ppIdByPreguntaIdRef.current = map;
+            }
+            if (ack?.estadisticas_map) {
+                // Espera algo como { [jugador_id]: estadistica_id }
+                estadisticaIdByJugadorIdRef.current = ack.estadisticas_map || {};
+            }
+        });
+
+        crearTablasEnviadoRef.current = true;
+    }, [creador, invitado, config, salaId, preguntas]);
+
+
+    // 3) Contador inicial + música
     useEffect(() => {
         if (!mostrarContador) return;
         if (contadorInicial > 0) {
@@ -234,8 +377,10 @@ export default function JugarMultijugador() {
             if (timerRef.current) clearInterval(timerRef.current);
             return;
         }
-        // reset en cada pregunta
         setTiempoRestante(tiempoPorPregunta(config?.tiempo));
+
+        // Inicia timepo de la pregunta
+        questionStartRef.current = performance.now();
 
         timerRef.current = setInterval(() => {
             setTiempoRestante((prev) => {
@@ -257,11 +402,18 @@ export default function JugarMultijugador() {
     const handleGuardarRespuesta = (opcion) => {
         setCronometroPausado(true);
 
-        let nuevasRespuestas;
-        if (!opcion) {
-            nuevasRespuestas = [...respuestas, { texto: 'Sin respuesta', es_correcta: false }];
-        } else {
-            nuevasRespuestas = [...respuestas, opcion];
+        // tiempo que tardó el jugador en contestar esta pregunta (ms)
+        const elapsedMs = Math.max(1, Math.round(performance.now() - (questionStartRef.current || performance.now())));
+
+        // === NUEVO: construir la respuesta que vamos a guardar y emitir
+        const payloadRespuesta = opcion
+            ? { ...opcion, tiempo_respuesta_ms: elapsedMs }
+            : { texto: 'Sin respuesta', es_correcta: false, tiempo_respuesta_ms: elapsedMs };
+
+        // mantener tu lógica visual/sonidos
+        let nuevasRespuestas = [...respuestas, payloadRespuesta];
+
+        if (opcion) {
             setRespuestaSeleccionada(opcion);
             if (opcion.es_correcta === true) {
                 setRespuestaCorrecta(opcion);
@@ -269,8 +421,20 @@ export default function JugarMultijugador() {
             } else {
                 playWrong();
             }
+        } else {
+            playWrong();
         }
+
         setRespuestas(nuevasRespuestas);
+
+        // >>> Emitir mi respuesta para que el otro cliente la reciba
+        socketRef.current?.emit('sala:respuesta', {
+            salaId,
+            userId: currentUserId,
+            nombre: currentUserName,
+            indice: contador,          // índice de la pregunta actual
+            respuesta: payloadRespuesta
+        });
 
         setTimeout(() => {
             const siguiente = contador + 1;
@@ -280,6 +444,7 @@ export default function JugarMultijugador() {
                 setRespuestaSeleccionada(null);
                 setRespuestaCorrecta(null);
                 setCronometroPausado(false);
+                // El start de la siguiente se setea en el useEffect (performance.now())
             } else {
                 setAlerta('Juego terminado ✅');
                 setJuegoTerminado(true);
@@ -287,20 +452,124 @@ export default function JugarMultijugador() {
                 setTiempoRestante(0);
                 playTimeout();
 
-                // TODO: integrar persistencia multijugador:
-                // - Buscar Partida por sala.codigo = salaId (endpoint GET /salas/by-codigo/:codigo → devuelve sala y partida_id)
-                // - Enviar respuestas, estadísticas, etc. usando ese partida_id
+                // TODO: persistencia multijugador si corresponde
+                // - GET /salas/by-codigo/:codigo → partida_id
+                // - enviar respuestas/estadísticas con ese partida_id
             }
         }, 3000);
     };
 
-    // 6) Guardado/cleanup música al terminar
+    // 6) Stop música al terminar
     useEffect(() => {
         if (juegoTerminado) {
             stop();
             musicStartedRef.current = false;
         }
     }, [juegoTerminado, stop]);
+
+    // mostrar todas las respuestas despues de jugar y este terminado
+    useEffect(() => {
+        if (!juegoTerminado) return;
+
+        // Identifico quién es el “otro”
+        const myId = currentUserId;
+        const otherId =
+            creador?.userId === myId ? invitado?.userId
+                : invitado?.userId === myId ? creador?.userId
+                    : null;
+
+        //console.log('▶︎ Respuestas del jugador actual:', respuestas);
+
+        if (otherId != null) {
+           // console.log('▶︎ Respuestas del otro jugador:', respuestasPorJugador[otherId] || []);
+        } else {
+           // console.log('▶︎ No se pudo identificar al otro jugador aún.');
+        }
+
+        // (Opcional) Si querés ver todo el buffer por userId:
+        // console.log('▶︎ Buffer de respuestas por jugador:', respuestasPorJugador);
+
+    }, [juegoTerminado, creador, invitado, respuestas, respuestasPorJugador, currentUserId]);
+
+    // === NUEVO: al terminar la partida, armo las 20 respuestas (2 jugadores x 10 preguntas) y las envío ===
+    useEffect(() => {
+        if (!juegoTerminado) return;
+        if (!config?.partida_id) return;
+        if (!Array.isArray(preguntas) || preguntas.length === 0) return;
+        if (!Array.isArray(respuestas) || respuestas.length === 0) return;
+        if (!socketRef.current) return;
+
+        // Top2 en el mismo orden que usaste
+        const top2 = [creador, invitado].filter(Boolean);
+        if (top2.length !== 2) return;
+
+        // helper: arma respuestas para un jugador dado su userId/jugador_id
+        const buildRespuestasPara = (jug) => {
+            const jugadorId = Number(jug?.jugador_id) || null;
+            if (!Number.isFinite(jugadorId)) return [];
+
+            // Tomo el array de respuestas según userId:
+            // - si soy yo: uso `respuestas`
+            // - si es el otro: saco de `respuestasPorJugador[userId]`
+            const isMe = jug?.userId === currentUserId;
+            const arr = isMe ? respuestas : (respuestasPorJugador[jug?.userId] || []);
+
+            // Por seguridad, si falta algo, completo con “Sin respuesta”
+            const safe = Array.from({ length: 10 }, (_, i) => {
+                const r = arr[i];
+                if (r && typeof r === 'object') return r;
+                return { texto: 'Sin respuesta', es_correcta: false, tiempo_respuesta_ms: null };
+            });
+
+            // Mapeo pregunta_idx -> ids y campos
+            return safe.map((r, idx) => {
+                const q = preguntas[idx];                     // la i-ésima pregunta que ambos vieron
+                const preguntaId = Number(q?.id) || null;
+
+                // opcion elegida: si tiene id => es el id de la opción; si "Sin respuesta" => null
+                const opcionElegidaId = (r?.id != null && Number.isFinite(Number(r.id))) ? Number(r.id) : null;
+
+                // es_correcta a 1/0
+                const esCorrecta = r?.es_correcta ? 1 : 0;
+
+                // tiempo en ms
+                const tms = Number.isFinite(Number(r?.tiempo_respuesta_ms)) ? Number(r.tiempo_respuesta_ms) : null;
+
+                // intento tomar partida_pregunta_id si lo guardamos en el ack anterior; si no, null (el server lo resuelve)
+                const partidaPreguntaId = (preguntaId != null) ? (ppIdByPreguntaIdRef.current[preguntaId] ?? null) : null;
+
+                // idem estadistica_id, si el server nos lo devolvió antes; si no, null (el server lo resuelve)
+                const estadisticaId = (jugadorId != null) ? (estadisticaIdByJugadorIdRef.current[jugadorId] ?? null) : null;
+
+                return {
+                    partida_id: Number(config.partida_id),
+                    jugador_id: jugadorId,
+                    pregunta_id: preguntaId,
+                    partida_pregunta_id: partidaPreguntaId,  // puede ir null
+                    opcion_elegida_id: opcionElegidaId,      // null si “Sin respuesta”
+                    estadistica_id: estadisticaId,           // puede ir null
+                    es_correcta: esCorrecta,                 // 1/0
+                    tiempo_respuesta_ms: tms,                // null si no mediste
+                    orden: idx + 1,                          // (opcional) por si lo querés en server
+                };
+            });
+        };
+
+        const respuestasCreador = buildRespuestasPara(creador);
+        const respuestasInvitado = buildRespuestasPara(invitado);
+
+        const payloadGuardar = {
+            salaId,
+            partida_id: Number(config.partida_id),
+            respuestas: [...respuestasCreador, ...respuestasInvitado], // 20 filas
+        };
+
+        socketRef.current.emit('guardar_respuestas', payloadGuardar, (ack) => {
+            console.log('guardar_respuestas → ack:', ack);
+        });
+    }, [juegoTerminado, config?.partida_id, preguntas, respuestas, creador, invitado, currentUserId, respuestasPorJugador]);
+
+
 
     // ====== UI ======
     if (mostrarContador && contadorInicial > 0) {
@@ -312,7 +581,9 @@ export default function JugarMultijugador() {
                     </h1>
                     <div className='bg-gradient-to-r from-purple-600 to-purple-700 px-4 py-4 rounded-3xl text-white text-2xl font-bold mb-6 shadow-2xl border-2 border-purple-400'>
                         🎮 Categoría:{' '}
-                        <span className='text-yellow-300'>{String(config?.categoria || '').toUpperCase()}</span>
+                        <span className='text-yellow-300'>
+                            {String(config?.categoria || '').toUpperCase()}
+                        </span>
                     </div>
                     <div className='space-y-5 mb-4 bg-black/30 p-4 rounded-2xl backdrop-blur-sm border border-purple-400/50'>
                         <p className='text-white text-xl flex items-center justify-center gap-3'>
@@ -347,9 +618,9 @@ export default function JugarMultijugador() {
 
     return (
         <div className='w-full h-full text-white pt-5'>
-            
+
+            {/* === NUEVO CSS: reloj centrado arriba, como en “individual” === */}
             <div className='w-full h-full text-white flex items-center justify-center'>
-                {/* Reloj */}
                 <div
                     className={`rounded-3xl px-6 py-4 text-center shadow-2xl border-4 w-40 ${tiempoRestante <= 5 && tiempoRestante > 0
                         ? 'bg-gradient-to-b from-red-500 to-orange-600 border-red-300/30 animate-pulse'
@@ -357,16 +628,20 @@ export default function JugarMultijugador() {
                         }`}
                 >
                     <p className='text-sm font-bold text-gray-800 mb-2'>⏱️ TIEMPO</p>
-                    <p className={`text-5xl font-black ${tiempoRestante <= 5 && tiempoRestante > 0 ? 'text-white' : 'text-red-600'}`}>
+                    <p
+                        className={`text-5xl font-black ${tiempoRestante <= 5 && tiempoRestante > 0 ? 'text-white' : 'text-red-600'
+                            }`}
+                    >
                         {tiempoRestante}
                     </p>
                     <p className='text-xs font-bold text-gray-800 mt-2'>segundos</p>
                 </div>
             </div>
 
+            {/* === NUEVO CSS: layout en 5 columnas (jugador izq, centro, jugador der) === */}
             <div className='grid grid-cols-5 gap-6 h-screen pt-10'>
 
-                {/* Panel izquierdo - (podés mostrar al usuario local si querés) */}
+                {/* izquierda - Jugador 1 - creador */}
                 <div className='col-span-1 flex flex-col items-center justify-start'>
                     <div className='bg-gradient-to-b from-blue-600/40 to-blue-700/70 rounded-2xl p-6 shadow-xl w-full'>
                         <div className='flex flex-col items-center'>
@@ -395,9 +670,7 @@ export default function JugarMultijugador() {
                     </div>
                 </div>
 
-                {/* {console.log(jugadores)} */}
-
-                {/* Centro - Pregunta */}
+                {/* Centro - Preguntas */}
                 <div className='col-span-3 flex flex-col items-center justify-start'>
                     <div className='bg-gradient-to-r from-orange-500 to-pink-500 rounded-full px-8 py-3 mb-8 text-2xl font-black shadow-lg'>
                         {String(config?.categoria || '').toUpperCase()}
@@ -415,9 +688,7 @@ export default function JugarMultijugador() {
                     ) : preguntaActual && juegoIniciado ? (
                         <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-8 w-full max-w-2xl shadow-2xl'>
                             <div className='mb-6'>
-                                <span className='text-sm font-bold text-yellow-300'>
-                                    Pregunta {contador + 1}/10
-                                </span>
+                                <span className='text-sm font-bold text-yellow-300'>Pregunta {contador + 1}/10</span>
                             </div>
 
                             <p className='text-2xl font-bold text-white mb-8 leading-relaxed'>
@@ -454,16 +725,15 @@ export default function JugarMultijugador() {
 
                     {juegoTerminado && (
                         <div className='bg-black/50 rounded-2xl p-8 mt-8 w-full max-w-2xl'>
+                            {/*console.log(juegoTerminado)*/}
+                            {/*console.log(respuestas)*/}
+                            {/*console.log("RespuestasPorJugador: ", respuestasPorJugador)*/}
                             <h2 className='text-2xl font-bold text-yellow-300 mb-6'>Resumen de Respuestas</h2>
                             <div className='space-y-3 max-h-64 overflow-y-auto'>
                                 {respuestas.map((respuesta, index) => (
-                                    <div
-                                        key={index}
-                                        className='bg-purple-500/20 p-3 rounded-lg border border-purple-400'
-                                    >
+                                    <div key={index} className='bg-purple-500/20 p-3 rounded-lg border border-purple-400'>
                                         <p className='text-sm'>
-                                            <span className='font-bold text-yellow-300'>P{index + 1}:</span>{' '}
-                                            {respuesta.texto}
+                                            <span className='font-bold text-yellow-300'>P{index + 1}:</span> {respuesta.texto}
                                             <span
                                                 className={`ml-2 font-bold ${respuesta.es_correcta ? 'text-green-400' : 'text-red-400'
                                                     }`}
@@ -478,15 +748,15 @@ export default function JugarMultijugador() {
                     )}
                 </div>
 
+                {/* derecha - Jugador 2 - invitado */}
                 <div className='col-span-1 flex flex-col items-center justify-start gap-4'>
-                    {/* Jugador invitado */}
                     <div className='bg-gradient-to-b from-green-600/40 to-green-700/70 rounded-2xl p-6 shadow-xl w-full'>
                         <div className='flex flex-col items-center'>
                             {invitado ? (
                                 <>
-                                    {invitado.foto_perfil && invitado.foto_perfil !== `${API}/uploads/default.png` ? (
+                                    {invitado.foto_perfil && invitado.foto_perfil !== `/uploads/default.png` ? (
                                         <img
-                                            src={abs(invitado.foto_perfil)}
+                                            src={`${API}${invitado.foto_perfil}`}
                                             alt='Invitado'
                                             className='w-24 h-24 rounded-full object-cover border-4 border-green-300 shadow-lg mb-4'
                                         />

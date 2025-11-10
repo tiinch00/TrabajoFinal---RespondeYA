@@ -6,79 +6,174 @@ import { useNavigate, useParams } from 'react-router-dom';
 import axios from "axios";
 import { useGame } from '../context/ContextJuego.jsx';
 
+// ===== Helpers para identificar usuarios de forma tolerante =====
+function normalizeName(s) {
+    return (s || '').toString().trim().toLowerCase();
+}
+
+function samePlayer(a = {}, b = {}) {
+    // Prioridad: userId -> jugador_id -> nombre
+    if (a.userId != null && b.userId != null) return a.userId === b.userId;
+    if (a.jugador_id != null && b.jugador_id != null) return a.jugador_id === b.jugador_id;
+    const na = normalizeName(a.nombre);
+    const nb = normalizeName(b.nombre);
+    return na && nb && na === nb;
+}
+
+function includesPlayer(list = [], me = {}) {
+    return list.some(p => samePlayer(p, me));
+}
+
+// ===== Dedupe y orden estable (creador primero, luego invitado “fijado”) =====
+function dedupeJugadores(arr = []) {
+    const byKey = new Map();
+    for (const j of arr) {
+        const key = j?.userId != null ? `u:${j.userId}` : `n:${(j?.nombre || '').toLowerCase()}`;
+        byKey.set(key, j); // si llega duplicado, se queda con el último
+    }
+    return Array.from(byKey.values());
+}
+
 export default function SalaEspera() {
     const [redirIn, setRedirIn] = useState(null); // null | 3..0
     const redirIntervalRef = useRef(null);
     const redirTimerRef = useRef(null);
     const goingToGameRef = useRef(false);
+
+    // Bloqueo estable del invitado (userId del jugador 2)
+    const invitadoLockRef = useRef(null);
+
     const API = "http://localhost:3006";
-    const { id } = useParams();             // id de sala
+    const { id } = useParams();             // param visible (puede ser código o id numérico)
     const { user, inicializarSocket } = useGame();
+
     const [socketReady, setSocketReady] = useState(false);
-    const [jugadores, setJugadores] = useState([]); // [{id, nombre, foto_perfil, esCreador}]
+    const [jugadores, setJugadores] = useState([]); // [{userId, nombre, foto_perfil, esCreador}]
     const [mensaje, setMensaje] = useState('Conectando...');
     const [cuenta, setCuenta] = useState(null);     // null | 10..0
     const [configJuego, setConfigJuego] = useState(null);
     const navigate = useNavigate();
 
-    // helper local
+    // Normaliza rutas absolutas de imágenes
     const abs = (p) => (typeof p === 'string' && p.startsWith('http')
         ? p
-        : `http://localhost:3006${p || '/uploads/default.png'}`);
+        : `${API}${p || '/uploads/default.png'}`);
 
+    // ====== REFS ESTABLES (sin useMemo) ======
+
+    // SalaKey: exactamente lo que espera el server (número si es numérico, string si es código)
+    const salaKeyRef = useRef(null);
+    if (salaKeyRef.current === null) {
+        salaKeyRef.current = /^\d+$/.test(id) ? Number(id) : id;
+    }
+
+    // Usuario actual estable (para evaluar si es “tercero”)
+    const currentUserRef = useRef(null);
+    if (!currentUserRef.current) {
+        try {
+            const u = JSON.parse(localStorage.getItem('user') || 'null') || {};
+            currentUserRef.current = {
+                userId: u.id ?? null,
+                jugador_id: u.jugador_id ?? null,
+                nombre: u.name || u.username || (u.email?.split?.('@')[0]) || 'Jugador',
+            };
+        } catch {
+            currentUserRef.current = { userId: null, jugador_id: null, nombre: 'Jugador' };
+        }
+    }
+
+    // Socket y banderas de control
+    const socketRef = useRef(null);
+    const listenersAttachedRef = useRef(false);
+    const joinedRef = useRef(false); // evita re-uniones múltiples
+
+    // ===== Ordenador estable con lock para invitado =====
+    function ordenarEstable(list = []) {
+        const creador = list.find(j => j?.esCreador) || null;
+
+        // Candidato invitado:
+        // 1) si hay lock y el user sigue en la lista y no es el creador → mantener lock
+        let invitado =
+            (invitadoLockRef.current != null
+                ? list.find(j => j?.userId === invitadoLockRef.current && !j?.esCreador)
+                : null) || null;
+
+        // 2) si no hay lock válido, elegir el primer no-creador ≠ creador y lockearlo
+        if (!invitado) {
+            const candidatos = list.filter(j => !j?.esCreador && (!creador || j?.userId !== creador?.userId));
+
+            // Orden determinista: primero por tener userId, luego por userId asc; si no hay, por nombre
+            candidatos.sort((a, b) => {
+                const aid = a.userId, bid = b.userId;
+                if (aid != null && bid == null) return -1;
+                if (aid == null && bid != null) return 1;
+                if (aid != null && bid != null) return aid - bid;
+                // ambos sin userId -> por nombre
+                return normalizeName(a.nombre).localeCompare(normalizeName(b.nombre));
+            });
+
+            invitado = candidatos[0] || null;
+            if (invitado?.userId != null) invitadoLockRef.current = invitado.userId;
+        }
+
+        // Devolver solo top2, en orden (creador primero)
+        const out = [];
+        if (creador) out.push(creador);
+        if (invitado && (!creador || invitado.userId !== creador.userId)) out.push(invitado);
+        return out;
+    }
+
+    // ===== Redirección local (por si el server no emite sala_llena) =====
+    const startLocalRedir = () => {
+        // limpiar timers previos
+        if (redirIntervalRef.current) clearInterval(redirIntervalRef.current);
+        if (redirTimerRef.current) clearTimeout(redirTimerRef.current);
+
+        setMensaje('La sala ya está completa (máximo 2 jugadores).');
+        setRedirIn(3);
+        redirIntervalRef.current = setInterval(() => {
+            setRedirIn(prev => {
+                if (prev <= 1) {
+                    clearInterval(redirIntervalRef.current);
+                    redirIntervalRef.current = null;
+                    setMensaje('Redirigiendo a la lista de sala de espera…');
+                    redirTimerRef.current = setTimeout(() => {
+                        navigate('/salaPartidas');
+                    }, 800);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+    };
+
+    // ===== Efecto 1: Inicializar socket y adjuntar listeners UNA sola vez =====
     useEffect(() => {
-        const s = inicializarSocket();
-        if (!s) return;
+        if (!socketRef.current) socketRef.current = inicializarSocket();
+        const s = socketRef.current;
+        if (!s || listenersAttachedRef.current) return;
 
-        // Fallback rápido a localStorage para evitar la carrera del Context
-        const fromLS = (() => {
-            try {
-                const raw = localStorage.getItem('user');
-                return raw ? JSON.parse(raw) : null;
-            } catch { return null; }
-        })();
-        const u = user || fromLS || {};
-        const foto = (() => {
-            const f = u.foto_perfil || u.avatar_url;
-            return (typeof f === 'string' && f.trim()) ? f : '/uploads/default.png';
-        })();
-        const datosUsuario = {
-            userId: u.id ?? null,
-            nombre: (u.name || u.username || (u.email?.split?.('@')[0]) || 'Jugador').trim(),
-            foto_perfil: foto,
-            jugador_id: u.jugador_id
-        };
-
+        // ---- Handlers (no dependas de estado/props para que no se recreen) ----
         const onSalaActualizada = (estado) => {
-            setJugadores(estado.jugadores || []);
-            setMensaje(estado.jugadores?.length === 1 ? 'Esperando jugador 2...' : '');
+            const deduped = dedupeJugadores(estado?.jugadores || []);
+            const top2 = ordenarEstable(deduped);
+
+            // Solo evaluar “tercero” si YA hay 2 jugadores efectivos en top2
+            if (top2.length === 2) {
+                const me = currentUserRef.current;
+                const soyTop2 = includesPlayer(top2, me);
+                // Si NO soy top2 y todavía no fui aceptado por el server, redirijo localmente
+                if (!soyTop2 && !socketReady) {
+                    startLocalRedir();
+                }
+            }
+
+            setJugadores(top2);
+            setMensaje(top2.length === 1 ? 'Esperando jugador 2...' : '');
         };
 
         const onSalaLlena = () => {
-            setMensaje('La sala ya está completa (máximo 2 jugadores).');
-
-            // limpiar timers previos si los hubiera
-            if (redirIntervalRef.current) clearInterval(redirIntervalRef.current);
-            if (redirTimerRef.current) clearTimeout(redirTimerRef.current);
-
-            setRedirIn(3); // 3 segundos
-            redirIntervalRef.current = setInterval(() => {
-                setRedirIn((prev) => {
-                    if (prev <= 1) {
-                        clearInterval(redirIntervalRef.current);
-                        redirIntervalRef.current = null;
-
-                        // mensaje final y pequeño delay para que se vea
-                        setMensaje('Redirigiendo a la lista de sala de espera…');
-                        redirTimerRef.current = setTimeout(() => {
-                            navigate('/salaPartidas');
-                        }, 800);
-
-                        return 0;
-                    }
-                    return prev - 1;
-                });
-            }, 1000);
+            startLocalRedir();
         };
 
         const onListoParaJugar = ({ kickoffAt, config } = {}) => {
@@ -86,82 +181,125 @@ export default function SalaEspera() {
                 setConfigJuego(config);
                 localStorage.setItem('ultima_config_multijugador', JSON.stringify(config));
             }
-            // si viene kickoffAt del server, derivamos la cuenta exacta con ese reloj
-            if (kickoffAt && Number.isFinite(kickoffAt)) {
+            if (Number.isFinite(kickoffAt)) {
                 const ms = Math.max(0, kickoffAt - Date.now());
                 setCuenta(Math.ceil(ms / 1000));
             } else {
-                setCuenta(10); // fallback
+                setCuenta(10);
             }
         };
 
         const onDesconexionOtro = (estado) => {
-            setJugadores(estado.jugadores || []);
+            const deduped = dedupeJugadores(estado?.jugadores || []);
+            // si el lock actual ya no está, se intentará lockear al nuevo en ordenarEstable
+            if (invitadoLockRef.current != null) {
+                const stillThere = deduped.some(j => j?.userId === invitadoLockRef.current);
+                if (!stillThere) invitadoLockRef.current = null;
+            }
+            const top2 = ordenarEstable(deduped);
+            setJugadores(top2);
             setMensaje('El otro jugador se fue. Esperando jugador 2...');
             setCuenta(null);
         };
 
-        // en el mismo useEffect donde registrás listeners
         const onComenzar = () => {
-            goingToGameRef.current = true;   // <-- marcar que pasamos a la pantalla de juego
             const cfg = configJuego || (() => {
                 try { return JSON.parse(localStorage.getItem('ultima_config_multijugador') || 'null'); }
                 catch { return null; }
             })();
+
+            goingToGameRef.current = true;
             navigate(`/jugarMultijugador/${id}`, { state: { config: cfg } });
+            // (La ruta puede seguir usando el param visible `id`; los emits usan `salaKeyRef.current`)
         };
 
-        // listeners
+        // ---- Attach listeners (una sola vez) ----
         s.on('sala_actualizada', onSalaActualizada);
         s.on('sala_llena', onSalaLlena);
         s.on('listo_para_jugar', onListoParaJugar);
         s.on('jugador_se_fue', onDesconexionOtro);
         s.on('sala:comenzar', onComenzar);
+        listenersAttachedRef.current = true;
 
-        // pido estado actual y me uno
-        s.emit('obtener_sala', { salaId: id }, (estado) => {
-            if (!estado?.ok) {
-                setMensaje(estado?.error || 'Sala no encontrada');
-                // cancela un timer previo si existiera
-                if (redirTimerRef.current) clearTimeout(redirTimerRef.current);
-                // espera 2s y redirige
-                redirTimerRef.current = setTimeout(() => {
-                    navigate('/salaPartidas');
-                }, 3000); // para una sala que no existe, 3 segundos
-                return;
-            }
-
-            setJugadores(estado.jugadores || []);
-            setMensaje(estado.jugadores?.length === 1 ? 'Esperando jugador 2...' : '');
-            if (estado?.config) {
-                setConfigJuego(estado.config);
-                localStorage.setItem('ultima_config_multijugador', JSON.stringify(estado.config));
-            }
-
-            // Emitimos SIEMPRE con datos defensivos (el server ya enriquece si viene userId)
-            s.emit('unirse_sala', { salaId: id, ...datosUsuario}, (resp) => {
-                if (!resp?.ok) setMensaje(resp?.error || 'No se pudo entrar a la sala');
-                else setSocketReady(true);
-            });
-        });
-
-        // cleanup
+        // Cleanup real al desmontar
         return () => {
             if (!goingToGameRef.current) {
-                s.emit('salir_sala', { salaId: id }); // solo si NO estamos yendo al juego
+                s.emit('salir_sala', { salaId: salaKeyRef.current });
             }
             s.off('sala_actualizada', onSalaActualizada);
             s.off('sala_llena', onSalaLlena);
             s.off('listo_para_jugar', onListoParaJugar);
             s.off('jugador_se_fue', onDesconexionOtro);
             s.off('sala:comenzar', onComenzar);
+            listenersAttachedRef.current = false;
 
             if (redirIntervalRef.current) clearInterval(redirIntervalRef.current);
             if (redirTimerRef.current) clearTimeout(redirTimerRef.current);
         };
-    }, [id, inicializarSocket, user, navigate]);
+        // deps vacías: corre una sola vez
+    }, []);
 
-    // cuenta regresiva
+    // ===== Efecto 2: obtener_sala + unirse_sala (UNA sola vez) =====
+    useEffect(() => {
+        const s = socketRef.current;
+        if (!s || joinedRef.current) return;
+
+        //console.log('Sala param:', id, '→ salaKey usada:', salaKeyRef.current);
+
+        // Estado actual
+        s.emit('obtener_sala', { salaId: salaKeyRef.current }, (estado) => {
+            //console.log('obtener_sala → resp:', estado);
+
+            if (!estado?.ok) {
+                // Sala no existe o expiró
+                setMensaje(estado?.error || 'Sala no encontrada');
+                if (redirTimerRef.current) clearTimeout(redirTimerRef.current);
+                redirTimerRef.current = setTimeout(() => navigate('/salaPartidas'), 3000);
+                return;
+            }
+
+            const deduped = dedupeJugadores(estado.jugadores || []);
+            const top2 = ordenarEstable(deduped);
+            setJugadores(top2);
+            setMensaje(top2.length === 1 ? 'Esperando jugador 2...' : '');
+
+            if (estado?.config) {
+                setConfigJuego(estado.config);
+                localStorage.setItem('ultima_config_multijugador', JSON.stringify(estado.config));
+            }
+
+            const me = currentUserRef.current;
+            // Si ya hay 2 y NO soy parte de ellos, redirijo (no me uno)
+            if (top2.length === 2 && !includesPlayer(top2, me)) {
+                startLocalRedir();
+                return;
+            }
+
+            // Unirme normalmente (datos defensivos desde LS)
+            const fromLS = JSON.parse(localStorage.getItem('user') || 'null') || {};
+            const foto = (fromLS.foto_perfil || fromLS.avatar_url || '/uploads/default.png') || '/uploads/default.png';
+            const datosUsuario = {
+                userId: fromLS.id ?? null,
+                nombre: (fromLS.name || fromLS.username || (fromLS.email?.split?.('@')[0]) || 'Jugador').trim(),
+                foto_perfil: foto,
+                jugador_id: fromLS.jugador_id
+            };
+
+            s.emit('unirse_sala', { salaId: salaKeyRef.current, ...datosUsuario }, (resp) => {
+                if (!resp?.ok) {
+                    setMensaje(resp?.error || 'No se pudo entrar a la sala');
+                    const err = (resp?.error || '').toLowerCase();
+                    if (err.includes('completa') || err.includes('llena')) startLocalRedir();
+                } else {
+                    setSocketReady(true);
+                    joinedRef.current = true; // evita reintentos
+                }
+            });
+        });
+        // deps vacías: corre una sola vez
+    }, []);
+
+    // ===== Cuenta regresiva a juego =====
     useEffect(() => {
         if (cuenta === null) return;
         if (cuenta === 0) {
@@ -169,6 +307,8 @@ export default function SalaEspera() {
                 try { return JSON.parse(localStorage.getItem('ultima_config_multijugador') || 'null'); }
                 catch { return null; }
             })();
+
+            goingToGameRef.current = true;
             navigate(`/jugarMultijugador/${id}`, { state: { config: cfg } });
             return;
         }
@@ -176,13 +316,16 @@ export default function SalaEspera() {
         return () => clearTimeout(t);
     }, [cuenta, id, navigate, configJuego]);
 
+    // ===== Render =====
     const jugador1 = jugadores[0] || null;
     const jugador2 = jugadores[1] || null;
 
-    // console.log("configJuego: ", configJuego);
-    // console.log("jugador1: ", jugador1);
-    // console.log("jugador2: ", jugador2);
-    // console.log("jugadores: ", jugadores);    
+    // if (jugadores.length > 0) {
+    //     console.log(jugador1.foto_perfil);
+    //     console.log(`${API}${jugador1.foto_perfil}`);
+    //     console.log(`${API}${user.foto_perfil}`);
+    // }
+
 
     return (
         <div className='m-3 flex items-center justify-center'>
@@ -196,9 +339,9 @@ export default function SalaEspera() {
                     <div className='flex flex-col items-center'>
                         {jugador1 ? (
                             <>
-                                {jugador1?.foto_perfil !== "http://localhost:3006/uploads/default.png" ? (
+                                {jugador1?.foto_perfil !== `/uploads/default.png` ? (
                                     <img
-                                        src={abs(jugador1?.foto_perfil)}
+                                        src={`${API}${jugador1.foto_perfil}`}
                                         alt='jugador1'
                                         className='w-28 h-28 rounded-full object-cover border-4 border-green-400'
                                     />
@@ -206,7 +349,7 @@ export default function SalaEspera() {
                                     <p className="text-[70px] w-28 h-28 bg-gray-200/90 rounded-full text-center">👤</p>
                                 )}
                                 <p className='mt-2 font-bold'>{jugador1.nombre}</p>
-                                <span className='text-xs opacity-70'>{jugador1?.esCreador ? 'Creador' : 'jugador 1'}</span>
+                                <span className='text-xs opacity-70'>{jugador1?.esCreador ? 'Creador' : 'Jugador 1'}</span>
                             </>
                         ) : (
                             <div className='w-28 h-28 rounded-full bg-white/20' />
@@ -245,9 +388,9 @@ export default function SalaEspera() {
                     <div className='flex flex-col items-center'>
                         {jugador2 ? (
                             <>
-                                {jugador2?.foto_perfil !== "http://localhost:3006/uploads/default.png" ? (
+                                {jugador2?.foto_perfil !== `/uploads/default.png` ? (
                                     <img
-                                        src={abs(jugador2?.foto_perfil)}
+                                        src={`${API}${jugador2.foto_perfil}`}
                                         alt='jugador2'
                                         className='w-28 h-28 rounded-full object-cover border-4 border-green-400'
                                     />
@@ -255,7 +398,8 @@ export default function SalaEspera() {
                                     <p className="text-[70px] w-28 h-28 bg-gray-200/90 rounded-full text-center">👤</p>
                                 )}
                                 <p className='mt-2 font-bold'>{jugador2.nombre}</p>
-                                <span className='text-xs opacity-70'>{jugador2?.esCreador ? 'Invitado' : 'jugador 2'}</span>
+                                {/* Si es creador -> "Creador"; si no -> "Invitado" */}
+                                <span className='text-xs opacity-70'>{jugador2?.esCreador ? 'Creador' : 'Invitado'}</span>
                             </>
                         ) : (
                             <div className='w-28 h-28 rounded-full bg-white/20' />

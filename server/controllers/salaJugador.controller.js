@@ -41,12 +41,12 @@ const show = async (req, res) => {
 const store = async (req, res) => {
   const { sala_id, jugador_id, joined_at } = req.body;
 
-  console.log({ sala_id: typeof sala_id });
-  console.log({ jugador_id: typeof jugador_id });
-  console.log({ joined_at: typeof joined_at });
-  console.log( "sala_id:",  sala_id );
-  console.log( "jugador_id: ",  jugador_id );
-  console.log( "joined_at: ",  joined_at );
+  // console.log({ sala_id: typeof sala_id });
+  // console.log({ jugador_id: typeof jugador_id });
+  // console.log({ joined_at: typeof joined_at });
+  // console.log( "sala_id:",  sala_id );
+  // console.log( "jugador_id: ",  jugador_id );
+  // console.log( "joined_at: ",  joined_at );
 
   // validaciones de parametros
   if (!sala_id || !jugador_id) {
