@@ -56,6 +56,7 @@ const JugarIndividual = () => {
   const [cronometroPausado, setCronometroPausado] = useState(false);
   const [mostrarEspera, setMostrarEspera] = useState(false);
   const [tiempoTotalJugado, setTiempoTotalJugado] = useState(0);
+  //const [puntos, setPuntos] = useState(0);
   const user = getStoredUser();
 
   const [foto] = useState(user.foto_perfil);
@@ -196,6 +197,38 @@ const JugarIndividual = () => {
     };
   }, [preguntaActual, juegoIniciado, juegoTerminado, cronometroPausado, tiempo]);
 
+  const calcularPuntaje = (respuestasCor, tiempo, dificultad) => {
+    if (!respuestasCor || respuestasCor.length === 0) return 0;
+
+    let multiplicador = 1;
+    const diff = tiempo.toLowerCase();
+    if (diff.includes('facil') || diff.includes('easy')) multiplicador = 1;
+    if (diff.includes('media') || diff.includes('medium') || diff.includes('normal'))
+      multiplicador = 1.3;
+    if (diff.includes('dificil') || diff.includes('hard')) multiplicador = 1.6;
+
+    let puntos = 0;
+    respuestasCor.forEach((respuesta) => {
+      const tiempo = respuesta.tiempo; // en segundos
+      if (tiempo <= 3) puntos += 10;
+      else if (tiempo <= 5) puntos += 7;
+      else if (tiempo <= 8) puntos += 5;
+      else if (tiempo <= 12) puntos += 3;
+      else puntos += 1;
+    });
+    const dificult = dificultad.toLowerCase();
+    let puntosDificultad = 0;
+    if (dificult.includes('facíl') || dificult.includes('easy'))
+      puntosDificultad = 5 * respuestasCor.length;
+    if (dificult.includes('media') || dificult.includes('medium'))
+      puntosDificultad = 10 * respuestasCor.length;
+    if (dificult.includes('dificíl') || dificult.includes('hard'))
+      puntosDificultad = 15 * respuestasCor.length;
+    console.log(puntos);
+    console.log(puntosDificultad);
+    return Math.round((puntos + puntosDificultad) * multiplicador);
+  };
+
   const handleGuardarRespuesta = (opcion) => {
     setCronometroPausado(true);
     const tiempoTotal = pasarTiempo(tiempo);
@@ -282,8 +315,10 @@ const JugarIndividual = () => {
         partidaId,
         respuestasCorrectas,
         respuestasIncorrectas,
-        tiempoTotal
+        tiempoTotal,
+        respuestasFinales
       );
+
       const estadisticasResID = estadisticasRes?.id;
       await guardarRespuesta(respuestasFinales, partidaId, estadisticasResID, partidaPreguntaID);
     } catch (error) {
@@ -322,7 +357,7 @@ const JugarIndividual = () => {
       });
 
       const resultados = await Promise.all(promesas);
-      console.log('Todas las preguntas fueron guardadas', resultados.data);
+      console.log('Todas las preguntas fueron guardadas', resultados[0]?.data);
 
       return resultados[0]?.data;
     } catch (error) {
@@ -335,17 +370,28 @@ const JugarIndividual = () => {
     partidaId,
     respuestasCorrectas,
     respuestasIncorrectas,
-    tiempoTotal
+    tiempoTotal,
+    respuestasFinales
   ) => {
     const id = user?.jugador_id;
     try {
       const tiempoTotalMs = tiempoTotal * 1000;
+      const respuestasCor = respuestasFinales
+        .filter((respuesta) => respuesta.es_correcta === true)
+        .map((respuesta, index) => ({
+          id: index,
+          tiempo: respuesta.tiempoRespuesta,
+        }));
+      console.log(respuestasFinales);
+      console.log(respuestasCor);
+
+      const puntos = calcularPuntaje(respuestasCor, tiempo, dificultad);
 
       const datosEstadisticas = {
         jugador_id: id,
         partida_id: partidaId,
         posicion: 1,
-        puntaje_total: respuestasCorrectas * 10,
+        puntaje_total: puntos,
         total_correctas: respuestasCorrectas,
         total_incorrectas: respuestasIncorrectas,
         tiempo_total_ms: tiempoTotalMs,
@@ -372,7 +418,7 @@ const JugarIndividual = () => {
     const id = user?.jugador_id;
     try {
       const promesas = respuestasFinales.map((respuesta, index) => {
-        const tiempoUsado = respuesta.tiempoRespuesta ?? 15;
+        const tiempoUsado = respuesta.tiempoRespuesta ?? 0;
         const tiempoRespuestaMs = tiempoUsado * 1000;
 
         return axios
