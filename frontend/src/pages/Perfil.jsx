@@ -111,6 +111,31 @@ const Perfil = () => {
   const [form, setForm] = useState({ name: '', email: '', password: '' }); // hook de inicializacion del formulario
   const [formErrors, setFormErrors] = useState({}); // error del formulario
 
+  // buscador de partidas - estado para el input y la lista filtrada
+  const [search, setSearch] = useState("");
+  const [listaFiltrada, setListaFiltrada] = useState(listaObjetosPartidaInformacion);
+
+  // --- estado de paginado ---
+  const PAGE_SIZE = 5; // cada 5 li hace el paginado
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // cuando cambia la lista filtrada, volvemos a página 1
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [listaFiltrada]);
+
+  // cálculo de páginas e items visibles
+  const total = (listaFiltrada?.length ?? 0);
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const startIndex = (currentPage - 1) * PAGE_SIZE;
+  const endIndex = Math.min(startIndex + PAGE_SIZE, total);
+  const visible = (listaFiltrada ?? []).slice(startIndex, endIndex);
+
+  // handlers
+  const goPrev = () => setCurrentPage(p => Math.max(1, p - 1));
+  const goNext = () => setCurrentPage(p => Math.min(totalPages, p + 1));
+  const goTo = (p) => setCurrentPage(() => Math.min(Math.max(1, p), totalPages));
+
   // Carga el perfil y verifica el usuario
   useEffect(() => {
     if (!userId) {
@@ -594,7 +619,7 @@ const Perfil = () => {
           })),
 
           // Niveles de dificultad por pregunta y su resumen
-          dificultad : dificultadesPorPregunta[0],          // ej: ["facil","facil","normal","dificil",...]
+          dificultad: dificultadesPorPregunta[0],          // ej: ["facil","facil","normal","dificil",...]
           resumenDificultad,                // ej: { facil: 5, normal: 3, dificil: 2 }
 
           // (Opcional) total de preguntas de esta partida
@@ -605,7 +630,7 @@ const Perfil = () => {
       //console.log("joined: ", joined);
 
       return joined;
-      
+
     } else {
       console.log('Alguno de los arrays no es un array:', { partidas, categorias, preguntas });
       return [];
@@ -729,9 +754,70 @@ const Perfil = () => {
     }
   };
 
-  /*const [objJugador, setObjJugador] = useState(null);
-  const [objUsuario, setObjUsuario] = useState(null);
-  const [arrayUsuariosJugadores, setArrayUsuariosJugadores] = useState([]);*/
+  // si cambia la fuente, reseteamos filtro (sincroniza)
+  useEffect(() => {
+    setListaFiltrada(listaObjetosPartidaInformacion);
+  }, [listaObjetosPartidaInformacion]);
+
+  // normalizador simple (tildes, mayúsculas, espacios) y evita errores con null/undefined/objetos raros.
+  const normalize = (s) => {
+    return (s ?? "")
+      .toString()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim();
+  };
+
+
+  // construye el “texto buscable” para cada item
+  const buildHaystack = (e) => {
+    const etiquetaPractica = e?.modo === "individual" ?? "practica" ?? "multijugador" ?? "";
+    const fecha = formatDateDMYLocal(e?.ended_at) ?? "-";   // ej: 11/11/2025
+    const hora = formatTimeHMLocal(e?.ended_at) ?? "-";    // ej: 23:35
+    const modo = modeTranslations[e?.modo] ?? e?.modo ?? "";
+    const cat = categoryTranslations[e?.categoria] ?? e?.categoria ?? "";
+    const diff = difficultyTranslations[e?.dificultad] ?? e?.dificultad ?? "";
+    return normalize([etiquetaPractica, fecha, hora, modo, cat, diff].filter(Boolean).join(" "));
+  };
+
+  // buscador de partidas
+  const handleSearch = () => {
+    const q = normalize(search);
+    if (!q) {
+      setListaFiltrada(listaObjetosPartidaInformacion); // reset si vacío
+      return;
+    }
+    const tokens = q.split(/[\s,]+/).filter(Boolean);
+    const filtrados = listaObjetosPartidaInformacion.filter((e) => {
+      const haystack = buildHaystack(e);
+      return tokens.every(tok => haystack.includes(tok));
+    });
+    setListaFiltrada(filtrados);
+  };
+
+  // ENTER dispara búsqueda
+  const onKeyDownSearch = (ev) => {
+    if (ev.key === "Enter") handleSearch();
+  };
+
+  // si borrás todo, resetea automáticamente
+  const onChangeSearch = (ev) => {
+    const val = ev.target.value;
+    setSearch(val);
+    if (val.trim() === "") {
+      setListaFiltrada(listaObjetosPartidaInformacion); // volver al estado original
+    }
+  };
+
+  // botón para limpiar
+  const handleClear = () => {
+    setSearch("");
+    setListaFiltrada(listaObjetosPartidaInformacion);
+  };
+
+  // helper para saber si hay consulta activa
+  const hasQuery = normalize(search) !== "";
 
   const getJugador = async (id) => {
     try {
@@ -771,10 +857,7 @@ const Perfil = () => {
     });
   };
 
-  // funcion de buscador entre estadisticas y amigos - (tengo que hacer 2 diferetes o uno para ambas)
-  const handleSearch = () => {
-    console.log('Buscar…');
-  };
+
 
   const formatDateDMYLocal = (isoString) => {
     if (!isoString) return '';
@@ -1487,9 +1570,9 @@ const Perfil = () => {
               </h2>
             </button>
           </div>
-          
-          {estadisticas.length === 0 ? (
-            <p className='indent-2 text-white'>{t('noResultsMatches')}</p>
+
+          {estadisticas.length === 0 ? (          
+            <p className='indent-2 text-white'> { 'No encontramos resultados' ?? t('noResultsMatches')}:</p>
           ) : (
             <div>
               {/* buscador de estadísticas */}
@@ -1497,27 +1580,34 @@ const Perfil = () => {
                 <input
                   className='bg-white/95 w-96 indent-2 border rounded-xl px-1 py-2 text-black placeholder-black/70 hover:bg-white'
                   placeholder={t('findAMatch')}
+                  value={search}
+                  onChange={onChangeSearch}
+                  onKeyDown={onKeyDownSearch}
                 />
+                {search && (
+                  <button
+                    type="button"
+                    onClick={handleClear}
+                    className="absolute top-0 right-8 h-full px-2 text-slate-600 hover:text-black cursor-pointer"
+                    aria-label="Limpiar búsqueda"
+                    title="Limpiar"
+                  >
+                    ✕
+                  </button>
+                )}
 
                 <button
-                  type='button'
+                  type="button"
                   onClick={handleSearch}
-                  className='absolute h-full w-fit top-0 right-0 flex items-center rounded-r-xl 
-                  bg-slate-800 hover:bg-slate-700 px-2 border border-transparent text-sm transition-all 
-                    shadow-sm hover:shadow focus:bg-slate-700 active:bg-slate-700 
-                    disabled:pointer-events-none disabled:opacity-50 cursor-pointer'
+                  className="absolute h-full top-0 right-0 flex items-center rounded-r-xl 
+                bg-slate-800 hover:bg-slate-700 px-2 border border-transparent text-sm transition-all 
+                  shadow-sm hover:shadow text-white cursor-pointer"
                 >
-                  <svg
-                    xmlns='http://www.w3.org/2000/svg'
-                    viewBox='0 0 24 24'
-                    fill='currentColor'
-                    className='w-4 h-4 text-white'
-                  >
-                    <path
-                      fillRule='evenodd'
-                      clipRule='evenodd'
-                      d='M10.5 3.75a6.75 6.75 0 1 0 0 13.5 6.75 6.75 0 0 0 0-13.5ZM2.25 10.5a8.25 8.25 0 1 1 14.59 5.28l4.69 4.69a.75.75 0 1 1-1.06 1.06l-4.69-4.69A8.25 8.25 0 0 1 2.25 10.5Z'
-                    />
+                  {/* ícono lupa */}
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                    fill="currentColor" className="w-4 h-4">
+                    <path fillRule="evenodd" clipRule="evenodd"
+                      d="M10.5 3.75a6.75 6.75 0 1 0 0 13.5 6.75 6.75 0 0 0 0-13.5ZM2.25 10.5a8.25 8.25 0 1 1 14.59 5.28l4.69 4.69a.75.75 0 1 1-1.06 1.06l-4.69-4.69A8.25 8.25 0 0 1 2.25 10.5Z" />
                   </svg>
                 </button>
               </div>
@@ -1525,76 +1615,135 @@ const Perfil = () => {
               {/*console.log("primera visualizacion de partidas listaObjetosPartidaInformacion:\n", listaObjetosPartidaInformacion)*/}
 
               {/* listado de las partidas (estadisticas) */}
-              <ul className=''>
-                {listaObjetosPartidaInformacion.map((e, index) => {
-                  return (
-                    <motion.li
-                      key={e.id}
-                      className='border rounded-xl p-4 bg-white/10 hover:bg-white/20 
+              {/* listado / mensaje */}
+              {(listaFiltrada?.length ?? 0) === 0 && hasQuery ? (
+                <div className="p-3 rounded-xl bg-white/10 text-white">
+                  {'No encontramos resultados' ??  t('noResults')}: <b> "{search}"</b>
+                  <button
+                    type="button"
+                    onClick={handleClear}
+                    className="ml-3 px-2 py-1 text-sm rounded-lg bg-slate-800 hover:bg-slate-700"
+                  >
+                    {'Limpiar' ?? t('clear')}
+                  </button>
+                </div>
+              ) : (
+                <ul className=''>
+                  {(visible ?? []).map((e, index) => {
+                    const globalIndex = startIndex + index; // para usar tu index original si lo necesitás
+                    return (
+                      <motion.li
+                        key={e.id}
+                        className='border rounded-xl p-4 bg-white/10 hover:bg-white/20 
                         flex space-x-4 mb-2 cursor-pointer'
-                      whileTap={{ scale: 1.05 }}
-                      onClick={() => {
-                        setSelectedEstadisticas(index);
-                        setPartidaIdSeleccionada(e.partida_id);
-                        setModalEstadisticaAbierto(true);
-                      }}
-                    >
-                      {e.posicion > 0 ? (
-                        <div className='flex flex-row gap-5'>
-                          {e?.modo == "individual" ? (
-                            <p className='text-yellow-400'>Práctica</p>
-                          )
-                            :
-                            (
-                              <p className='text-green-500'>{t('youWon')}</p>
-                            )}
-                          <p className='text-white'>
-                            {t('date')}: {formatDateDMYLocal(e?.ended_at) ?? '-'}
-                          </p>
-                          <p className='text-white'>
-                            {t('dateHs')}: {formatTimeHMLocal(e?.ended_at) ?? '-'}
-                          </p>
-                          <p className='text-white'>
-                            {t('mode')}: {modeTranslations[e?.modo] ?? '-'}
-                          </p>
-                          <p className='text-white'>
-                            {t('category')}: {categoryTranslations[e?.categoria] ?? '-'}
-                          </p>
-                          <p className='text-white'>
-                            {t('dificulty')}: {difficultyTranslations[e?.dificultad] ?? '-'}
-                          </p>
-                        </div>
-                      ) : (
-                        <div className='flex flex-row gap-5'>
-                          {e?.modo == "individual" ? (
-                            <p className='text-yellow-400'>Práctica</p>
-                          )
-                            :
-                            (
-                              <p className='text-red-500'>{t('youLoss')}</p>
+                        whileTap={{ scale: 1.05 }}
+                        onClick={() => {
+                          setSelectedEstadisticas(index);
+                          setPartidaIdSeleccionada(e.partida_id);
+                          setModalEstadisticaAbierto(true);
+                        }}
+                      >
+                        {e.posicion > 0 ? (
+                          <div className='flex flex-row gap-5'>
+                            {e?.modo == "individual" ? (
+                              <p className='text-yellow-400'>Práctica</p>
                             )
-                          }
-                          <p className='text-white'>
-                            {t('date')}: {formatDateDMYLocal(e?.ended_at) ?? '-'}
-                          </p>
-                          <p className='text-white'>
-                            {t('dateHs')}: {formatTimeHMLocal(e?.ended_at) ?? '-'}
-                          </p>
-                          <p className='text-white'>
-                            {t('mode')}: {modeTranslations[e?.modo] ?? '-'}
-                          </p>
-                          <p className='text-white'>
-                            {t('category')}: {categoryTranslations[e?.categoria] ?? '-'}
-                          </p>
-                          <p className='text-white'>
-                            {t('dificulty')}: {difficultyTranslations[e?.dificultad] ?? '-'}
-                          </p>
-                        </div>
-                      )}
-                    </motion.li>
-                  );
-                })}
-              </ul>
+                              :
+                              (
+                                <p className='text-green-500'>{t('youWon')}</p>
+                              )}
+                            <p className='text-white'>
+                              {t('date')}: {formatDateDMYLocal(e?.ended_at) ?? '-'}
+                            </p>
+                            <p className='text-white'>
+                              {t('dateHs')}: {formatTimeHMLocal(e?.ended_at) ?? '-'}
+                            </p>
+                            <p className='text-white'>
+                              {t('mode')}: {modeTranslations[e?.modo] ?? '-'}
+                            </p>
+                            <p className='text-white'>
+                              {t('category')}: {categoryTranslations[e?.categoria] ?? '-'}
+                            </p>
+                            <p className='text-white'>
+                              {t('dificulty')}: {difficultyTranslations[e?.dificultad] ?? '-'}
+                            </p>
+                          </div>
+                        ) : (
+                          <div className='flex flex-row gap-5'>
+                            {e?.modo == "individual" ? (
+                              <p className='text-yellow-400'>Práctica</p>
+                            )
+                              :
+                              (
+                                <p className='text-red-500'>{t('youLoss')}</p>
+                              )
+                            }
+                            <p className='text-white'>
+                              {t('date')}: {formatDateDMYLocal(e?.ended_at) ?? '-'}
+                            </p>
+                            <p className='text-white'>
+                              {t('dateHs')}: {formatTimeHMLocal(e?.ended_at) ?? '-'}
+                            </p>
+                            <p className='text-white'>
+                              {t('mode')}: {modeTranslations[e?.modo] ?? '-'}
+                            </p>
+                            <p className='text-white'>
+                              {t('category')}: {categoryTranslations[e?.categoria] ?? '-'}
+                            </p>
+                            <p className='text-white'>
+                              {t('dificulty')}: {difficultyTranslations[e?.dificultad] ?? '-'}
+                            </p>
+                          </div>
+                        )}
+                      </motion.li>
+                    );
+                  })}
+                </ul>)}
+
+              {/* Paginado: aparece solo si hay más de 5 */}
+              {total > PAGE_SIZE && (
+                <div className="mt-3 flex items-center justify-between gap-2">
+                  <span className="text-white/80 text-sm">
+                    { 'Mostrando' ?? t('showing')} {startIndex + 1}–{endIndex} {'de' ?? t('of')} {total}
+                  </span>
+
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={goPrev}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1 rounded-lg bg-white/10 text-white disabled:opacity-50 hover:bg-white/20"
+                    >
+                      ‹
+                    </button>
+
+                    {/* numeritos simples; si querés compactar, podés limitar a +-2 del current */}
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => goTo(p)}
+                        className={`px-3 py-1 rounded-lg ${p === currentPage
+                            ? 'bg-slate-800 text-white'
+                            : 'bg-white/10 text-white hover:bg-white/20'
+                          }`}
+                      >
+                        {p}
+                      </button>
+                    ))}
+
+                    <button
+                      type="button"
+                      onClick={goNext}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-1 rounded-lg bg-white/10 text-white disabled:opacity-50 hover:bg-white/20"
+                    >
+                      ›
+                    </button>
+                  </div>
+                </div>
+              )}
+
             </div>
           )}
 
@@ -1697,7 +1846,7 @@ const Perfil = () => {
                         <strong>{t('scoreGeneral')}:</strong>{' '}
                         {listaObjetosPartidaInformacion[selectedEstadisticas].puntaje_total}
                       </p>
-                      { <p className='p-1'>
+                      {<p className='p-1'>
                         <strong>{t('category')}:</strong>{' '}
                         {categoryTranslations[
                           listaObjetosPartidaInformacion[selectedEstadisticas]?.categoria
