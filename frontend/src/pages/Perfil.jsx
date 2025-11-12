@@ -471,8 +471,8 @@ const Perfil = () => {
       const arr = Array.isArray(data)
         ? data
         : Array.isArray(data?.sala_jugadores)
-        ? data.sala_jugadores
-        : [];
+          ? data.sala_jugadores
+          : [];
       setArraySalaJugadores(arr);
     } catch (e) {
       console.error('GET /sala_jugadores', e.response?.data?.error || e.message);
@@ -491,7 +491,7 @@ const Perfil = () => {
   };
 
   // obtiene un objeto partida_pregunta
-  const getPartidaPreguntas = async (id) => {
+  const getPartidaPreguntas = async () => {
     try {
       const { data } = await axios.get(`http://localhost:3006/partida_preguntas`);
       setPartida_preguntas(data);
@@ -534,57 +534,78 @@ const Perfil = () => {
   };
 
   const inventarioInforCompletaDeTodasLasPartidas = () => {
-    if (Array.isArray(partidas) && Array.isArray(categorias) && Array.isArray(preguntas)) {
-      // 1) Índices rápidos
-      const catById = new Map(categorias.map((c) => [Number(c.id), c]));
+    if (Array.isArray(partidas) && Array.isArray(categorias) && Array.isArray(preguntas) && Array.isArray(partidas)) {
 
-      // Si la dificultad está en "preguntas", tomamos (por simplicidad) la primera que aparezca por categoría.
-      const dificultadPorCategoria = new Map();
-      (preguntas ?? []).forEach((p) => {
-        const cid = Number(p.categoria_id);
-        if (!dificultadPorCategoria.has(cid)) {
-          dificultadPorCategoria.set(cid, p.dificultad);
-        }
+      // Índices para joins rápidos
+      const partidasById = new Map(partidas.map(p => [p.id, p]));
+      const categoriasById = new Map(categorias.map(c => [c.id, c]));
+      const preguntasById = new Map(preguntas.map(q => [q.id, q]));
+
+      // Agrupo partida_preguntas por partida_id (1→N)
+      const ppByPartida = partida_preguntas.reduce((m, pp) => {
+        if (!m.has(pp.partida_id)) m.set(pp.partida_id, []);
+        m.get(pp.partida_id).push(pp);
+        return m;
+      }, new Map());
+
+      // Helper: cuenta ocurrencias en un array de strings
+      const contar = (arr) =>
+        arr.reduce((acc, k) => ((acc[k] = (acc[k] || 0) + 1), acc), {});
+
+      // JOIN principal: por cada estadística, traigo todo lo demás
+      const joined = estadisticas.map(e => {
+        const partida = partidasById.get(e.partida_id) || null;
+
+        // Datos de la partida
+        const modo = partida?.modo ?? null;
+        const categoria_id = partida?.categoria_id ?? null;
+        const categoria = categoriasById.get(categoria_id)?.nombre ?? null;
+        const created_at = partida?.created_at ?? null;
+        const started_at = partida?.started_at ?? null;
+        const ended_at = partida?.ended_at ?? null;
+
+        // Todas las preguntas de esa partida
+        const pps = ppByPartida.get(e.partida_id) || [];
+
+        // Dificultades: mapeo cada pregunta → dificultad en `preguntas`
+        const dificultadesPorPregunta = pps.map(pp => {
+          const q = preguntasById.get(pp.pregunta_id);
+          return q?.dificultad || null;
+        }).filter(Boolean);
+
+        // Resumen de dificultades (conteo por nivel)
+        const resumenDificultad = contar(dificultadesPorPregunta);
+
+        return {
+          // Campos originales de estadistica
+          ...e,
+
+          // Enriquecidos
+          modo,
+          categoria_id,
+          categoria,
+          created_at,
+          started_at,
+          ended_at,
+
+          // Info de preguntas de la partida
+          preguntasDeLaPartida: pps.map(({ pregunta_id, orden, question_text_copy, correct_option_id_copy, correct_option_text_copy }) => ({
+            pregunta_id, orden, question_text_copy, correct_option_id_copy, correct_option_text_copy
+          })),
+
+          // Niveles de dificultad por pregunta y su resumen
+          dificultad : dificultadesPorPregunta[0],          // ej: ["facil","facil","normal","dificil",...]
+          resumenDificultad,                // ej: { facil: 5, normal: 3, dificil: 2 }
+
+          // (Opcional) total de preguntas de esta partida
+          total_preguntas_partida: pps.length,
+        };
       });
 
-      // 2) Partidas enriquecidas con "categoria" y "dificultad"
-      const partidasInfo = (partidas ?? []).map(({ id, categoria_id, ended_at, modo }) => {
-        const cid = Number(categoria_id);
-        const categoria = catById.get(cid)?.nombre ?? '—';
-        const dificultad = dificultadPorCategoria.get(cid) ?? '—';
+      //console.log("joined: ", joined);
 
-        return { partida_id_dos: id, categoria_id: cid, ended_at, modo, categoria, dificultad };
-      });
-
-      // 1) Índice de partidas por id de partida
-      const partidasById = new Map(
-        (partidasInfo ?? []).map((p) => [
-          Number(p.partida_id_dos ?? p.id), // clave del índice
-          p,
-        ])
-      );
-
-      // 2) Filtrar + mergear
-      const estadisticasMatch = (estadisticas ?? []).reduce((acc, s) => {
-        const key = Number(s.partida_id);
-        const pi = partidasById.get(key);
-        if (!pi) return acc; // si no hay partida asociada, no la incluimos
-
-        acc.push({
-          ...s,
-          // agrego lo que necesito de partidasInfo
-          partida_id_dos: pi.partida_id_dos ?? pi.id, //partida_id_dos porque ya existe en el otro array: partida_id. por eso es dos al final
-          categoria_id: pi.categoria_id ?? pi.cid, // por si usaste 'cid'
-          ended_at: pi.ended_at,
-          modo: pi.modo,
-          categoria: pi.categoria,
-          dificultad: pi.dificultad,
-        });
-        return acc;
-      }, []);
-
-      //return partidasInfo;
-      return estadisticasMatch;
+      return joined;
+      
     } else {
       console.log('Alguno de los arrays no es un array:', { partidas, categorias, preguntas });
       return [];
@@ -608,7 +629,7 @@ const Perfil = () => {
       //console.log("idPartida", idPartida);
 
       if (!Number.isFinite(idPartida)) {
-        console.log('partidaIdSeleccionada no es numérico:', idPartida);
+        //console.log('partidaIdSeleccionada no es numérico:', idPartida);
       } else {
         // 1) obtiene un objeto de partidas con todos sus atributos segun el id de la partida seleccionada en la lista.
         const partidaDelJugador = partidas.filter((e) => Number(e.id) === idPartida);
@@ -616,9 +637,13 @@ const Perfil = () => {
 
         // verifica si la partida existe
         if (partidaDelJugador.length !== 0) {
-          // 2) obtiene el id de categoria.
+          // 2.1) obtiene el obj de partida_pregunta.
+          const objPartida_Pregunta = partida_preguntas.find((partida_pregunta) => partida_pregunta.partida_id == partidaDelJugador[0].id);
+          //console.log("objPartida_Pregunta: ", objPartida_Pregunta);
+
+          // 2.2) obtiene el id de categoria.
           const categoriaIds = partidaDelJugador[0].categoria_id;
-          //console.log("array categoriaIds:", categoriaIds);
+          //console.log("array categoriaIds:", categoriaIds); // id: 1 (geografia)
 
           // 3) obtiene el string categoria
           const objCategoria = categorias.find((category) => category.id == categoriaIds);
@@ -626,7 +651,7 @@ const Perfil = () => {
 
           // 4) filtra el array preguntas segun el id de categoria y obtiene un array de 10 objetos de preguntas
           const resultDificultad = preguntas.find(
-            (pregunta) => pregunta.categoria_id == categoriaIds
+            (pregunta) => pregunta.id == objPartida_Pregunta.pregunta_id
           );
           //console.log("array resultDificultad:", resultDificultad);
 
@@ -672,7 +697,7 @@ const Perfil = () => {
           const opcionesDeLaPartida = (opciones ?? []).filter(
             (o) => Number(o.pregunta_id) && preguntaIdsSet.has(Number(o.pregunta_id))
           );
-          //console.log("opcionesDeLaPartida:", opcionesDeLaPartida);
+          //console.log("opcionesDeLaPartida:", opcionesDeLaPartida);          
 
           return {
             idPartida,
@@ -1033,8 +1058,8 @@ const Perfil = () => {
                 preview
                   ? preview
                   : perfil?.foto_perfil
-                  ? `${API}${perfil.foto_perfil}` // el server devuelve ruta relativa
-                  : 'https://placehold.co/128x128?text=Foto' // placeholder opcional
+                    ? `${API}${perfil.foto_perfil}` // el server devuelve ruta relativa
+                    : 'https://placehold.co/128x128?text=Foto' // placeholder opcional
               }
               alt='Foto de perfil'
               className='w-32 h-32 rounded-full object-cover bg-white/20'
@@ -1075,8 +1100,8 @@ const Perfil = () => {
                     preview
                       ? preview
                       : perfil?.foto_perfil
-                      ? `${API}${perfil.foto_perfil}` // el server devuelve ruta relativa
-                      : 'https://placehold.co/128x128?text=Foto' // placeholder opcional
+                        ? `${API}${perfil.foto_perfil}` // el server devuelve ruta relativa
+                        : 'https://placehold.co/128x128?text=Foto' // placeholder opcional
                   }
                   alt='Foto de perfil'
                   className='w-68 h-68 rounded-full object-cover bg-white/20'
@@ -1255,7 +1280,7 @@ const Perfil = () => {
             setSelectedAvatar(true);
           }}
           type='button'
-          //aria-pressed={selectedAvatar}
+        //aria-pressed={selectedAvatar}
         >
           {t('myavatars')}
         </motion.button>
@@ -1462,7 +1487,7 @@ const Perfil = () => {
               </h2>
             </button>
           </div>
-
+          
           {estadisticas.length === 0 ? (
             <p className='indent-2 text-white'>{t('noResultsMatches')}</p>
           ) : (
@@ -1516,7 +1541,13 @@ const Perfil = () => {
                     >
                       {e.posicion > 0 ? (
                         <div className='flex flex-row gap-5'>
-                          <p className='text-green-500'>{t('youWon')}</p>
+                          {e?.modo == "individual" ? (
+                            <p className='text-yellow-400'>Práctica</p>
+                          )
+                            :
+                            (
+                              <p className='text-green-500'>{t('youWon')}</p>
+                            )}
                           <p className='text-white'>
                             {t('date')}: {formatDateDMYLocal(e?.ended_at) ?? '-'}
                           </p>
@@ -1535,7 +1566,14 @@ const Perfil = () => {
                         </div>
                       ) : (
                         <div className='flex flex-row gap-5'>
-                          <p className='text-red-500'>{t('youLoss')}</p>
+                          {e?.modo == "individual" ? (
+                            <p className='text-yellow-400'>Práctica</p>
+                          )
+                            :
+                            (
+                              <p className='text-red-500'>{t('youLoss')}</p>
+                            )
+                          }
                           <p className='text-white'>
                             {t('date')}: {formatDateDMYLocal(e?.ended_at) ?? '-'}
                           </p>
@@ -1659,12 +1697,12 @@ const Perfil = () => {
                         <strong>{t('scoreGeneral')}:</strong>{' '}
                         {listaObjetosPartidaInformacion[selectedEstadisticas].puntaje_total}
                       </p>
-                      {/* <p className='p-1'>
+                      { <p className='p-1'>
                         <strong>{t('category')}:</strong>{' '}
                         {categoryTranslations[
                           listaObjetosPartidaInformacion[selectedEstadisticas]?.categoria
                         ].trim() ?? '—'}
-                      </p> */}
+                      </p>}
                       <p className='p-1'>
                         <strong>{t('date')}:</strong>{' '}
                         {formatDateDMYLocal(
@@ -1926,7 +1964,7 @@ const Perfil = () => {
                           className='text-fuchsia-500 rounded p-2                            
                             [text-shadow:_0_4px_8px_#000000]
                           '
-                          // [text-shadow:_0_8px_8px_rgb(99_102_241_/_0.8)]
+                        // [text-shadow:_0_8px_8px_rgb(99_102_241_/_0.8)]
                         >
                           {t('answerGrafics')}
                         </button>

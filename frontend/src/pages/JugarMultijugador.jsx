@@ -143,7 +143,7 @@ export default function JugarMultijugador() {
         } catch { }
     }, [config, location.state]);
 
-    //console.log("config: ", config);
+    console.log("config: ", config);
 
     // 1) Socket: traer/escuchar jugadores (con dedupe)
     useEffect(() => {
