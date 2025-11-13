@@ -66,7 +66,7 @@ const preguntasByCategoria = async (req, res) => {
         {
           model: Opcion,
           as: 'Opciones', // Especifica el alias para Opciones (si lo definiste)
-          attributes: ['id', 'texto', 'es_correcta'],
+          attributes: ['id', 'texto', 'texto_en', 'es_correcta'],
         },
       ],
       where: dificultad ? { dificultad: dificultad.toLowerCase() } : {},

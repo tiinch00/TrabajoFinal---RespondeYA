@@ -25,8 +25,18 @@ const show = async (req, res) => {
 };
 
 const store = async (req, res) => {
-  const { sala_id, categoria_id, modo, total_preguntas, estado, created_at, started_at, ended_at } =
-    req.body;
+  const {
+    sala_id,
+    categoria_id,
+    modo,
+    total_preguntas,
+    dificultad_tiempo,
+    dificultad_pregunta,
+    estado,
+    created_at,
+    started_at,
+    ended_at,
+  } = req.body;
   if (!modo) {
     return res.status(400).json({ error: 'modo is required' });
   }
@@ -59,6 +69,8 @@ const store = async (req, res) => {
       categoria_id,
       modo,
       total_preguntas,
+      dificultad_tiempo,
+      dificultad_pregunta,
       estado,
       created_at,
       started_at,

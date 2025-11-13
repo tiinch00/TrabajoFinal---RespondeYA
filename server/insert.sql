@@ -1,6 +1,23 @@
 -- TENER EN CUENTA LOS ID DE CADA TABLA
 -- HAY QUE MODIFICARLAS SEGUN NUESTRA BD
 -- preguntas
+
+-- avatares
+INSERT INTO avatares (id, admin_id, nombre, division, precio_puntos, activo, preview_url) VALUES
+(1, 1, 'Thor', 'Humano', 2000, 1, '/assets/avatares/avatar1.png'),
+(2, 1, 'Julie', 'Humana', 2000, 1, '/assets/avatares/avatar2.png'),
+(3, 1, 'Gaston', 'Humano', 4000, 1, '/assets/avatares/avatar3.png'),
+(4, 1, 'Agustina', 'Humana', 4000, 1, '/assets/avatares/avatar4.png'),
+(5, 1, 'Elio', 'Soldado', 8000, 1, '/assets/avatares/avatar5.png'),
+(6, 1, 'Ana', 'Soldado', 8000, 1, '/assets/avatares/avatar6.png'),
+(7, 1, 'Will', 'Computo', 10000, 1, '/assets/avatares/avatar7.png'),
+(8, 1, 'Valentina', 'Computo', 10000, 1, '/assets/avatares/avatar8.png'),
+(9, 1, 'Fred', 'Master', 20000, 1, '/assets/avatares/avatar9.png'),
+(10, 1, 'Elizabeth', 'Master', 20000, 1, '/assets/avatares/avatar10.png'),
+(11, 1, 'Suko', 'Mago', 30000, 1, '/assets/avatares/avatar11.png'),
+(12, 1, 'Natalia', 'Maga', 30000, 1, '/assets/avatares/avatar12.png'),
+(13, 1, 'Ron', 'Ingeniero', 50000, 1, '/assets/avatares/avatar13.png'),
+(14, 1, 'Ganicus', 'Principal', 100000, 1, '/assets/avatares/avatar14.png');
 INSERT INTO
     `preguntas` -- Geografia
     (

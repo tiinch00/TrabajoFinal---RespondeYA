@@ -30,7 +30,7 @@ const Ranking = () => {
     const fin = inicio + itemsPorPagina;
     setRankingPaginado(ranking.slice(inicio, fin));
   }, [ranking, paginaActual]);
-  console.log(rankingPaginado);
+
   const getData = async () => {
     try {
       const [resUsuarios, resJugadores] = await Promise.all([

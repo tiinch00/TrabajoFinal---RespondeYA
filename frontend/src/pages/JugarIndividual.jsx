@@ -7,6 +7,7 @@ import finalDeJuego from '/sounds/finalDeJuego.wav';
 import fiveSeconds from '/sounds/fiveSeconds.mp3';
 import musicaPreguntas from '/sounds/musicaPreguntasEdit.mp3';
 import { useTranslation } from 'react-i18next';
+import i18n from 'i18next';
 
 import axios from 'axios';
 
@@ -14,6 +15,7 @@ const JugarIndividual = () => {
   const navigate = useNavigate();
   const musicStartedRef = useRef(false);
   const { t } = useTranslation();
+
   const getStoredUser = () => {
     const raw = localStorage.getItem('user');
     if (!raw) return null;
@@ -37,7 +39,7 @@ const JugarIndividual = () => {
     geografía: t('geography'),
     informatica: t('informatic'),
   };
-
+  const [idioma, setIdioma] = useState(i18n.language);
   const { categoria, tiempo, dificultad } = useParams();
   const [preguntas, setPreguntas] = useState([]);
   const [preguntaActual, setPreguntaActual] = useState(null);
@@ -56,22 +58,25 @@ const JugarIndividual = () => {
   const [cronometroPausado, setCronometroPausado] = useState(false);
   const [mostrarEspera, setMostrarEspera] = useState(false);
   const [tiempoTotalJugado, setTiempoTotalJugado] = useState(0);
-  //const [puntos, setPuntos] = useState(0);
+
+  // console.log(tiempo + 1);
+  // console.log(dificultad + 2);
   const user = getStoredUser();
-
-  const [foto] = useState(user.foto_perfil);
-
-  //const entrePreguntasRef = useRef(null);
-
   const timerRef = useRef(null);
   const tiempoRestanteRef = useRef(pasarTiempo(tiempo));
   function pasarTiempo(tiempo) {
     if (tiempo === 'Facíl' || tiempo === 'Easy') return 15;
     if (tiempo === 'Media' || tiempo === 'Medium') return 12;
-    if (tiempo === 'Dificíl' || tiempo === 'Hard') return 8;
+    if (tiempo === 'Difícil' || tiempo === 'Hard') return 8;
     return '';
   }
-
+  useEffect(() => {
+    const handleLangChange = (lng) => setIdioma(lng);
+    i18n.on('languageChanged', handleLangChange);
+    return () => {
+      i18n.off('languageChanged', handleLangChange);
+    };
+  }, []);
   // detener musica cuando el juego termina
   useEffect(() => {
     if (juegoTerminado) {
@@ -104,7 +109,7 @@ const JugarIndividual = () => {
           dificultadTraducida = 'facil';
         if (dificultadTraducida === 'medium' || dificultadTraducida === 'media')
           dificultadTraducida = 'normal';
-        if (dificultadTraducida === 'hard' || dificultadTraducida === 'dificíl')
+        if (dificultadTraducida === 'hard' || dificultadTraducida === 'difícil')
           dificultadTraducida = 'dificil';
 
         // let categoriaTraducida = categoria;
@@ -222,7 +227,7 @@ const JugarIndividual = () => {
       puntosDificultad = 5 * respuestasCor.length;
     if (dificult.includes('media') || dificult.includes('medium'))
       puntosDificultad = 10 * respuestasCor.length;
-    if (dificult.includes('dificíl') || dificult.includes('hard'))
+    if (dificult.includes('difícil') || dificult.includes('hard'))
       puntosDificultad = 15 * respuestasCor.length;
     console.log(puntos);
     console.log(puntosDificultad);
@@ -292,6 +297,20 @@ const JugarIndividual = () => {
 
   const guardarPartidaEnBD = async (respuestasFinales, tiempoTotal) => {
     try {
+      let diffTiempo = tiempo.toLowerCase();
+
+      if (diffTiempo.includes('facíl') || diffTiempo.includes('easy')) diffTiempo = 'facil';
+      if (diffTiempo.includes('media') || diffTiempo.includes('medium')) diffTiempo = 'normal';
+      if (diffTiempo.includes('difícil') || diffTiempo.includes('hard')) diffTiempo = 'dificil';
+
+      let dificultadPregunta = dificultad.toLocaleLowerCase();
+      if (dificultadPregunta.includes('facíl') || dificultadPregunta.includes('easy'))
+        dificultadPregunta = 'facil';
+      if (dificultadPregunta.includes('media') || dificultadPregunta.includes('medium'))
+        dificultadPregunta = 'normal';
+      if (dificultadPregunta.includes('difícil') || dificultadPregunta.includes('hard'))
+        dificultadPregunta = 'dificil';
+
       const respuestasCorrectas = respuestasFinales.filter((r) => r.es_correcta).length;
       const respuestasIncorrectas = respuestasFinales.length - respuestasCorrectas;
       const datosPartida = {
@@ -299,6 +318,8 @@ const JugarIndividual = () => {
         categoria_id: categoriaId,
         modo: 'individual',
         total_preguntas: preguntas.length,
+        dificultad_tiempo: diffTiempo,
+        dificultad_pregunta: dificultadPregunta,
         estado: 'finalizada',
         created_at: new Date(),
         started_at: new Date(),
@@ -573,7 +594,7 @@ const JugarIndividual = () => {
               </div>
 
               <p className='text-2xl font-bold text-white mb-8 leading-relaxed'>
-                {preguntaActual.enunciado}
+                {idioma === 'en' ? preguntaActual.enunciado_en : preguntaActual.enunciado}
               </p>
 
               <div className='space-y-4'>
@@ -594,7 +615,7 @@ const JugarIndividual = () => {
                       onClick={() => handleGuardarRespuesta(opcion)}
                       disabled={!!respuestaSeleccionada}
                     >
-                      {opcion.texto}
+                      {idioma === 'en' ? opcion.texto_en : opcion.texto}
                     </button>
                   );
                 })}

@@ -4,15 +4,18 @@
 CREATE TABLE users (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     role ENUM('jugador', 'administrador') NULL,
-    name VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL UNIQUE,
     email VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
+    pais VARCHAR(100) NOT NULL,
+    foto_perfil VARCHAR(255) NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+
 
 -- =========================================================
--- JUGADORES (1:1 con users, PK propia + user_id único)
+-- JUGADORES (1:1 con users)
 -- =========================================================
 CREATE TABLE jugadores (
     jugador_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -25,7 +28,7 @@ CREATE TABLE jugadores (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
 -- =========================================================
--- ADMINISTRADORES (1:1 con users, PK propia + user_id único)
+-- ADMINISTRADORES (1:1 con users)
 -- =========================================================
 CREATE TABLE administradores (
     admin_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -39,8 +42,6 @@ CREATE TABLE administradores (
 -- =========================================================
 -- AMIGOS (entre jugadores)
 -- =========================================================
-DROP TABLE IF EXISTS amigos;
-
 CREATE TABLE amigos (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     jugador_id INT UNSIGNED NOT NULL,
@@ -54,44 +55,46 @@ CREATE TABLE amigos (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
 CREATE INDEX idx_amigos_jugador ON amigos (jugador_id);
-
 CREATE INDEX idx_amigos_amigo ON amigos (amigo_id);
 
 -- =========================================================
--- CATALOGO DE PREGUNTAS
+-- CATALOGO DE PREGUNTAS Y OPCIONES (BILINGÜE)
 -- =========================================================
 CREATE TABLE categorias (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     admin_id INT UNSIGNED NULL,
-    -- ← UNSIGNED para matchear
     nombre VARCHAR(100) NOT NULL UNIQUE,
-    descripcion VARCHAR(255) NOT NULL UNIQUE,
-    CONSTRAINT fk_categorias_admin FOREIGN KEY (admin_id) REFERENCES administradores(admin_id) ON UPDATE CASCADE ON DELETE RESTRICT
+    descripcion VARCHAR(255) NOT NULL,
+    CONSTRAINT fk_categorias_admin FOREIGN KEY (admin_id) REFERENCES administradores(admin_id)
+        ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
 CREATE TABLE preguntas (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     categoria_id INT UNSIGNED NOT NULL,
     admin_id INT UNSIGNED NULL,
-    -- ← UNSIGNED
-    enunciado TEXT NOT NULL,
+    enunciado_es TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+    enunciado_en TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
     dificultad ENUM('facil', 'normal', 'dificil') NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_preguntas_admin FOREIGN KEY (admin_id) REFERENCES administradores(admin_id) ON UPDATE CASCADE ON DELETE RESTRICT,
-    CONSTRAINT fk_preguntas_categoria FOREIGN KEY (categoria_id) REFERENCES categorias(id) ON UPDATE CASCADE ON DELETE CASCADE
+    CONSTRAINT fk_preguntas_admin FOREIGN KEY (admin_id) REFERENCES administradores(admin_id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_preguntas_categoria FOREIGN KEY (categoria_id) REFERENCES categorias(id)
+        ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
--- OPCIONES
 CREATE TABLE opciones (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     admin_id INT UNSIGNED NULL,
-    -- ← UNSIGNED
     pregunta_id INT UNSIGNED NOT NULL,
-    texto VARCHAR(255) NOT NULL,
+    texto_es VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+    texto_en VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
     es_correcta TINYINT(1) NOT NULL DEFAULT 0,
-    CONSTRAINT fk_opciones_admin FOREIGN KEY (admin_id) REFERENCES administradores(admin_id) ON UPDATE CASCADE ON DELETE RESTRICT,
-    CONSTRAINT fk_opciones_pregunta FOREIGN KEY (pregunta_id) REFERENCES preguntas(id) ON UPDATE CASCADE ON DELETE CASCADE
+    CONSTRAINT fk_opciones_admin FOREIGN KEY (admin_id) REFERENCES administradores(admin_id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_opciones_pregunta FOREIGN KEY (pregunta_id) REFERENCES preguntas(id)
+        ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
 -- =========================================================
@@ -104,9 +107,8 @@ CREATE TABLE salas (
     max_jugadores TINYINT UNSIGNED NOT NULL DEFAULT 2,
     estado ENUM('esperando', 'en_curso', 'cancelada') NOT NULL DEFAULT 'esperando',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_salas_categoria FOREIGN KEY (categoria_id) REFERENCES categorias(id) ON UPDATE CASCADE ON DELETE
-    SET
-        NULL
+    CONSTRAINT fk_salas_categoria FOREIGN KEY (categoria_id) REFERENCES categorias(id)
+        ON UPDATE CASCADE ON DELETE SET NULL
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
 CREATE TABLE sala_jugadores (
@@ -114,8 +116,10 @@ CREATE TABLE sala_jugadores (
     sala_id INT UNSIGNED NOT NULL,
     jugador_id INT UNSIGNED NOT NULL,
     joined_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_sj_sala FOREIGN KEY (sala_id) REFERENCES salas(id) ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT fk_sj_jugador FOREIGN KEY (jugador_id) REFERENCES jugadores(jugador_id) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_sj_sala FOREIGN KEY (sala_id) REFERENCES salas(id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_sj_jugador FOREIGN KEY (jugador_id) REFERENCES jugadores(jugador_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT uc_sj_unico UNIQUE (sala_id, jugador_id)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
@@ -126,25 +130,29 @@ CREATE TABLE partidas (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     sala_id INT UNSIGNED NULL,
     categoria_id INT UNSIGNED NULL,
+    dificultad_tiempo  VARCHAR(20),
+    dificultad_pregunta  VARCHAR(20),
     modo ENUM('individual', 'multijugador') NOT NULL,
     total_preguntas TINYINT UNSIGNED NOT NULL,
     estado ENUM('pendiente', 'en_curso', 'finalizada', 'abandonada') NOT NULL DEFAULT 'en_curso',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     started_at DATETIME NULL,
     ended_at DATETIME NULL,
-    CONSTRAINT fk_partidas_sala FOREIGN KEY (sala_id) REFERENCES salas(id) ON UPDATE CASCADE ON DELETE RESTRICT,
-    CONSTRAINT fk_partidas_categoria FOREIGN KEY (categoria_id) REFERENCES categorias(id) ON UPDATE CASCADE ON DELETE
-    SET
-        NULL,
-        CONSTRAINT uc_partidas_sala UNIQUE (sala_id) -- Nota: se eliminó el CHECK que referenciaba 'usuario_id' porque esa columna no existe
+    CONSTRAINT fk_partidas_sala FOREIGN KEY (sala_id) REFERENCES salas(id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_partidas_categoria FOREIGN KEY (categoria_id) REFERENCES categorias(id)
+        ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT uc_partidas_sala UNIQUE (sala_id)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
 CREATE TABLE partida_jugadores (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     partida_id INT UNSIGNED NOT NULL,
     jugador_id INT UNSIGNED NOT NULL,
-    CONSTRAINT fk_pj_partida FOREIGN KEY (partida_id) REFERENCES partidas(id) ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT fk_pj_jugador FOREIGN KEY (jugador_id) REFERENCES jugadores(jugador_id) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_pj_partida FOREIGN KEY (partida_id) REFERENCES partidas(id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_pj_jugador FOREIGN KEY (jugador_id) REFERENCES jugadores(jugador_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT uc_pj_unico UNIQUE (partida_id, jugador_id)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
@@ -156,8 +164,10 @@ CREATE TABLE partida_preguntas (
     question_text_copy TEXT NULL,
     correct_option_id_copy INT UNSIGNED NULL,
     correct_option_text_copy VARCHAR(255) NULL,
-    CONSTRAINT fk_pp_partida FOREIGN KEY (partida_id) REFERENCES partidas(id) ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT fk_pp_pregunta FOREIGN KEY (pregunta_id) REFERENCES preguntas(id) ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_pp_partida FOREIGN KEY (partida_id) REFERENCES partidas(id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_pp_pregunta FOREIGN KEY (pregunta_id) REFERENCES preguntas(id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
     CONSTRAINT uc_pp_orden UNIQUE (partida_id, orden)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
@@ -170,8 +180,10 @@ CREATE TABLE estadisticas (
     total_correctas INT UNSIGNED NOT NULL DEFAULT 0,
     total_incorrectas INT UNSIGNED NOT NULL DEFAULT 0,
     tiempo_total_ms INT UNSIGNED NOT NULL DEFAULT 0,
-    FOREIGN KEY (jugador_id) REFERENCES jugadores(jugador_id) ON UPDATE CASCADE ON DELETE RESTRICT,
-    FOREIGN KEY (partida_id) REFERENCES partidas(id) ON UPDATE CASCADE ON DELETE RESTRICT
+    FOREIGN KEY (jugador_id) REFERENCES jugadores(jugador_id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    FOREIGN KEY (partida_id) REFERENCES partidas(id)
+        ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
 CREATE TABLE respuestas (
@@ -184,11 +196,16 @@ CREATE TABLE respuestas (
     estadistica_id INT UNSIGNED NOT NULL,
     es_correcta TINYINT(1) NOT NULL,
     tiempo_respuesta_ms INT UNSIGNED NOT NULL,
-    CONSTRAINT fk_r_partida FOREIGN KEY (partida_id) REFERENCES partidas(id) ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT fk_r_jugador FOREIGN KEY (jugador_id) REFERENCES jugadores(jugador_id) ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT fk_r_pregunta FOREIGN KEY (pregunta_id) REFERENCES preguntas(id) ON UPDATE CASCADE ON DELETE RESTRICT,
-    CONSTRAINT fk_r_partida_pregunta FOREIGN KEY (partida_pregunta_id) REFERENCES partida_preguntas(id) ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT fk_r_opcion FOREIGN KEY (opcion_elegida_id) REFERENCES opciones(id) ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_r_partida FOREIGN KEY (partida_id) REFERENCES partidas(id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_r_jugador FOREIGN KEY (jugador_id) REFERENCES jugadores(jugador_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_r_pregunta FOREIGN KEY (pregunta_id) REFERENCES preguntas(id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_r_partida_pregunta FOREIGN KEY (partida_pregunta_id) REFERENCES partida_preguntas(id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_r_opcion FOREIGN KEY (opcion_elegida_id) REFERENCES opciones(id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
     CONSTRAINT uc_r_unica UNIQUE (partida_id, jugador_id, pregunta_id)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
@@ -198,13 +215,13 @@ CREATE TABLE respuestas (
 CREATE TABLE avatares (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     admin_id INT UNSIGNED NULL,
-    -- ← UNSIGNED
     nombre VARCHAR(100) NOT NULL,
     division VARCHAR(50) NOT NULL,
     precio_puntos INT UNSIGNED NOT NULL,
     activo TINYINT(1) NOT NULL DEFAULT 1,
     preview_url VARCHAR(255) NULL,
-    CONSTRAINT fk_avatars_admin FOREIGN KEY (admin_id) REFERENCES administradores(admin_id) ON UPDATE CASCADE ON DELETE CASCADE
+    CONSTRAINT fk_avatars_admin FOREIGN KEY (admin_id) REFERENCES administradores(admin_id)
+        ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
 CREATE TABLE user_avatars (
@@ -213,7 +230,9 @@ CREATE TABLE user_avatars (
     avatar_id INT UNSIGNED NOT NULL,
     origen ENUM('compra', 'recompensa', 'admin') NOT NULL DEFAULT 'compra',
     adquirido_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_ua_jugador FOREIGN KEY (jugador_id) REFERENCES jugadores(jugador_id) ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT fk_ua_avatar FOREIGN KEY (avatar_id) REFERENCES avatares(id) ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_ua_jugador FOREIGN KEY (jugador_id) REFERENCES jugadores(jugador_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_ua_avatar FOREIGN KEY (avatar_id) REFERENCES avatares(id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
     CONSTRAINT uc_ua_unico UNIQUE (jugador_id, avatar_id)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
