@@ -95,22 +95,15 @@ export default function registrarEventosSala(io, socket) {
                                 created_at: formatearTimestampParaMySQL(datos.timestamp)
                             });
                             //console.log("Sala creada en la DB para nuevaSala: ", nuevaSala);
-                            if (nuevaSala) {
-                                // 3) se crea el obj sala_jugadores para jugador - creador
-                                // try {
-                                //     const nuevaSala_jugadores = await SalaJugador.create({
-                                //         sala_id: nuevaSala.id,
-                                //         jugador_id: jugador_id,
-                                //         joined_at: formatearTimestampParaMySQL(datos.timestamp)
-                                //     });
-                                // 4) se crea el obj Partida
-                                //if (nuevaSala_jugadores) {
+                            if (nuevaSala) {                             
                                 try {
                                     const nuevaPartida = await Partida.create({
                                         sala_id: nuevaSala.id,
                                         categoria_id: objCategoria.id,
                                         modo: "multijugador",
                                         total_preguntas: 10,
+                                        dificultad_tiempo: datos.tiempo,
+                                        dificultad_pregunta: datos.dificultad,
                                         estado: "pendiente",
                                         created_at: formatearTimestampParaMySQL(datos.timestamp),
                                         started_at: null,
@@ -122,12 +115,16 @@ export default function registrarEventosSala(io, socket) {
                                     const sala = {
                                         jugadores: [], createdAt: Date.now(), config: {
                                             categoria: datos.categoria,
+                                            tiempo: datos.tiempo,
                                             dificultad: datos.dificultad,
-                                            tiempo: formatearTimestampParaMySQL(datos.timestamp),
+                                            timestamp: formatearTimestampParaMySQL(datos.timestamp),
                                             partida_id: nuevaPartida.id,
                                             sala_id: nuevaSala.id,
                                         }
                                     };
+                                    console.log("@@@ Sala  tiempo: ",  datos.tiempo);
+                                    console.log("@@@ Sala dificultad: ", datos.dificultad);
+                                    console.log("@@@ Sala creada en la DB para sala: ", sala);
                                     salas.set(idPartida, sala);
 
                                     // envia el socket con success del primer try
@@ -606,7 +603,7 @@ export default function registrarEventosSala(io, socket) {
                     ganador_jugador_id == null
                         ? 1 // empate: ambos 1, o poné 0/2 según tu criterio
                         : (jugadorId === ganador_jugador_id ? 1 : 0);
-
+                //console.log("tiempo_total_ms: ", st.total_tiempo_ms);
                 try {
                     await Estadistica.update(
                         {
@@ -614,7 +611,7 @@ export default function registrarEventosSala(io, socket) {
                             total_incorrectas: st.total_incorrectas,
                             puntaje_total: st.puntaje_total,
                             posicion,
-                            tiempo_total_ms: st.tiempo_total_ms,
+                            tiempo_total_ms: st.total_tiempo_ms,
                         },
                         { where: { partida_id: partidaId, jugador_id: jugadorId } }
                     );

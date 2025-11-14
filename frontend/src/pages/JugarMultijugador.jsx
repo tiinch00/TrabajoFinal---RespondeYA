@@ -5,6 +5,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import confetti from 'canvas-confetti';
 import correcta from '/sounds/correcta.wav';
 import ficeSeconds from '/sounds/fiveSeconds.mp3';
 import finalDeJuego from '/sounds/finalDeJuego.wav';
@@ -12,49 +13,7 @@ import incorrecta from '/sounds/incorrecta.wav';
 import musicaPreguntas from '/sounds/musicaPreguntasEdit.mp3';
 import { useGame } from '../context/ContextJuego.jsx';
 import useSound from 'use-sound';
-
-// 2) Función pura que devuelve [ganador, perdedor] como objetos
-function getGanadorYPerdedor(creador, invitado, statsCreador, statsInvitado) {
-    if (!creador || !invitado || !statsCreador || !statsInvitado) {
-        return [null, null];
-    }
-
-    const jugadorIdCreador = Number(creador.jugador_id) || null;
-    const jugadorIdInvitado = Number(invitado.jugador_id) || null;
-
-    const pickWinner = (A, B, idA, idB) => {
-        if (A.total_correctas > B.total_correctas) return idA;
-        if (B.total_correctas > A.total_correctas) return idB;
-
-        if (A.total_tiempo_correctas_ms < B.total_tiempo_correctas_ms) return idA;
-        if (B.total_tiempo_correctas_ms < A.total_tiempo_correctas_ms) return idB;
-
-        return null;
-    };
-
-    const ganadorId = pickWinner(
-        statsCreador,
-        statsInvitado,
-        jugadorIdCreador,
-        jugadorIdInvitado
-    );
-
-    if (ganadorId == null) return [null, null];
-
-    const ganadorEsCreador = ganadorId === jugadorIdCreador;
-
-    // 🔥 A partir de acá es donde corregimos:
-    const ganador = ganadorEsCreador
-        ? { ...creador, ...statsCreador }
-        : { ...invitado, ...statsInvitado };
-
-    const perdedor = ganadorEsCreador
-        ? { ...invitado, ...statsInvitado }
-        : { ...creador, ...statsCreador };
-
-    return [ganador, perdedor];
-}
-
+import { useTranslation } from 'react-i18next';
 
 // ===== util: PRNG determinístico y shuffle con seed (para que ambos vean lo mismo)
 function mulberry32(a) {
@@ -96,11 +55,13 @@ export default function JugarMultijugador() {
     const location = useLocation();
     const { id: salaId } = useParams(); // salaId
     const { inicializarSocket } = useGame();
+    const { t } = useTranslation();
 
     //console.log("useParams(): ", useParams());
 
     const musicStartedRef = useRef(false);
     const timerRef = useRef(null);
+    const finPartidaProcesadaRef = useRef(false); // para que no se ejecute 2 vece el ultimo useEffect (guadar_partida)
 
     const [jugadores, setJugadores] = useState([]); // [{userId, nombre, foto_perfil, esCreador}]
     const abs = (p) =>
@@ -132,6 +93,13 @@ export default function JugarMultijugador() {
     const questionStartRef = useRef(null); // tiempo en responder por respuesta
     const [partidasPreguntasDeLaPartida, setPartidasPreguntasDeLaPartida] = useState([]);
     const [jugadorIdGanador, setJugadorIdGanador] = useState(null);
+    const [mostrarEspera, setMostrarEspera] = useState(false); // siguiete pregunta msg...
+
+    // confeti
+    const canvasRef = useRef(null);
+    const confettiInstanceRef = useRef(null);
+
+
 
     const [ganador, setGanador] = useState(null);
     const [perdedor, setPerdedor] = useState(null);
@@ -193,6 +161,98 @@ export default function JugarMultijugador() {
     }, [config, location.state]);
 
     //console.log("config: ", config);
+
+    const actualizarPuntajeJugadorEstadisticas = async (jugador, configuracion) => {
+        try {
+            const jugador_id = jugador.jugador_id;
+
+            await axios.put(
+                `${API}/jugadores/updatePuntajeEstadistica/${jugador_id}`,
+                {
+                    puntaje: jugador.puntaje_total,
+                    partida_id: configuracion.partida_id,
+                }
+            );
+        } catch (error) {
+            console.log('@@@@ Error PUT /jugadores/updatePuntajeEstadistica\n', error);
+        }
+    }
+
+    // 2) Función pura que devuelve [ganador, perdedor] como objetos
+    function getGanadorYPerdedor(creador, invitado, statsCreador, statsInvitado) {
+        if (!creador || !invitado || !statsCreador || !statsInvitado) {
+            return [null, null];
+        }
+
+        const jugadorIdCreador = Number(creador.jugador_id) || null;
+        const jugadorIdInvitado = Number(invitado.jugador_id) || null;
+
+        const pickWinner = (A, B, idA, idB) => {
+            if (A.total_correctas > B.total_correctas) return idA;
+            if (B.total_correctas > A.total_correctas) return idB;
+
+            if (A.total_tiempo_correctas_ms < B.total_tiempo_correctas_ms) return idA;
+            if (B.total_tiempo_correctas_ms < A.total_tiempo_correctas_ms) return idB;
+
+            return null;
+        };
+
+        const ganadorId = pickWinner(
+            statsCreador,
+            statsInvitado,
+            jugadorIdCreador,
+            jugadorIdInvitado
+        );
+
+        if (ganadorId == null) return [null, null];
+
+        const ganadorEsCreador = ganadorId === jugadorIdCreador;
+
+        const ganadorBase = ganadorEsCreador
+            ? { ...creador, ...statsCreador }
+            : { ...invitado, ...statsInvitado };
+
+        const perdedorBase = ganadorEsCreador
+            ? { ...invitado, ...statsInvitado }
+            : { ...creador, ...statsCreador };
+
+        // Puntaje base (por las dudas, fallback a 0)
+        const puntajeBaseGanador = Number(ganadorBase.puntaje_total) || 0;
+        const puntajeBasePerdedor = Number(perdedorBase.puntaje_total) || 0;
+
+        // Aplicar bonus SOLO en los objetos que devolvés al front
+        const ganador = {
+            ...ganadorBase,
+            puntaje_total: puntajeBaseGanador + 1000,
+        };
+
+        const perdedor = {
+            ...perdedorBase,
+            puntaje_total: puntajeBasePerdedor + 500,
+        };
+
+        return [ganador, perdedor];
+    }
+
+    // Ejemplo: handler async (puede ser un socket.on, un controller, etc.)
+    async function finalizarPartida(creador, invitado, statsCreador, statsInvitado, config) {
+        const [ganador, perdedor] = getGanadorYPerdedor(
+            creador,
+            invitado,
+            statsCreador,
+            statsInvitado
+        );
+
+        if (ganador && perdedor) {
+            await Promise.all([
+                actualizarPuntajeJugadorEstadisticas(ganador, config),
+                actualizarPuntajeJugadorEstadisticas(perdedor, config),
+            ]);
+        }
+
+        // acá devolvés al front, o hacés emit, lo que toque:
+        return { ganador, perdedor };
+    }
 
     // 1) Socket: traer/escuchar jugadores (con dedupe)
     useEffect(() => {
@@ -437,17 +497,16 @@ export default function JugarMultijugador() {
     // 5) Guardar respuesta y avanzar
     const handleGuardarRespuesta = (opcion) => {
         setCronometroPausado(true);
+        const elapsedMs = Math.max(
+            1,
+            Math.round(performance.now() - (questionStartRef.current || performance.now()))
+        );
 
-        // tiempo que tardó el jugador en contestar esta pregunta (ms)
-        const elapsedMs = Math.max(1, Math.round(performance.now() - (questionStartRef.current || performance.now())));
-
-        // === NUEVO: construir la respuesta que vamos a guardar y emitir
         const payloadRespuesta = opcion
             ? { ...opcion, tiempo_respuesta_ms: elapsedMs }
             : { texto: 'Sin respuesta', es_correcta: false, tiempo_respuesta_ms: elapsedMs };
 
-        // mantener tu lógica visual/sonidos
-        let nuevasRespuestas = [...respuestas, payloadRespuesta];
+        const nuevasRespuestas = [...respuestas, payloadRespuesta];
 
         if (opcion) {
             setRespuestaSeleccionada(opcion);
@@ -463,37 +522,44 @@ export default function JugarMultijugador() {
 
         setRespuestas(nuevasRespuestas);
 
-        // >>> Emitir mi respuesta para que el otro cliente la reciba
         socketRef.current?.emit('sala:respuesta', {
             salaId,
             userId: currentUserId,
             nombre: currentUserName,
-            indice: contador,          // índice de la pregunta actual
-            respuesta: payloadRespuesta
+            indice: contador,
+            respuesta: payloadRespuesta,
         });
 
+        // ⏳ Esperar 3s para mostrar feedback de correcta/incorrecta
         setTimeout(() => {
             const siguiente = contador + 1;
+
+            // 👉 Mostrar overlay de "siguiente pregunta"
+            setMostrarEspera(true);
+
             if (siguiente < preguntas.length) {
+                // cambiamos la pregunta mientras el overlay está visible
                 setContador(siguiente);
                 setPreguntaActual(preguntas[siguiente]);
                 setRespuestaSeleccionada(null);
                 setRespuestaCorrecta(null);
-                setCronometroPausado(false);
-                // El start de la siguiente se setea en el useEffect (performance.now())
+
+                // dejamos el cartelito 1 segundo más (ajustá a gusto)
+                setTimeout(() => {
+                    setMostrarEspera(false);
+                    setCronometroPausado(false); // vuelve a correr el timer
+                }, 1000);
             } else {
                 setAlerta('Juego terminado ✅');
                 setJuegoTerminado(true);
                 setJuegoIniciado(false);
                 setTiempoRestante(0);
                 playTimeout();
-
-                // TODO: persistencia multijugador si corresponde
-                // - GET /salas/by-codigo/:codigo → partida_id
-                // - enviar respuestas/estadísticas con ese partida_id
+                setMostrarEspera(false);
             }
         }, 3000);
     };
+
 
     // 6) Stop música al terminar
     useEffect(() => {
@@ -562,7 +628,12 @@ export default function JugarMultijugador() {
     const [partidaCompleta, setPartidaCompleta] = useState(null);
     // === NUEVO: al terminar la partida, armo las 20 respuestas (2 jugadores x 10 preguntas), calculo ganador y envío ===
     useEffect(() => {
-        if (!juegoTerminado) return;
+        if (!juegoTerminado) {
+            // por si en algún momento permitís jugar otra partida en la misma pantalla
+            finPartidaProcesadaRef.current = false;
+            return;
+        }
+
         if (!config?.partida_id) return;
         if (!Array.isArray(preguntas) || preguntas.length === 0) return;
         if (!Array.isArray(respuestas) || respuestas.length === 0) return;
@@ -573,7 +644,6 @@ export default function JugarMultijugador() {
 
         const msToSeg = (ms) => (Number.isFinite(ms) ? Math.round(ms / 1000) : null);
 
-        // Construye estadísticas por jugador
         const buildStats = (arrRespuestas) => {
             const total_correctas = arrRespuestas.reduce((a, r) => a + (r.es_correcta ? 1 : 0), 0);
             const total_incorrectas = arrRespuestas.length - total_correctas;
@@ -607,7 +677,6 @@ export default function JugarMultijugador() {
             };
         };
 
-        // Construye las 10 respuestas para cada jugador
         const buildRespuestasPara = (jug) => {
             const jugadorId = Number(jug?.jugador_id) || null;
             if (!Number.isFinite(jugadorId)) return [];
@@ -650,57 +719,110 @@ export default function JugarMultijugador() {
             });
         };
 
-        // Armar las 20 filas derespuestas
+        // calculo respuestas y stats para ambos jugadores (esto lo pueden hacer los dos clientes)
         const respuestasCreador = buildRespuestasPara(creador);
         const respuestasInvitado = buildRespuestasPara(invitado);
 
         const statsCreador = buildStats(respuestasCreador);
         const statsInvitado = buildStats(respuestasInvitado);
 
-        // Determina ganador/perdedor
-        const [ganadorObj, perdedorObj] =
-            getGanadorYPerdedor(creador, invitado, statsCreador, statsInvitado);
+        // 👉 si soy el CREADOR, hago TODO (BD + socket + podio)
+        if (creador && creador.userId === currentUserId) {
+            // evitar duplicar en este cliente
+            if (finPartidaProcesadaRef.current) return;
+            finPartidaProcesadaRef.current = true;
 
-        setGanador(ganadorObj);
-        setPerdedor(perdedorObj);
+            (async () => {
+                const { ganador, perdedor } = await finalizarPartida(
+                    creador,
+                    invitado,
+                    statsCreador,
+                    statsInvitado,
+                    config
+                );
 
-        // Determinar ID ganador para enviar al server
-        const jugadorIdGanador =
-            ganadorObj ? Number(ganadorObj.jugador_id) : null;
+                setGanador(ganador);
+                setPerdedor(perdedor);
 
-        setJugadorIdGanador(jugadorIdGanador);
+                const jugadorIdGanador =
+                    ganador ? Number(ganador.jugador_id) : null;
 
-        // Armar payload final para guardar_respuestas
-        const payload = {
-            salaId,
-            partida_id: Number(config.partida_id),
-            dificultad: String(config?.dificultad || ''),
-            tiempo: String(config?.tiempo || ''),
-            respuestas: [...respuestasCreador, ...respuestasInvitado],
-            resumen: {
-                jugadores: [
-                    {
-                        jugador_id: Number(creador.jugador_id),
-                        ...statsCreador,
-                        ganador: ganadorObj?.jugador_id === creador.jugador_id ? 1 : 0,
+                setJugadorIdGanador(jugadorIdGanador);
+
+                const payload = {
+                    salaId,
+                    partida_id: Number(config.partida_id),
+                    dificultad: String(config?.dificultad || ''),
+                    tiempo: String(config?.tiempo || ''),
+                    respuestas: [...respuestasCreador, ...respuestasInvitado],
+                    resumen: {
+                        jugadores: [
+                            {
+                                jugador_id: Number(creador.jugador_id),
+                                ...statsCreador,
+                                ganador: ganador?.jugador_id === creador.jugador_id ? 1 : 0,
+                            },
+                            {
+                                jugador_id: Number(invitado.jugador_id),
+                                ...statsInvitado,
+                                ganador: ganador?.jugador_id === invitado.jugador_id ? 1 : 0,
+                            },
+                        ],
+                        ganador_jugador_id: jugadorIdGanador,
+                        ended_at: new Date().toISOString().slice(0, 19).replace("T", " "),
                     },
-                    {
-                        jugador_id: Number(invitado.jugador_id),
-                        ...statsInvitado,
-                        ganador: ganadorObj?.jugador_id === invitado.jugador_id ? 1 : 0,
-                    },
-                ],
-                ganador_jugador_id: jugadorIdGanador,
-                ended_at: new Date().toISOString().slice(0, 19).replace("T", " "),
-            },
-        };
+                };
 
-        setPartidaCompleta(payload);
+                setPartidaCompleta(payload);
 
-        // Emitir al servidor
-        socketRef.current.emit('guardar_respuestas', payload, (ack) => {
-            console.log('guardar_respuestas → ack:', ack);
-        });
+                socketRef.current.emit('guardar_respuestas', payload, (ack) => {
+                    console.log('guardar_respuestas → ack:', ack);
+                });
+            })();
+        } else {
+            // 👉 si soy el INVITADO, SOLO calculo ganador/perdedor
+            const [ganadorLocal, perdedorLocal] = getGanadorYPerdedor(
+                creador,
+                invitado,
+                statsCreador,
+                statsInvitado
+            );
+
+            setGanador(ganadorLocal);
+            setPerdedor(perdedorLocal);
+
+            const jugadorIdGanador =
+                ganadorLocal ? Number(ganadorLocal.jugador_id) : null;
+            setJugadorIdGanador(jugadorIdGanador);
+
+            // opcional: también podés armar partidaCompleta local
+            const payload = {
+                salaId,
+                partida_id: Number(config.partida_id),
+                dificultad: String(config?.dificultad || ''),
+                tiempo: String(config?.tiempo || ''),
+                respuestas: [...respuestasCreador, ...respuestasInvitado],
+                resumen: {
+                    jugadores: [
+                        {
+                            jugador_id: Number(creador.jugador_id),
+                            ...statsCreador,
+                            ganador: ganadorLocal?.jugador_id === creador.jugador_id ? 1 : 0,
+                        },
+                        {
+                            jugador_id: Number(invitado.jugador_id),
+                            ...statsInvitado,
+                            ganador: ganadorLocal?.jugador_id === invitado.jugador_id ? 1 : 0,
+                        },
+                    ],
+                    ganador_jugador_id: jugadorIdGanador,
+                    ended_at: new Date().toISOString().slice(0, 19).replace("T", " "),
+                },
+            };
+
+
+            setPartidaCompleta(payload);
+        }
 
     }, [
         juegoTerminado,
@@ -714,338 +836,490 @@ export default function JugarMultijugador() {
         partidasPreguntasDeLaPartida
     ]);
 
+    // crear instancia una vez que el canvas existe
+    useEffect(() => {
+        if (canvasRef.current && !confettiInstanceRef.current) {
+            confettiInstanceRef.current = confetti.create(canvasRef.current, {
+                resize: true,
+                useWorker: true,
+            });
+        }
+    }, []);
 
+    const confetiFinal = () => {
+        const instance = confettiInstanceRef.current;
+        if (!instance) return;
 
+        instance({
+            particleCount: 200,
+            startVelocity: 30,
+            spread: 360,
+            ticks: 60,
+            origin: {
+                x: Math.random(),
+                y: Math.random() - 0.2,
+            },
+        });
+    };
 
+    useEffect(() => {
+        // 👉 Solo cuando la partida terminó
+        if (!juegoTerminado) return;
+
+        // 👉 Y cuando ya existe un ganador en el resumen de la partida
+        const ganadorId = partidaCompleta?.resumen?.ganador_jugador_id;
+        if (!ganadorId) return;
+
+        // 🎉 Esto se ejecuta en *ambos* clientes (creador e invitado)
+        for (let i = 0; i < 10; i++) {
+            setTimeout(confetiFinal, 500 + i * 500);
+        }
+    }, [juegoTerminado, partidaCompleta]);
 
 
     // ====== UI ======
-    if (mostrarContador && contadorInicial > 0) {
-        return (
-            <div className='min-h-screen flex items-start justify-center relative overflow-hidden'>
-                <div className='relative z-10 text-center'>
-                    <h1 className='text-5xl md:text-6xl font-black text-white mb-8 drop-shadow-lg'>
-                        ¡Prepárate!
-                    </h1>
-                    <div className='bg-gradient-to-r from-purple-600 to-purple-700 px-4 py-4 rounded-3xl text-white text-2xl font-bold mb-6 shadow-2xl border-2 border-purple-400'>
-                        🎮 Categoría:{' '}
-                        <span className='text-yellow-300'>
-                            {String(config?.categoria || '').toUpperCase()}
-                        </span>
-                    </div>
-                    <div className='space-y-5 mb-4 bg-black/30 p-4 rounded-2xl backdrop-blur-sm border border-purple-400/50'>
-                        <p className='text-white text-xl flex items-center justify-center gap-3'>
-                            <span className='text-2xl'>⏱️</span>
-                            Tiempo por pregunta:{' '}
-                            <span className='font-bold text-yellow-300'>
-                                {tiempoPorPregunta(config?.tiempo)}s
-                            </span>
-                        </p>
-                        <p className='text-white text-xl flex items-center justify-center gap-3'>
-                            <span className='text-2xl'>📊</span>
-                            Dificultad:{' '}
-                            <span className='font-bold text-orange-400 capitalize'>
-                                {String(config?.dificultad || '')}
-                            </span>
-                        </p>
-                        <p className='text-white text-xl flex items-center justify-center gap-3'>
-                            <span className='text-2xl'>❓</span>
-                            Total de preguntas: <span className='font-bold text-green-400'>10</span>
-                        </p>
-                    </div>
-                    <div className='mb-4'>
-                        <div className='text-[200px] font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-400 to-yellow-300 animate-pulse drop-shadow-[0_0_60px_rgba(250,204,21,1)]'>
-                            {contadorInicial}
-                        </div>
-                    </div>
-                    <div className='text-white text-2xl font-bold animate-bounce'>El juego comenzará en...</div>
-                </div>
-            </div>
-        );
-    }
-
+    // if (mostrarContador && contadorInicial > 0) {
+    //     return (
+    //         <div className='min-h-screen flex items-start justify-center relative overflow-hidden'>
+    //             <div className='relative z-10 text-center'>
+    //                 <h1 className='text-5xl md:text-6xl font-black text-white mb-8 drop-shadow-lg'>
+    //                     ¡Prepárate!
+    //                 </h1>
+    //                 <div className='bg-gradient-to-r from-purple-600 to-purple-700 px-4 py-4 rounded-3xl text-white text-2xl font-bold mb-6 shadow-2xl border-2 border-purple-400'>
+    //                     🎮 Categoría:{' '}
+    //                     <span className='text-yellow-300'>
+    //                         {String(config?.categoria || '').toUpperCase()}
+    //                     </span>
+    //                 </div>
+    //                 <div className='space-y-5 mb-4 bg-black/30 p-4 rounded-2xl backdrop-blur-sm border border-purple-400/50'>
+    //                     <p className='text-white text-xl flex items-center justify-center gap-3'>
+    //                         <span className='text-2xl'>⏱️</span>
+    //                         Tiempo por pregunta:{' '}
+    //                         <span className='font-bold text-yellow-300'>
+    //                             {tiempoPorPregunta(config?.tiempo)}s
+    //                         </span>
+    //                     </p>
+    //                     <p className='text-white text-xl flex items-center justify-center gap-3'>
+    //                         <span className='text-2xl'>📊</span>
+    //                         Dificultad:{' '}
+    //                         <span className='font-bold text-orange-400 capitalize'>
+    //                             {String(config?.dificultad || '')}
+    //                         </span>
+    //                     </p>
+    //                     <p className='text-white text-xl flex items-center justify-center gap-3'>
+    //                         <span className='text-2xl'>❓</span>
+    //                         Total de preguntas: <span className='font-bold text-green-400'>10</span>
+    //                     </p>
+    //                 </div>
+    //                 <div className='mb-4'>
+    //                     <div className='text-[200px] font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-400 to-yellow-300 animate-pulse drop-shadow-[0_0_60px_rgba(250,204,21,1)]'>
+    //                         {contadorInicial}
+    //                     </div>
+    //                 </div>
+    //                 <div className='text-white text-2xl font-bold animate-bounce'>El juego comenzará en...</div>
+    //             </div>
+    //         </div>
+    //     );
+    // }
     return (
         <div className='w-full h-full text-white pt-5 mb-10'>
+            {/* Canvas SIEMPRE montado */}
+            <canvas
+                ref={canvasRef}
+                style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    pointerEvents: 'none',
+                    zIndex: 9999,
+                }}
+            />
 
-
-            {/* Centro - Preguntas */}
-            <div className='col-span-3 flex flex-col items-center justify-start'>
-                {loading ? (
-                    <div className='text-center space-y-4'>
-                        <p className='text-white text-2xl font-bold'>Cargando preguntas...</p>
-                        {alerta && <p className='text-white/80'>{alerta}</p>}
-                    </div>
-                ) : alerta ? (
-                    <>
-
-                        {console.log("ganador: ", ganador)}
-                        {console.log("perdedor: ", perdedor)}
-
-                        <Link
-                            to='/'
-                            className='inline-flex items-center text-yellow-600 hover:text-yellow-800 mb-3 transition-colors'
-                        >
-                            <svg className='w-5 h-5 mr-2' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M15 19l-7-7 7-7' />
-                            </svg>
-                            volver
-                        </Link>
-
-                        {/* muestra "juego terminado" */}
-                        <div className='bg-red-500/20 border-2 border-red-500 text-red-200 p-6 mt-5 rounded-2xl text-xl font-bold text-center'>
-                            {alerta}
+            {mostrarContador && contadorInicial > 0 ? (
+                // 🧮 PANTALLA DE CONTADOR (lo que antes estaba en el return temprano)
+                <div className='min-h-screen flex items-start justify-center relative overflow-hidden'>
+                    <div className='relative z-10 text-center'>
+                        <h1 className='text-5xl md:text-6xl font-black text-white mb-8 drop-shadow-lg'>
+                            ¡Prepárate!
+                        </h1>
+                        <div className='bg-gradient-to-r from-purple-600 to-purple-700 px-4 py-4 rounded-3xl text-white text-2xl font-bold mb-6 shadow-2xl border-2 border-purple-400'>
+                            🎮 Categoría:{' '}
+                            <span className='text-yellow-300'>
+                                {String(config?.categoria || '').toUpperCase()}
+                            </span>
                         </div>
-
-                        {/* PODIO de juego terminado */}
-                        <div className='flex flex-row items-end mt-10'>
-
-                            {/* ganador */}
-                            <div className='flex flex-col items-center'>
-                                {/* número 1 */}
-                                <span className='mb-2 w-10 h-10 rounded-full bg-yellow-400 text-slate-900 
-                                    flex items-center justify-center text-xl font-extrabold'>
-                                    1
+                        <div className='space-y-5 mb-4 bg-black/30 p-4 rounded-2xl backdrop-blur-sm border border-purple-400/50'>
+                            <p className='text-white text-xl flex items-center justify-center gap-3'>
+                                <span className='text-2xl'>⏱️</span>
+                                Tiempo por pregunta:{' '}
+                                <span className='font-bold text-yellow-300'>
+                                    {tiempoPorPregunta(config?.tiempo)}s
                                 </span>
-
-                                <div className='w-52'>
-                                    <div className='flex flex-col items-center justify-start'>
-                                        <div className='bg-gradient-to-b from-blue-600/40 to-blue-700/70 p-6 shadow-xl w-full rounded-l-lg rounded-tr-lg'>
-                                            <div className='flex flex-col items-center'>
-                                            {console.log("ganadaor: desde adentro ", ganador)}
-                                                {ganador ? (
-                                                    
-                                                    <>
-                                                        {ganador?.foto_perfil && ganador?.foto_perfil !== `${API}/uploads/default.png` && ganador?.foto_perfil !== `/uploads/default.png` ? (
-                                                            <img
-                                                                src={abs(ganador?.foto_perfil)}
-                                                                alt='ganador'
-                                                                className='w-24 h-24 rounded-full object-cover border-4 border-yellow-300 shadow-lg mb-4'
-                                                            />
-                                                        ) : (
-                                                            <div className='w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-5xl mb-4 shadow-lg'>
-                                                                👤
-                                                            </div>
-                                                        )}
-                                                        <span className='bg-blue-900 px-4 py-2 rounded-full text-sm font-bold text-center text-yellow-300'>
-                                                            {ganador?.nombre || 'ganador'}
-                                                        </span>
-                                                        <span className='text-xs mt-2 opacity-70'>{ganador?.puntaje_total} puntos!</span>
-                                                    </>
-                                                ) : (
-                                                    <div className='w-24 h-24 rounded-full bg-white/20' />
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* perdedor */}
-                            <div className='flex flex-col items-center mt-6'>
-                                {/* número 2 */}
-                                <span className='mb-2 w-8 h-8 rounded-full bg-gray-300 text-slate-900 
-                                    flex items-center justify-center text-md font-bold'>
-                                    2
+                            </p>
+                            <p className='text-white text-xl flex items-center justify-center gap-3'>
+                                <span className='text-2xl'>📊</span>
+                                Dificultad:{' '}
+                                <span className='font-bold text-orange-400 capitalize'>
+                                    {String(config?.dificultad || '')}
                                 </span>
-
-                                <div className='w-44'>
-                                    <div className='flex flex-col items-center gap-4'>
-                                        <div className='bg-gradient-to-b from-green-600/40 to-green-700/70 p-4 shadow-xl w-full rounded-r-lg'>
-                                            <div className='flex flex-col items-center '>
-                                                {perdedor ? (
-                                                    <>
-                                                        {perdedor.foto_perfil && perdedor.foto_perfil !== `/uploads/default.png` && perdedor?.foto_perfil !== `/uploads/default.png` ? (
-                                                            <img
-                                                                src={`${API}${perdedor.foto_perfil}`}
-                                                                alt='perdedor'
-                                                                className='w-20 h-20 rounded-full object-cover border-4 border-green-300 shadow-lg mb-4'
-                                                            />
-                                                        ) : (
-                                                            <div className='w-20 h-20 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-4xl mb-4 shadow-lg'>
-                                                                👤
-                                                            </div>
-                                                        )}
-                                                        <span className='bg-green-800 px-4 py-2 rounded-full text-sm font-bold text-center text-yellow-300'>
-                                                            {perdedor?.nombre || 'perdedor'}
-                                                        </span>
-                                                        <span className='text-xs mt-2 opacity-70'>{perdedor?.puntaje_total} puntos!</span>
-                                                    </>
-                                                ) : (
-                                                    <div className='w-20 h-20 rounded-full bg-white/20' />
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                        </div>
-
-                        <div className='bg-black/50 mt-5 rounded-full w-96 text-center'>
-                            <p className=' text-xl font-bold text-gray-200 p-4'>
-                                {ganador
-                                    ? `¡El ganador es ${ganador?.nombre}!`
-                                    : 'Calculando ganador...'}
+                            </p>
+                            <p className='text-white text-xl flex items-center justify-center gap-3'>
+                                <span className='text-2xl'>❓</span>
+                                Total de preguntas: <span className='font-bold text-green-400'>10</span>
                             </p>
                         </div>
-
-
-                        {juegoTerminado && (
-                            // ==============================  Resumen de Respuestas =======================================
-                            <div className='bg-black/50 rounded-2xl p-8 mt-10 w-full max-w-2xl'>
-                                {/*console.log(juegoTerminado)*/}
-                                {/*console.log(respuestas)*/}
-                                {console.log("RespuestasPorJugador: ", respuestasPorJugador)}
-                                {console.log("partidaCompleta: ", partidaCompleta)}
-                                <h2 className='text-2xl font-bold text-yellow-300 mb-6'>Resumen de Respuestas</h2>
-                                <div className='space-y-3 max-h-64 overflow-y-auto'>
-                                    {respuestas.map((respuesta, index) => (
-                                        <div key={index} className='bg-purple-500/20 p-3 rounded-lg border border-purple-400'>
-                                            <p className='text-sm'>
-                                                <span className='font-bold text-yellow-300'>P{index + 1}:</span> {respuesta.texto}
-                                                <span
-                                                    className={`ml-2 font-bold ${respuesta.es_correcta ? 'text-green-400' : 'text-red-400'
-                                                        }`}
-                                                >
-                                                    {respuesta.es_correcta ? '✓' : '✗'}
-                                                </span>
-                                            </p>
-                                        </div>
-                                    ))}
-                                </div>
+                        <div className='mb-4'>
+                            <div className='text-[200px] font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-400 to-yellow-300 animate-pulse drop-shadow-[0_0_60px_rgba(250,204,21,1)]'>
+                                {contadorInicial}
                             </div>
-                        )}
-                    </>
-                ) : preguntaActual && juegoIniciado ? (
-                    <>
+                        </div>
+                        <div className='text-white text-2xl font-bold animate-bounce'>
+                            El juego comenzará en...
+                        </div>
+                    </div>
+                </div>
+            ) : (
+                // 🎮 ACA VA TODO LO QUE YA TENÍAS: preguntas / podio / resumen
+                <div className='col-span-3 flex flex-col items-center justify-start'>
+                    {loading ? (
+                        <div className='text-center space-y-4'>
+                            <p className='text-white text-2xl font-bold'>Cargando preguntas...</p>
+                            {alerta && <p className='text-white/80'>{alerta}</p>}
+                        </div>
+                    ) : alerta ? (
+                        <>
+                            {/* {console.log("ganador: ", ganador)} */}
+                            {/* {console.log("perdedor: ", perdedor)} */}
+                            {/* {console.log("config: ", config)} */}
 
-                        {/* === NUEVO CSS: reloj centrado arriba, como en “individual” === */}
-                        <div className='w-full h-full text-white flex items-center justify-center'>
-                            <div
-                                className={`rounded-3xl px-6 py-4 text-center shadow-2xl border-4 w-40 ${tiempoRestante <= 5 && tiempoRestante > 0
-                                    ? 'bg-gradient-to-b from-red-500 to-orange-600 border-red-300/30 animate-pulse'
-                                    : 'bg-gradient-to-b from-yellow-300/80 to-yellow-400/80 border-yellow-400'
-                                    }`}
+                            <Link
+                                to='/'
+                                className='inline-flex items-center text-yellow-600 hover:text-yellow-800 mb-3 transition-colors'
                             >
-                                <p className='text-sm font-bold text-gray-800 mb-2'>⏱️ TIEMPO</p>
-                                <p
-                                    className={`text-5xl font-black ${tiempoRestante <= 5 && tiempoRestante > 0 ? 'text-white' : 'text-red-600'
+                                <svg className='w-5 h-5 mr-2' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                                    <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M15 19l-7-7 7-7' />
+                                </svg>
+                                volver
+                            </Link>
+
+                            {/* muestra "juego terminado" */}
+                            <div className='bg-red-500/20 border-2 border-red-500 text-red-200 p-6 mt-5 rounded-2xl text-xl font-bold text-center'>
+                                {alerta}
+                            </div>
+
+                            {/* PODIO de juego terminado */}
+                            <div className='flex flex-row items-end mt-10'>
+
+                                {/* ganador */}
+                                <div className='flex flex-col items-center'>
+                                    {/* número 1 */}
+                                    <span className='mb-2 w-10 h-10 rounded-full bg-yellow-400 text-slate-900 
+                                    flex items-center justify-center text-xl font-extrabold'>
+                                        1
+                                    </span>
+
+                                    <div className='w-52'>
+                                        <div className='flex flex-col items-center justify-start'>
+                                            <div className='bg-gradient-to-b from-blue-600/40 to-blue-700/70 p-6 shadow-xl w-full rounded-l-lg rounded-tr-lg'>
+                                                <div className='flex flex-col items-center'>
+                                                    {ganador ? (
+
+                                                        <>
+                                                            {ganador?.foto_perfil && ganador?.foto_perfil !== `${API}/uploads/default.png` && ganador?.foto_perfil !== `/uploads/default.png` ? (
+                                                                <img
+                                                                    src={abs(ganador?.foto_perfil)}
+                                                                    alt='ganador'
+                                                                    className='w-24 h-24 rounded-full object-cover border-4 border-yellow-300 shadow-lg mb-4'
+                                                                />
+                                                            ) : (
+                                                                <div className='w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-5xl mb-4 shadow-lg'>
+                                                                    👤
+                                                                </div>
+                                                            )}
+                                                            <span className='bg-blue-900 px-4 py-2 rounded-full text-sm font-bold text-center text-yellow-300'>
+                                                                {ganador?.nombre || 'ganador'}
+                                                            </span>
+                                                            <span className='text-xs mt-2 opacity-70'>{ganador?.puntaje_total} puntos!</span>
+                                                        </>
+                                                    ) : (
+                                                        <div className='w-24 h-24 rounded-full bg-white/20' />
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* perdedor */}
+                                <div className='flex flex-col items-center mt-6'>
+                                    {/* número 2 */}
+                                    <span className='mb-2 w-8 h-8 rounded-full bg-gray-300 text-slate-900 
+                                    flex items-center justify-center text-md font-bold'>
+                                        2
+                                    </span>
+
+                                    <div className='w-44'>
+                                        <div className='flex flex-col items-center gap-4'>
+                                            <div className='bg-gradient-to-b from-green-600/40 to-green-700/70 p-4 shadow-xl w-full rounded-r-lg'>
+                                                <div className='flex flex-col items-center '>
+                                                    {perdedor ? (
+                                                        <>
+                                                            {perdedor.foto_perfil && perdedor.foto_perfil !== `/uploads/default.png` && perdedor?.foto_perfil !== `/uploads/default.png` ? (
+                                                                <img
+                                                                    src={`${API}${perdedor.foto_perfil}`}
+                                                                    alt='perdedor'
+                                                                    className='w-20 h-20 rounded-full object-cover border-4 border-green-300 shadow-lg mb-4'
+                                                                />
+                                                            ) : (
+                                                                <div className='w-20 h-20 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-4xl mb-4 shadow-lg'>
+                                                                    👤
+                                                                </div>
+                                                            )}
+                                                            <span className='bg-green-800 px-4 py-2 rounded-full text-sm font-bold text-center text-yellow-300'>
+                                                                {perdedor?.nombre || 'perdedor'}
+                                                            </span>
+                                                            <span className='text-xs mt-2 opacity-70'>{perdedor?.puntaje_total} puntos!</span>
+                                                        </>
+                                                    ) : (
+                                                        <div className='w-20 h-20 rounded-full bg-white/20' />
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <div className='bg-black/50 mt-5 rounded-full w-96 text-center'>
+                                <p className=' text-xl font-bold text-gray-200 p-4'>
+                                    {ganador
+                                        ? `¡${ganador?.nombre} ha ganado esta partida!`
+                                        : 'Calculando ganador...'}
+                                </p>
+                            </div>
+
+
+                            {juegoTerminado && (
+                                // ==============================  Resumen de Respuestas =======================================
+                                <div className='bg-black/50 rounded-2xl p-8 mt-10 w-full max-w-2xl'>
+                                    {/*console.log(juegoTerminado)*/}
+                                    {/*console.log(respuestas)*/}
+                                    {console.log("RespuestasPorJugador: ", respuestasPorJugador)}
+                                    {console.log("partidaCompleta: ", partidaCompleta)}
+                                    <h2 className='text-2xl font-bold text-yellow-300 mb-6'>Resumen de Respuestas</h2>
+                                    <div className='space-y-3 max-h-64 overflow-y-auto'>
+                                        {respuestas.map((respuesta, index) => (
+                                            <div key={index} className='bg-purple-500/20 p-3 rounded-lg border border-purple-400'>
+                                                <p className='text-sm'>
+                                                    <span className='font-bold text-yellow-300'>P{index + 1}:</span> {respuesta.texto}
+                                                    <span
+                                                        className={`ml-2 font-bold ${respuesta.es_correcta ? 'text-green-400' : 'text-red-400'
+                                                            }`}
+                                                    >
+                                                        {respuesta.es_correcta ? '✓' : '✗'}
+                                                    </span>
+                                                </p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    ) : preguntaActual && juegoIniciado ? (
+                        <>
+
+                            {/* === NUEVO CSS: reloj centrado arriba, como en “individual” === */}
+                            <div className='w-full h-full text-white flex items-center justify-center'>
+                                <div
+                                    className={`rounded-3xl px-6 py-4 text-center shadow-2xl border-4 w-40 ${tiempoRestante <= 5 && tiempoRestante > 0
+                                        ? 'bg-gradient-to-b from-red-500 to-orange-600 border-red-300/30 animate-pulse'
+                                        : 'bg-gradient-to-b from-yellow-300/80 to-yellow-400/80 border-yellow-400'
                                         }`}
                                 >
-                                    {tiempoRestante}
-                                </p>
-                                <p className='text-xs font-bold text-gray-800 mt-2'>segundos</p>
+                                    <p className='text-sm font-bold text-gray-800 mb-2'>⏱️ TIEMPO</p>
+                                    <p
+                                        className={`text-5xl font-black ${tiempoRestante <= 5 && tiempoRestante > 0 ? 'text-white' : 'text-red-600'
+                                            }`}
+                                    >
+                                        {tiempoRestante}
+                                    </p>
+                                    <p className='text-xs font-bold text-gray-800 mt-2'>segundos</p>
+                                </div>
                             </div>
-                        </div>
 
-                        {/* titulo de la categoria */}
-                        <div className='bg-gradient-to-r from-orange-500 to-pink-500 rounded-full px-8 py-3 mt-8 text-2xl font-black shadow-lg'>
-                            {String(config?.categoria || '').toUpperCase()}
-                        </div>
+                            {/* titulo de la categoria */}
+                            <div className='bg-gradient-to-r from-orange-500 to-pink-500 rounded-full px-8 py-3 mt-8 text-2xl font-black shadow-lg'>
+                                {String(config?.categoria || '').toUpperCase()}
+                            </div>
 
-                        {/* === NUEVO CSS: layout en 5 columnas (jugador izq, centro, jugador der) === */}
-                        <div className='grid grid-cols-3 gap-6 h-fit pt-10'>
+                            {/* === NUEVO CSS: layout en 5 columnas (jugador izq, centro, jugador der) === */}
+                            <div className='grid grid-cols-3 gap-6 h-fit pt-10'>
 
-                            {/* izquierda - Jugador 1 - creador */}
-                            <div className='col-span-1 flex flex-col items-center justify-start'>
-                                <div className='bg-gradient-to-b from-blue-600/40 to-blue-700/70 rounded-2xl p-6 shadow-xl w-52'>
-                                    <div className='flex flex-col items-center'>
-                                        {creador ? (
-                                            <>
-                                                {creador?.foto_perfil && creador?.foto_perfil !== `${API}/uploads/default.png` ? (
-                                                    <img
-                                                        src={abs(creador?.foto_perfil)}
-                                                        alt='Creador'
-                                                        className='w-24 h-24 rounded-full object-cover border-4 border-yellow-300 shadow-lg mb-4'
-                                                    />
-                                                ) : (
-                                                    <div className='w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-5xl mb-4 shadow-lg'>
-                                                        👤
-                                                    </div>
-                                                )}
-                                                <span className='bg-blue-800 px-4 py-2 rounded-full text-sm font-bold text-center text-yellow-300'>
-                                                    {creador?.nombre || 'Creador'}
-                                                </span>
-                                                <span className='text-xs mt-2 opacity-70'>Creador</span>
-                                            </>
-                                        ) : (
-                                            <div className='w-24 h-24 rounded-full bg-white/20' />
-                                        )}
+                                {/* izquierda - Jugador 1 - creador */}
+                                <div className='col-span-1 flex flex-col items-center justify-start'>
+                                    <div className='bg-gradient-to-b from-blue-600/40 to-blue-700/70 rounded-2xl p-6 shadow-xl w-52'>
+                                        <div className='flex flex-col items-center'>
+                                            {creador ? (
+                                                <>
+                                                    {creador?.foto_perfil && creador?.foto_perfil !== `${API}/uploads/default.png` ? (
+                                                        <img
+                                                            src={abs(creador?.foto_perfil)}
+                                                            alt='Creador'
+                                                            className='w-24 h-24 rounded-full object-cover border-4 border-yellow-300 shadow-lg mb-4'
+                                                        />
+                                                    ) : (
+                                                        <div className='w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-5xl mb-4 shadow-lg'>
+                                                            👤
+                                                        </div>
+                                                    )}
+                                                    <span className='bg-blue-800 px-4 py-2 rounded-full text-sm font-bold text-center text-yellow-300'>
+                                                        {creador?.nombre || 'Creador'}
+                                                    </span>
+                                                    <span className='text-xs mt-2 opacity-70'>Creador</span>
+                                                </>
+                                            ) : (
+                                                <div className='w-24 h-24 rounded-full bg-white/20' />
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-8 w-full max-w-2xl shadow-2xl'>
-                                <div className='mb-6'>
-                                    <span className='text-sm font-bold text-yellow-300'>Pregunta {contador + 1}/10</span>
-                                </div>
 
-                                <p className='text-2xl font-bold text-white mb-8 leading-relaxed'>
-                                    {preguntaActual.enunciado}
-                                </p>
 
-                                <div className='space-y-4'>
-                                    {preguntaActual.Opciones.map((opcion, index) => {
-                                        let colorClase =
-                                            'bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600';
 
-                                        if (respuestaSeleccionada === opcion) {
-                                            colorClase = respuestaCorrecta
-                                                ? 'bg-gradient-to-r from-green-500 to-emerald-500 scale-105'
-                                                : 'bg-gradient-to-r from-red-500 to-pink-500 scale-105';
-                                        }
 
-                                        return (
-                                            <button
-                                                key={index}
-                                                className={`w-full rounded-xl py-4 px-6 cursor-pointer transition-all font-bold text-lg text-white shadow-lg border-2 border-transparent hover:border-yellow-300 disabled:opacity-50 ${colorClase}`}
-                                                onClick={() => handleGuardarRespuesta(opcion)}
-                                                disabled={!!respuestaSeleccionada}
-                                            >
-                                                {opcion.texto}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            </div>
 
-                            {/* derecha - Jugador 2 - invitado */}
-                            <div className='col-span-1 flex flex-col items-center justify-start gap-4'>
-                                <div className='bg-gradient-to-b from-green-600/40 to-green-700/70 rounded-2xl p-6 shadow-xl w-52'>
-                                    <div className='flex flex-col items-center'>
-                                        {invitado ? (
-                                            <>
-                                                {invitado.foto_perfil && invitado.foto_perfil !== `/uploads/default.png` ? (
-                                                    <img
-                                                        src={`${API}${invitado.foto_perfil}`}
-                                                        alt='Invitado'
-                                                        className='w-24 h-24 rounded-full object-cover border-4 border-green-300 shadow-lg mb-4'
-                                                    />
-                                                ) : (
-                                                    <div className='w-24 h-24 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-5xl mb-4 shadow-lg'>
-                                                        👤
-                                                    </div>
-                                                )}
-                                                <span className='bg-green-800 px-4 py-2 rounded-full text-sm font-bold text-center text-yellow-300'>
-                                                    {invitado?.nombre || 'Invitado'}
-                                                </span>
-                                                <span className='text-xs mt-2 opacity-70'>Invitado</span>
-                                            </>
-                                        ) : (
-                                            <div className='w-24 h-24 rounded-full bg-white/20' />
-                                        )}
+                                {mostrarEspera ? (
+                                    <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-8 w-full max-w-2xl shadow-2xl text-center'>
+                                        <div className='flex flex-col items-center justify-center gap-4'>
+                                            <div className='flex justify-center gap-2'>
+                                                <div className='w-3 h-3 bg-yellow-300 rounded-full animate-bounce' />
+                                                <div
+                                                    className='w-3 h-3 bg-yellow-300 rounded-full animate-bounce'
+                                                    style={{ animationDelay: '0.2s' }}
+                                                />
+                                                <div
+                                                    className='w-3 h-3 bg-yellow-300 rounded-full animate-bounce'
+                                                    style={{ animationDelay: '0.4s' }}
+                                                />
+                                            </div>
+                                            <p className='text-2xl font-bold text-yellow-300 animate-pulse'>
+                                                {t('nextQuestion')}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-8 w-full max-w-2xl shadow-2xl'>
+                                        <div className='mb-6'>
+                                            <span className='text-sm font-bold text-yellow-300'>
+                                                Pregunta {contador + 1}/10
+                                            </span>
+                                        </div>
+
+                                        <p className='text-2xl font-bold text-white mb-8 leading-relaxed'>
+                                            {preguntaActual.enunciado}
+                                        </p>
+
+                                        <div className='space-y-4'>
+                                            {preguntaActual.Opciones.map((opcion, index) => {
+                                                let colorClase =
+                                                    'bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600';
+
+                                                if (respuestaSeleccionada === opcion) {
+                                                    colorClase = respuestaCorrecta
+                                                        ? 'bg-gradient-to-r from-green-500 to-emerald-500 scale-105'
+                                                        : 'bg-gradient-to-r from-red-500 to-pink-500 scale-105';
+                                                }
+
+                                                return (
+                                                    <button
+                                                        key={index}
+                                                        className={`w-full rounded-xl py-4 px-6 cursor-pointer transition-all font-bold text-lg text-white shadow-lg border-2 border-transparent hover:border-yellow-300 disabled:opacity-50 ${colorClase}`}
+                                                        onClick={() => handleGuardarRespuesta(opcion)}
+                                                        disabled={!!respuestaSeleccionada}
+                                                    >
+                                                        {opcion.texto}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+
+
+                                {/* <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-8 w-full max-w-2xl shadow-2xl'>
+                                    <div className='mb-6'>
+                                        <span className='text-sm font-bold text-yellow-300'>Pregunta {contador + 1}/10</span>
+                                    </div>
+
+                                    <p className='text-2xl font-bold text-white mb-8 leading-relaxed'>
+                                        {preguntaActual.enunciado}
+                                    </p>
+
+                                    <div className='space-y-4'>
+                                        {preguntaActual.Opciones.map((opcion, index) => {
+                                            let colorClase =
+                                                'bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600';
+
+                                            if (respuestaSeleccionada === opcion) {
+                                                colorClase = respuestaCorrecta
+                                                    ? 'bg-gradient-to-r from-green-500 to-emerald-500 scale-105'
+                                                    : 'bg-gradient-to-r from-red-500 to-pink-500 scale-105';
+                                            }
+
+                                            return (
+                                                <button
+                                                    key={index}
+                                                    className={`w-full rounded-xl py-4 px-6 cursor-pointer transition-all font-bold text-lg text-white shadow-lg border-2 border-transparent hover:border-yellow-300 disabled:opacity-50 ${colorClase}`}
+                                                    onClick={() => handleGuardarRespuesta(opcion)}
+                                                    disabled={!!respuestaSeleccionada}
+                                                >
+                                                    {opcion.texto}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div> */}
+
+                                {/* derecha - Jugador 2 - invitado */}
+                                <div className='col-span-1 flex flex-col items-center justify-start gap-4'>
+                                    <div className='bg-gradient-to-b from-green-600/40 to-green-700/70 rounded-2xl p-6 shadow-xl w-52'>
+                                        <div className='flex flex-col items-center'>
+                                            {invitado ? (
+                                                <>
+                                                    {invitado.foto_perfil && invitado.foto_perfil !== `/uploads/default.png` ? (
+                                                        <img
+                                                            src={`${API}${invitado.foto_perfil}`}
+                                                            alt='Invitado'
+                                                            className='w-24 h-24 rounded-full object-cover border-4 border-green-300 shadow-lg mb-4'
+                                                        />
+                                                    ) : (
+                                                        <div className='w-24 h-24 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-5xl mb-4 shadow-lg'>
+                                                            👤
+                                                        </div>
+                                                    )}
+                                                    <span className='bg-green-800 px-4 py-2 rounded-full text-sm font-bold text-center text-yellow-300'>
+                                                        {invitado?.nombre || 'Invitado'}
+                                                    </span>
+                                                    <span className='text-xs mt-2 opacity-70'>Invitado</span>
+                                                </>
+                                            ) : (
+                                                <div className='w-24 h-24 rounded-full bg-white/20' />
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
+
                             </div>
-
-                        </div>
-                    </>
-                ) : (
-                    <p className='text-xl text-gray-300'>No hay preguntas disponibles.</p>
-                )}
-            </div>
-
-
-        </div >
+                        </>
+                    ) : (
+                        <p className='text-xl text-gray-300'>No hay preguntas disponibles.</p>
+                    )}
+                </div>
+            )}
+        </div>
     );
 }

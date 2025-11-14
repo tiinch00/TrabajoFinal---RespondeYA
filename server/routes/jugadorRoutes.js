@@ -6,7 +6,7 @@ const router = express.Router();
 router.get('/jugadores', jugadorController.index);
 router.get('/jugadores/:jugador_id', jugadorController.show);
 router.put('/jugadores/update/:jugador_id', jugadorController.update);
-
+router.put('/jugadores/updatePuntajeEstadistica/:jugador_id', jugadorController.updatePuntajeEstadisticas);
 router.get('jugador/:user_id', jugadorController.showUser);
 
 export default router;
