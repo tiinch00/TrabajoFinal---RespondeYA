@@ -626,12 +626,12 @@ const JugarIndividual = () => {
           ) : preguntaActual && juegoIniciado ? (
             <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-8 w-full max-w-2xl shadow-2xl'>
               <div className='mb-6'>
-                <span className='text-sm font-bold text-yellow-300'>
+                <span className='text-sm font-bold  text-yellow-300'>
                   Pregunta {contador + 1}/10
                 </span>
               </div>
 
-              <p className='text-2xl font-bold text-white mb-8 leading-relaxed'>
+              <p className='text-3xl font-bold text-white mb-8 text-center leading-relaxed'>
                 {idioma === 'en' ? preguntaActual.enunciado_en : preguntaActual.enunciado}
               </p>
 
