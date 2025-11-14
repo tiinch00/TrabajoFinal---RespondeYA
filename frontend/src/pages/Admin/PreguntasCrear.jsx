@@ -6,6 +6,7 @@ const PreguntasCrear = ({ categoriaID, onCreate }) => {
     admin_id: 1,
     categoria_id: categoriaID,
     enunciado: '',
+    enunciado_en: '',
     dificultad: '',
   });
   const [agregarPregunta, setAgregarPreguntas] = useState(false);
@@ -22,6 +23,7 @@ const PreguntasCrear = ({ categoriaID, onCreate }) => {
 
     let newErrors = {};
     if (!values.enunciado) newErrors.enunciado = 'La pregunta es obligatoria';
+    if (!values.enunciado_en) newErrors.enunciado_en = 'La pregunta en ingles es obligatoria';
     if (!values.dificultad) newErrors.dificultad = 'La dificultad es obligatoria';
 
     setAlerta(newErrors);
@@ -34,7 +36,13 @@ const PreguntasCrear = ({ categoriaID, onCreate }) => {
 
       onCreate(data);
       //setPregunta(data);
-      setValues({ admin_id: 1, categoria_id: categoriaID, enunciado: '', dificultad: '' });
+      setValues({
+        admin_id: 1,
+        categoria_id: categoriaID,
+        enunciado: '',
+        enunciado_en: '',
+        dificultad: '',
+      });
     } catch (error) {
       console.error(error);
     }
@@ -69,6 +77,23 @@ const PreguntasCrear = ({ categoriaID, onCreate }) => {
                 className='w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-400 outline-none resize-none text-gray-600'
               />
               {alerta.enunciado && <p className='text-red-500 text-xs mt-1'>{alerta.enunciado}</p>}
+            </div>
+            <div>
+              <label htmlFor='enunciado' className='block text-sm font-medium text-gray-700 mb-1'>
+                Enunciado en ingles
+              </label>
+              <textarea
+                id='enunciado_en'
+                name='enunciado_en'
+                rows='3'
+                value={values.enunciado_en}
+                onChange={handleChange}
+                placeholder='Escribí la pregunta en ingles...'
+                className='w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-400 outline-none resize-none text-gray-600'
+              />
+              {alerta.enunciado_en && (
+                <p className='text-red-500 text-xs mt-1'>{alerta.enunciado_en}</p>
+              )}
             </div>
 
             <div>

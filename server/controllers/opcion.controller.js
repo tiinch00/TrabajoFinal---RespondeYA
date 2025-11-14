@@ -56,13 +56,32 @@ const storeViejo = async (req, res) => {
 };
 
 const store = async (req, res) => {
-  const { admin_id, opcion1, opcion2, opcion3, opcion4, es_correcta } = req.body;
+  const {
+    admin_id,
+    opcion1,
+    opcion2,
+    opcion3,
+    opcion4,
+    opcion1_en,
+    opcion2_en,
+    opcion3_en,
+    opcion4_en,
+    es_correcta,
+  } = req.body;
   const { pregunta_id } = req.params;
 
   const opciones = [opcion1, opcion2, opcion3, opcion4];
+  const opcionesEn = [opcion1_en, opcion2_en, opcion3_en, opcion4_en];
   const nombres = ['opcion1', 'opcion2', 'opcion3', 'opcion4'];
-  if (!pregunta_id || opciones.every((o) => !o)) {
-    return res.status(400).json({ error: 'pregunta_id y al menos una opción son requeridos' });
+
+  if (!pregunta_id) {
+    return res.status(400).json({ error: 'pregunta_id es requerido' });
+  }
+
+  if (opciones.every((o) => !o) || opcionesEn.every((o) => !o)) {
+    return res.status(400).json({
+      error: 'Se requiere al menos una opción completa (español + inglés)',
+    });
   }
 
   if (!es_correcta || !nombres.includes(es_correcta)) {
@@ -71,25 +90,30 @@ const store = async (req, res) => {
 
   try {
     const pregunta = await Pregunta.findByPk(pregunta_id);
-    if (!pregunta) return res.status(400).json({ error: 'Invalid pregunta_id' });
+    if (!pregunta) {
+      return res.status(404).json({ error: 'Pregunta no encontrada' });
+    }
 
-    // si ya existe una opcion correcta
     const existingCorrectOption = await Opcion.findOne({
       where: { pregunta_id, es_correcta: true },
     });
-    if (existingCorrectOption && opciones.some((_, i) => nombres[i] === es_correcta)) {
-      return res.status(400).json({ error: 'Ya existe una opción correcta para esta pregunta' });
+
+    if (existingCorrectOption) {
+      return res.status(400).json({
+        error: 'Ya existe una opción correcta para esta pregunta',
+      });
     }
 
     const nuevasOpciones = await Promise.all(
       opciones.map((texto, i) =>
-        texto
+        texto && opcionesEn[i]
           ? Opcion.create({
-            admin_id,
-            pregunta_id,
-            texto,
-            es_correcta: nombres[i] === es_correcta,
-          })
+              admin_id,
+              pregunta_id,
+              texto,
+              texto_en: opcionesEn[i],
+              es_correcta: nombres[i] === es_correcta,
+            })
           : null
       )
     );
@@ -101,7 +125,9 @@ const store = async (req, res) => {
     });
   } catch (error) {
     if (error.name === 'SequelizeValidationError') {
-      return res.status(400).json({ error: error.errors.map((e) => e.message) });
+      return res.status(400).json({
+        error: error.errors.map((e) => e.message),
+      });
     }
     console.error(error);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -109,10 +135,22 @@ const store = async (req, res) => {
 };
 
 const update = async (req, res) => {
-  const { admin_id, opcion1, opcion2, opcion3, opcion4, es_correcta } = req.body;
+  const {
+    admin_id,
+    opcion1,
+    opcion2,
+    opcion3,
+    opcion4,
+    opcion1_en,
+    opcion2_en,
+    opcion3_en,
+    opcion4_en,
+    es_correcta,
+  } = req.body;
   const { pregunta_id } = req.params;
 
   const opciones = [opcion1, opcion2, opcion3, opcion4];
+  const opcionesEn = [opcion1_en, opcion2_en, opcion3_en, opcion4_en];
   const nombres = ['opcion1', 'opcion2', 'opcion3', 'opcion4'];
 
   // Validaciones básicas
@@ -138,13 +176,14 @@ const update = async (req, res) => {
     if (opcionesExistentes.length === 0) {
       const nuevasOpciones = await Promise.all(
         opciones.map((texto, i) =>
-          texto
+          texto && opcionesEn[i]
             ? Opcion.create({
-              admin_id,
-              pregunta_id,
-              texto,
-              es_correcta: nombres[i] === es_correcta,
-            })
+                admin_id,
+                pregunta_id,
+                texto,
+                texto_en: opcionesEn[i],
+                es_correcta: nombres[i] === es_correcta,
+              })
             : null
         )
       );
@@ -159,10 +198,12 @@ const update = async (req, res) => {
     await Promise.all(
       opcionesExistentes.map((opcion, i) => {
         const texto = opciones[i];
-        if (texto) {
+        const texto_en = opcionesEn[i];
+        if (texto && texto_en) {
           return opcion.update({
             admin_id,
             texto,
+            texto_en,
             es_correcta: nombres[i] === es_correcta,
           });
         }

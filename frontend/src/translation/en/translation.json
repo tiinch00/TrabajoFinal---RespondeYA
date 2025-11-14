@@ -220,5 +220,6 @@
   "createMatch": "Match Create",
   "nameAlreadyUser": "Name user is already in use",
   "emailAlreadyUser": "Email already in use",
-  "countryReal": "Must be a real Country"
+  "countryReal": "Must be a real Country",
+  "confirm": "Confirm"
 }

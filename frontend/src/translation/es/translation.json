@@ -220,5 +220,6 @@
   "createMatch": "Crear Partida",
   "nameAlreadyUser": "Nombre de usuario ya resgistrado.",
   "emailAlreadyUser": "Email ya registrado.",
-  "countryReal": "Debes seleccionar un pais real"
+  "countryReal": "Debes seleccionar un pais real",
+  "confirm": "Confirmar"
 }

@@ -114,7 +114,7 @@ const AbmEstadisticas = () => {
   if (!chartData) return <div>Sin datos disponibles</div>;
 
   return (
-    <div className='statistics-section'>
+    <div className='statistics-section min-h-screen'>
       <h2 className='text-white text-center mb-8'>Estadísticas Generales</h2>
 
       {/* Resumen general */}

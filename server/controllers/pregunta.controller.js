@@ -85,9 +85,9 @@ const preguntasByCategoria = async (req, res) => {
 };
 
 const store = async (req, res) => {
-  const { admin_id, categoria_id, enunciado, dificultad } = req.body;
+  const { admin_id, categoria_id, enunciado, enunciado_en, dificultad } = req.body;
   //validar
-  if (!categoria_id || !enunciado) {
+  if (!categoria_id || !enunciado || !enunciado_en) {
     return res.status(400).json({ error: 'categoria_id and enunciado are required' });
   }
   //validar
@@ -100,7 +100,13 @@ const store = async (req, res) => {
     return res.status(400).json({ error: 'Invalid dificultad value' });
   }
   try {
-    const pregunta = await Pregunta.create({ admin_id, categoria_id, enunciado, dificultad });
+    const pregunta = await Pregunta.create({
+      admin_id,
+      categoria_id,
+      enunciado,
+      enunciado_en,
+      dificultad,
+    });
     res.json(pregunta);
   } catch (error) {
     if (error.name === 'SequelizeForeignKeyConstraintError') {
@@ -113,8 +119,8 @@ const store = async (req, res) => {
 
 const update = async (req, res) => {
   const { pregunta_id, categoria_id } = req.params;
-  const { admin_id, enunciado, dificultad } = req.body;
-  if (!categoria_id || !enunciado) {
+  const { admin_id, enunciado, enunciado_en, dificultad } = req.body;
+  if (!categoria_id || !enunciado || !enunciado_en) {
     return res.status(400).json({ error: 'categoria_id and enunciado are required' });
   }
   // categoria existe?
@@ -130,7 +136,7 @@ const update = async (req, res) => {
     if (!pregunta) {
       return res.status(404).json({ error: 'Pregunta not found' });
     }
-    await pregunta.update({ admin_id, categoria_id, enunciado, dificultad });
+    await pregunta.update({ admin_id, categoria_id, enunciado, enunciado_en, dificultad });
     res.json(pregunta);
   } catch (error) {
     if (error.name === 'SequelizeForeignKeyConstraintError') {

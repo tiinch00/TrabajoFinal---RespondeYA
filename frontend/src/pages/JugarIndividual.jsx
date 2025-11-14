@@ -8,6 +8,7 @@ import fiveSeconds from '/sounds/fiveSeconds.mp3';
 import musicaPreguntas from '/sounds/musicaPreguntasEdit.mp3';
 import { useTranslation } from 'react-i18next';
 import i18n from 'i18next';
+import confetti from 'canvas-confetti';
 
 import axios from 'axios';
 
@@ -15,6 +16,7 @@ const JugarIndividual = () => {
   const navigate = useNavigate();
   const musicStartedRef = useRef(false);
   const { t } = useTranslation();
+  const canvasRef = useRef(null);
 
   const getStoredUser = () => {
     const raw = localStorage.getItem('user');
@@ -59,6 +61,26 @@ const JugarIndividual = () => {
   const [mostrarEspera, setMostrarEspera] = useState(false);
   const [tiempoTotalJugado, setTiempoTotalJugado] = useState(0);
 
+  useEffect(() => {
+    if (canvasRef.current) {
+      confetti.create(canvasRef.current, {
+        resize: true,
+        useWorker: true,
+      });
+    }
+  }, []);
+  const confetiFinal = () => {
+    confetti({
+      particleCount: 200,
+      startVelocity: 30,
+      spread: 360,
+      ticks: 60,
+      origin: {
+        x: Math.random(),
+        y: Math.random() - 0.2,
+      },
+    });
+  };
   // console.log(tiempo + 1);
   // console.log(dificultad + 2);
   const user = getStoredUser();
@@ -291,6 +313,10 @@ const JugarIndividual = () => {
         setJuegoIniciado(false);
         setTiempoRestante(0);
         playTimeout();
+
+        for (let i = 0; i < 10; i++) {
+          setTimeout(confetiFinal, 500 + i * 500); // 500ms inicial + 150ms entre cada confeti
+        }
       }
     }, 1000);
   };
@@ -534,6 +560,18 @@ const JugarIndividual = () => {
 
   return (
     <div className='w-full h-full text-white pt-5'>
+      <canvas
+        ref={canvasRef}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          pointerEvents: 'none',
+          zIndex: 9999,
+        }}
+      />
       <div className='grid grid-cols-5 gap-6 h-screen pt-15'>
         {/* Panel izquierdo - Usuario */}
         <div className='col-span-1 flex flex-col items-center justify-start'>

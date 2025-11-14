@@ -269,7 +269,7 @@ const Tienda = () => {
     avatares[selected] &&
     jugadorAvatares.some((a) => a.avatar_id === avatares[selected].id);
   return (
-    <div className='min-h-full my-5 py-5 '>
+    <div className='min-h-screen my-5 py-5 '>
       <motion.h1
         className='text-6xl font-extrabold text-center tracking-wider text-white neon-text'
         initial={{ opacity: 0, scale: 0.8 }}

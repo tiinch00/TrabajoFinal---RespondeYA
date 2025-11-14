@@ -51,7 +51,7 @@ const AbmPreguntas = () => {
     }
   };
   return (
-    <div>
+    <div className='w-full min-h-screen'>
       <div className='mb-6 flex flex-col items-center'>
         <Link
           to='/admin/categorias'

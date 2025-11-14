@@ -1,5 +1,5 @@
 import '../assets/css/Ruleta.css';
-
+import confetti from 'canvas-confetti';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
@@ -7,11 +7,13 @@ import { motion } from 'framer-motion';
 import premioRueda from '/sounds/premioRueda.mp3';
 import useSound from 'use-sound';
 import { Link } from 'react-router-dom';
+
 export default function Ruleta() {
   const { t } = useTranslation();
   const barraRef = useRef(null);
   const cooldownTimerRef = useRef(null);
   const audioRef = useRef(null);
+  const canvasRef = useRef(null);
 
   const [playPremio] = useSound(premioRueda, { volume: 0.7 });
 
@@ -23,6 +25,14 @@ export default function Ruleta() {
   const [remainingMs, setRemainingMs] = useState(0);
   const [jugador, setJugador] = useState(null);
 
+  const lanzarConfetti = () => {
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#FFD700', '#FFA500', '#FF6347', '#32CD32', '#00BFFF'],
+    });
+  };
   const [user] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem('user') || 'null');
@@ -35,6 +45,15 @@ export default function Ruleta() {
       playPremio();
     }
   }, [premio, playPremio]);
+
+  useEffect(() => {
+    if (canvasRef.current) {
+      confetti.create(canvasRef.current, {
+        resize: true,
+        useWorker: true,
+      });
+    }
+  }, []);
 
   const userId = user?.id;
   const jugador_id = user?.jugador_id;
@@ -194,7 +213,7 @@ export default function Ruleta() {
 
     // reproducir sonido al ganar
     playPremio();
-
+    lanzarConfetti();
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
@@ -212,7 +231,19 @@ export default function Ruleta() {
   }, [puntos, tiradas]);
 
   return (
-    <div className='flex flex-col items-center mt-5'>
+    <div className='flex flex-col items-center mt-5 min-h-screen'>
+      <canvas
+        ref={canvasRef}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          pointerEvents: 'none',
+          zIndex: 50,
+        }}
+      />
       <Link
         to='/'
         className='inline-flex items-center text-yellow-600 hover:text-yellow-800 mb-3 transition-colors'

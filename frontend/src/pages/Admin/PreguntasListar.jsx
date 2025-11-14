@@ -27,6 +27,7 @@ const PreguntasListar = ({
     admin_id: 1,
     categoria_id: '',
     enunciado: '',
+    enunciado_en: '',
     dificultad: '',
   });
 
@@ -37,15 +38,12 @@ const PreguntasListar = ({
     opcion2: '',
     opcion3: '',
     opcion4: '',
+    opcion1_en: '',
+    opcion2_en: '',
+    opcion3_en: '',
+    opcion4_en: '',
     es_correcta: '',
   });
-
-  // useEffect(() => {
-  //   setPreguntaActiva(null);
-  //   setOpciones([]);
-  //   setMostrarModal(false);
-  //   setMostrarEditarOpciones(false);
-  // }, [preguntas]);
 
   useEffect(() => {
     if (preguntaEditar) {
@@ -53,6 +51,7 @@ const PreguntasListar = ({
         admin_id: 1,
         categoria_id: preguntaEditar.categoria_id,
         enunciado: preguntaEditar.enunciado,
+        enunciado_en: preguntaEditar.enunciado_en,
         dificultad: preguntaEditar.dificultad,
       });
     }
@@ -107,6 +106,10 @@ const PreguntasListar = ({
       opcion2: opts[1]?.texto || '',
       opcion3: opts[2]?.texto || '',
       opcion4: opts[3]?.texto || '',
+      opcion1_en: opts[0]?.texto_en || '',
+      opcion2_en: opts[1]?.texto_en || '',
+      opcion3_en: opts[2]?.texto_en || '',
+      opcion4_en: opts[3]?.texto_en || '',
       es_correcta: (() => {
         const idx = opts.findIndex((x) => x.es_correcta === 1 || x.es_correcta === true);
         return idx >= 0 ? `opcion${idx + 1}` : '';
@@ -122,7 +125,9 @@ const PreguntasListar = ({
     e.preventDefault();
     let newErrors = {};
     if (!form.opcion1 || !form.opcion2 || !form.opcion3 || !form.opcion4)
-      newErrors.opciones = 'Faltan opciones por completar';
+      newErrors.opciones = 'Faltan opciones en español por completar';
+    if (!form.opcion1_en || !form.opcion2_en || !form.opcion3_en || !form.opcion4_en)
+      newErrors.opciones_en = 'Faltan opciones en inglés por completar';
     if (!form.es_correcta) newErrors.es_correcta = 'Debe seleccionar una opción correcta';
 
     setAlerta(newErrors);
@@ -140,6 +145,10 @@ const PreguntasListar = ({
           opcion2: '',
           opcion3: '',
           opcion4: '',
+          opcion1_en: '',
+          opcion2_en: '',
+          opcion3_en: '',
+          opcion4_en: '',
           es_correcta: '',
         });
         setMostrarModal(false);
@@ -157,6 +166,8 @@ const PreguntasListar = ({
     let newErrors = {};
     if (!form.opcion1 || !form.opcion2 || !form.opcion3 || !form.opcion4)
       newErrors.opciones = 'Faltan opciones por completar';
+    if (!form.opcion1_en || !form.opcion2_en || !form.opcion3_en || !form.opcion4_en)
+      newErrors.opciones_en = 'Faltan opciones en inglés por completar';
     if (!form.es_correcta) newErrors.es_correcta = 'Debe seleccionar una opción correcta';
 
     setAlerta(newErrors);
@@ -168,7 +179,18 @@ const PreguntasListar = ({
         form
       );
       if (res.data.ok) {
-        setForm({ opcion1: '', opcion2: '', opcion3: '', opcion4: '', es_correcta: '' });
+        setForm({
+          admin_id: 1,
+          opcion1: '',
+          opcion2: '',
+          opcion3: '',
+          opcion4: '',
+          opcion1_en: '',
+          opcion2_en: '',
+          opcion3_en: '',
+          opcion4_en: '',
+          es_correcta: '',
+        });
         setMostrarEditarOpciones(false);
         await obtenerOpciones(preguntaActiva);
         setPreguntaActiva(null);
@@ -289,8 +311,13 @@ const PreguntasListar = ({
                 <li key={pregunta.id} className='p-3 bg-white border rounded-lg shadow-sm'>
                   <div className='flex justify-between items-start'>
                     <div className='flex-1 pr-3'>
+                      Enunciado Español
                       <p className='text-sm text-gray-800 truncate max-w-[36rem]'>
                         {pregunta.enunciado}
+                      </p>
+                      Enunciado Ingles
+                      <p className='text-sm text-gray-800 truncate max-w-[36rem]'>
+                        {pregunta.enunciado_en}
                       </p>
                       <span
                         className={`inline-block mt-2 text-xs px-2 py-1 rounded ${handleColor(
@@ -331,7 +358,6 @@ const PreguntasListar = ({
                         <div className='text-gray-500 text-sm p-2'>Cargando opciones...</div>
                       ) : opciones && opciones.length > 0 ? (
                         <div>
-                          {/* header con título y botón Editar Opciones alineado a la derecha */}
                           <div className='flex items-center justify-between mb-2'>
                             <div className='text-sm text-gray-700 font-medium'>Opciones</div>
                             <button
@@ -341,7 +367,7 @@ const PreguntasListar = ({
                               Editar Opciones
                             </button>
                           </div>
-
+                          <p>En español</p>
                           <ul className='text-sm text-gray-700 space-y-1 mb-2'>
                             {opciones.map((o) => (
                               <li
@@ -353,6 +379,21 @@ const PreguntasListar = ({
                                 }`}
                               >
                                 {o.texto}
+                              </li>
+                            ))}
+                          </ul>
+                          <p>En ingles</p>
+                          <ul className='text-sm text-gray-700 space-y-1 mb-2'>
+                            {opciones.map((o) => (
+                              <li
+                                key={o.id}
+                                className={`p-2 rounded ${
+                                  o.es_correcta
+                                    ? 'bg-green-100 text-green-800 font-medium'
+                                    : 'bg-gray-100'
+                                }`}
+                              >
+                                {o.texto_en}
                               </li>
                             ))}
                           </ul>
@@ -378,28 +419,36 @@ const PreguntasListar = ({
           {mostrarModal && (
             <div className='fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50'>
               <div className='bg-white rounded-2xl p-6 shadow-lg w-96 relative text-gray-600'>
-                <h2 className='text-lg font-semibold mb-4'>Agregar opciones</h2>
+                <h2 className='text-lg font-semibold mb-4 text-center'>Agregar opciones</h2>
                 {alerta.error && <div className='text-red-600 text-sm mt-2'>{alerta.error}</div>}
                 <form className='space-y-3' onSubmit={handleSendOptions}>
                   {['opcion1', 'opcion2', 'opcion3', 'opcion4'].map((campo, i) => (
                     <div key={campo} className='flex items-center gap-2'>
-                      <label className='flex items-center gap-2 w-full'>
-                        <input
-                          type='radio'
-                          name='es_correcta'
-                          value={campo}
-                          checked={form.es_correcta === campo}
-                          onChange={(e) => setForm({ ...form, es_correcta: e.target.value })}
-                        />
-                        <input
-                          type='text'
-                          name={campo}
-                          placeholder={`Opción ${i + 1}`}
-                          className='w-full border p-2 rounded-lg'
-                          value={form[campo]}
-                          onChange={handleInputChange}
-                        />
-                      </label>
+                      <input
+                        type='radio'
+                        name='es_correcta'
+                        value={campo}
+                        checked={form.es_correcta === campo}
+                        onChange={(e) => setForm({ ...form, es_correcta: e.target.value })}
+                      />
+                      {/* Español */}
+                      <input
+                        type='text'
+                        name={campo} // ← opcion1, opcion2, etc
+                        placeholder={`Opción ${i + 1} (ES)`}
+                        className='w-full border p-2 rounded-lg'
+                        value={form[campo]}
+                        onChange={handleInputChange}
+                      />
+                      {/* Inglés */}
+                      <input
+                        type='text'
+                        name={`${campo}_en`} // ← opcion1_en, opcion2_en, etc
+                        placeholder={`Option ${i + 1} (EN)`}
+                        className='w-full border p-2 rounded-lg'
+                        value={form[`${campo}_en`]}
+                        onChange={handleInputChange}
+                      />
                     </div>
                   ))}
 
@@ -446,6 +495,25 @@ const PreguntasListar = ({
                         name='enunciado'
                         rows='3'
                         value={formEditar.enunciado}
+                        onChange={handleChangeEditar}
+                        className='w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-400 outline-none resize-none text-gray-600'
+                      />
+                      {alerta.enunciado && (
+                        <p className='text-red-500 text-xs mt-1'>{alerta.enunciado}</p>
+                      )}
+                    </div>
+                    <div>
+                      <label
+                        htmlFor='enunciado_en'
+                        className='block text-sm font-medium text-gray-700 mb-1'
+                      >
+                        Enunciado
+                      </label>
+                      <textarea
+                        id='enunciado_en'
+                        name='enunciado_en'
+                        rows='3'
+                        value={formEditar.enunciado_en}
                         onChange={handleChangeEditar}
                         className='w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-400 outline-none resize-none text-gray-600'
                       />
@@ -504,7 +572,6 @@ const PreguntasListar = ({
             <div className='fixed inset-0  bg-black/60 backdrop-blur-sm flex justify-center items-center z-50'>
               <div className='bg-white rounded-2xl p-6 shadow-lg w-96 relative text-gray-600'>
                 <h2 className='text-lg font-semibold mb-4'>Editar opciones</h2>
-                {alerta.error && <div className='text-red-600 text-sm mt-2'>{alerta.error}</div>}
 
                 <form className='space-y-3' onSubmit={handleEditarOptions}>
                   {['opcion1', 'opcion2', 'opcion3', 'opcion4'].map((campo, i) => (
@@ -525,10 +592,19 @@ const PreguntasListar = ({
                           value={form[campo]}
                           onChange={handleInputChange}
                         />
+
+                        <input
+                          type='text'
+                          name={`${campo}_en`}
+                          placeholder={`Option ${i + 1} (EN)`}
+                          className='w-full border p-2 rounded-lg'
+                          value={form[`${campo}_en`]}
+                          onChange={handleInputChange}
+                        />
                       </label>
                     </div>
                   ))}
-
+                  {alerta.error && <div className='text-red-600 text-sm mt-2'>{alerta.error}</div>}
                   <button
                     type='submit'
                     className='w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 cursor-pointer'

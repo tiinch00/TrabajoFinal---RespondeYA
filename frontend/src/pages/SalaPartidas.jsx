@@ -2,17 +2,17 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 
 import { Link } from 'react-router-dom';
-import axios from "axios";
+import axios from 'axios';
 
 const SalaPartidas = () => {
   const [salas, setSalas] = useState([]);
 
   const getSalas = async () => {
     try {
-      const estado = "esperando";
+      const estado = 'esperando';
       const { data } = await axios.get(
-        "http://localhost:3006/salas/",
-        { params: { estado } }   // <-- params
+        'http://localhost:3006/salas/',
+        { params: { estado } } // <-- params
       );
       setSalas(data);
     } catch (e) {
@@ -29,7 +29,7 @@ const SalaPartidas = () => {
   };
 
   return (
-    <div className='h-full w-full p-8'>
+    <div className='min-h-screen w-full p-8'>
       <div className='max-w-6xl mx-auto'>
         <div className='mb-8 flex items-center justify-center'>
           <Link to='/crearMultijugador'>
@@ -49,17 +49,22 @@ const SalaPartidas = () => {
 
         <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6'>
           {salas.length > 0 ? (
-            <>              
+            <>
               {salas.map((sala) => (
                 <button
                   key={sala.id}
                   onClick={() => handleJoinGame(sala.id)}
                   className='group cursor-pointer transform transition-transform duration-300 hover:scale-105'
                 >
-                  <Link to={`/salaEspera/${sala.codigo}`} className='bg-pink-200 rounded-3xl p-1 shadow-lg'>
+                  <Link
+                    to={`/salaEspera/${sala.codigo}`}
+                    className='bg-pink-200 rounded-3xl p-1 shadow-lg'
+                  >
                     <div className='bg-blue-300 rounded-2xl h-32 flex flex-col items-center justify-center group-hover:shadow-inner transition-shadow duration-300'>
                       <p className='text-purple-900 font-semibold text-lg mb-2'>{sala.id}</p>
-                      <p className='text-purple-900 font-semibold text-lg mb-2'>Categoria ID: {sala.categoria_id}</p>
+                      <p className='text-purple-900 font-semibold text-lg mb-2'>
+                        Categoria ID: {sala.categoria_id}
+                      </p>
                       <p className='text-purple-700 text-sm'>Estado: {sala.estado}</p>
                       <p className='text-purple-700 text-sm'>Codigo: {sala.codigo}</p>
                     </div>
@@ -73,7 +78,6 @@ const SalaPartidas = () => {
               <span className='text-white'>No hay salas en "espera" disponibles...</span>
             </div>
           )}
-
         </div>
       </div>
     </div>
