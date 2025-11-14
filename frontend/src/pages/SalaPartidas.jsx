@@ -2,23 +2,40 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import axios from "axios";
 
 const SalaPartidas = () => {
   const [salas, setSalas] = useState([]);
+  const API = 'http://localhost:3006';
 
   const getSalas = async () => {
     try {
-      const estado = 'esperando';
+      const estado = "esperando";
       const { data } = await axios.get(
-        'http://localhost:3006/salas/',
-        { params: { estado } } // <-- params
+        "http://localhost:3006/salas/",
+        { params: { estado } }   // <-- params
       );
       setSalas(data);
     } catch (e) {
       console.error('GET /salas', e.response?.data?.error || e.message);
     }
   };
+
+  const updateEstadoSala = async (id) => {
+    try {
+      const { data } = await axios.put(`${API}/salas/${id}`,
+        { estado: "en_curso", },
+      );
+      if (!data) {
+        return null;
+      } else {
+        console.log("Cambio de estado listo");
+      }
+      //const { password, ...safe } = data;
+    } catch (e) {
+      console.error('PUT /salas/:id', e.response?.data?.error || e.message);
+    }
+  }
 
   useEffect(() => {
     getSalas();
@@ -29,7 +46,7 @@ const SalaPartidas = () => {
   };
 
   return (
-    <div className='min-h-screen w-full p-8'>
+    <div className='h-full w-full p-8'>
       <div className='max-w-6xl mx-auto'>
         <div className='mb-8 flex items-center justify-center'>
           <Link to='/crearMultijugador'>
@@ -53,20 +70,16 @@ const SalaPartidas = () => {
               {salas.map((sala) => (
                 <button
                   key={sala.id}
-                  onClick={() => handleJoinGame(sala.id)}
-                  className='group cursor-pointer transform transition-transform duration-300 hover:scale-105'
+                  onClick={() => updateEstadoSala(sala.id)}
+                  className='cursor-pointer'
                 >
-                  <Link
-                    to={`/salaEspera/${sala.codigo}`}
-                    className='bg-pink-200 rounded-3xl p-1 shadow-lg'
-                  >
-                    <div className='bg-blue-300 rounded-2xl h-32 flex flex-col items-center justify-center group-hover:shadow-inner transition-shadow duration-300'>
-                      <p className='text-purple-900 font-semibold text-lg mb-2'>{sala.id}</p>
-                      <p className='text-purple-900 font-semibold text-lg mb-2'>
-                        Categoria ID: {sala.categoria_id}
-                      </p>
-                      <p className='text-purple-700 text-sm'>Estado: {sala.estado}</p>
-                      <p className='text-purple-700 text-sm'>Codigo: {sala.codigo}</p>
+                  <Link to={`/salaEspera/${sala.codigo}`} className='shadow-lg'>
+                    <div className=' bg-gradient-to-br from-pink-300/10 via-violet-500/90 to-pink-800/10 rounded-4xl shadow-2xl hover:shadow-violet-500/50 transition-all duration-300 border-2 sm:border-3 md:border-4 border-violet-400 text-white p-4'>
+                      {/* <p className='font-semibold text-lg mb-2'>{sala.id}</p> */}
+                      <p className='font-semibold text-lg mb-2'>Tiempo: </p>
+                      <p className='font-semibold text-lg mb-2'>Categoria: </p>
+                      <p className='font-semibold text-lg mb-2'>Preguntas: </p>
+                      <p className='font-semibold text-mb'>{sala.estado}...</p>
                     </div>
                   </Link>
                 </button>
@@ -78,6 +91,7 @@ const SalaPartidas = () => {
               <span className='text-white'>No hay salas en "espera" disponibles...</span>
             </div>
           )}
+
         </div>
       </div>
     </div>

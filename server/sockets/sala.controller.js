@@ -342,6 +342,29 @@ export default function registrarEventosSala(io, socket) {
                     // ignoreDuplicates: true, // si tenés unique(partida_id, pregunta_id) y querés saltar duplicados
                 });
 
+                const endedAtLocal = (() => {
+                    const MS_3HS = 3 * 60 * 60 * 1000;
+                    const fecha = new Date(Date.now() - MS_3HS);
+                    const pad = (n) => String(n).padStart(2, '0');
+                    const y = fecha.getFullYear();
+                    const m = pad(fecha.getMonth() + 1);
+                    const d = pad(fecha.getDate());
+                    const H = pad(fecha.getHours());
+                    const M = pad(fecha.getMinutes());
+                    const S = pad(fecha.getSeconds());
+                    return `${y}-${m}-${d} ${H}:${M}:${S}`;
+                })();
+
+                const modPartid = await Partida.findOne({
+                    where: { id: partidaId },
+                });
+                if(modPartid){
+                    const started_at = endedAtLocal;
+                await modPartid.update({ started_at });
+                }
+
+                
+
                 return ack?.({
                     success: true,
                     msg: "Salió bien",
@@ -418,9 +441,15 @@ export default function registrarEventosSala(io, socket) {
 
     socket.on('guardar_respuestas', async (datos, ack) => {
         try {
-            const { partida_id, respuestas = [] } = datos || {};
-            const partidaId = Number(partida_id);
+            const {
+                partida_id,
+                respuestas = [],
+                resumen = null, // { jugadores: [...], ganador_jugador_id, ended_at }
+                dificultad,
+                tiempo,
+            } = datos || {};
 
+            const partidaId = Number(partida_id);
             if (!Number.isFinite(partidaId) || !Array.isArray(respuestas) || respuestas.length === 0) {
                 return ack?.({ success: false, msg: 'Payload inválido (partida_id o respuestas).' });
             }
@@ -472,7 +501,7 @@ export default function registrarEventosSala(io, socket) {
                 return ack?.({ success: false, msg: 'No hay filas válidas para insertar.' });
             }
 
-            console.log("*******filas: ", filas);
+            //console.log("*******filas: ", filas);
 
             // 1) (opcional pero útil) quito duplicados dentro del MISMO payload
             const seen = new Set();
@@ -495,7 +524,111 @@ export default function registrarEventosSala(io, socket) {
                 ],
             });
 
-            return ack?.({ success: true, msg: 'Respuestas guardadas (upsert)', insertadas: filasUnicas.length });
+
+
+            // --- RESUMEN / GANADOR / ENDED_AT ---
+            // Si el cliente mandó el resumen, lo usamos. Si no, lo calculamos rápido desde `respuestas`.
+            let ganador_jugador_id = resumen?.ganador_jugador_id ?? null;
+            let ended_at = resumen?.ended_at ?? null;
+            const jugadoresStats = Array.isArray(resumen?.jugadores) ? resumen.jugadores : null;
+
+            // Si no vino ended_at, lo calculamos ahora
+            if (!ended_at) {
+                const formatearTS = (ts) => {
+                    const d = new Date(ts || Date.now());
+                    const pad = (n) => String(n).padStart(2, '0');
+                    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+                };
+                ended_at = formatearTS(Date.now());
+            }
+
+            // Si no vinieron stats por jugador, los calculamos a partir de respuestas
+            let statsMap = new Map();
+            if (jugadoresStats) {
+                for (const js of jugadoresStats) {
+                    statsMap.set(Number(js.jugador_id), js);
+                }
+            } else {
+                const byJugador = new Map();
+                for (const r of respuestas) {
+                    const j = Number(r.jugador_id);
+                    if (!Number.isFinite(j)) continue;
+                    if (!byJugador.has(j)) byJugador.set(j, []);
+                    byJugador.get(j).push(r);
+                }
+
+                const calc = (arr) => {
+                    const total_correctas = arr.reduce((a, x) => a + (x.es_correcta ? 1 : 0), 0);
+                    const total_incorrectas = arr.length - total_correctas;
+                    const total_tiempo_correctas_ms = arr.filter(x => x.es_correcta).reduce((a, x) => a + (Number(x.tiempo_respuesta_ms) || 0), 0);
+
+                    // Puntaje con tu función (si querés replicarla en server, o podés confiar en el cliente)
+                    // Acá como ejemplo simple:
+                    const respuestasCor = arr.filter(x => x.es_correcta).map(x => ({ tiempo: Math.round((Number(x.tiempo_respuesta_ms) || 0) / 1000) }));
+                    const puntaje_total = 0 + respuestasCor.length; // <-- si querés, copiamos tu función al server
+
+                    return { total_correctas, total_incorrectas, total_tiempo_correctas_ms, puntaje_total };
+                };
+
+                for (const [jugId, arr] of byJugador.entries()) {
+                    statsMap.set(jugId, calc(arr));
+                }
+
+                // Ganador si no vino:
+                const ids = [...statsMap.keys()];
+                if (ids.length === 2 && ganador_jugador_id == null) {
+                    const a = statsMap.get(ids[0]);
+                    const b = statsMap.get(ids[1]);
+                    if (a.total_correctas > b.total_correctas) ganador_jugador_id = ids[0];
+                    else if (b.total_correctas > a.total_correctas) ganador_jugador_id = ids[1];
+                    else {
+                        if (a.total_tiempo_correctas_ms < b.total_tiempo_correctas_ms) ganador_jugador_id = ids[0];
+                        else if (b.total_tiempo_correctas_ms < a.total_tiempo_correctas_ms) ganador_jugador_id = ids[1];
+                        else ganador_jugador_id = null; // empate
+                    }
+                }
+            }
+
+            // 1) Actualizar Partida (ended_at y estado)
+            try {
+                await Partida.update(
+                    { ended_at, estado: 'finalizada' },
+                    { where: { id: partidaId } }
+                );
+            } catch (e) {
+                console.warn('No se pudo actualizar Partida.ended_at:', e?.message);
+            }
+
+            // 2) Actualizar Estadistica por jugador (totales, puntaje, posición)
+            //    (asumiendo que tu tabla tiene estos campos; si no, quitá los que falten)
+            for (const [jugadorId, st] of statsMap.entries()) {
+                const posicion =
+                    ganador_jugador_id == null
+                        ? 1 // empate: ambos 1, o poné 0/2 según tu criterio
+                        : (jugadorId === ganador_jugador_id ? 1 : 0);
+
+                try {
+                    await Estadistica.update(
+                        {
+                            total_correctas: st.total_correctas,
+                            total_incorrectas: st.total_incorrectas,
+                            puntaje_total: st.puntaje_total,
+                            posicion,
+                            tiempo_total_ms: st.tiempo_total_ms,
+                        },
+                        { where: { partida_id: partidaId, jugador_id: jugadorId } }
+                    );
+                } catch (e) {
+                    console.warn('No se pudo actualizar Estadistica:', e?.message);
+                }
+            }
+
+            return ack?.({
+                success: true,
+                msg: 'Respuestas guardadas y estadísticas actualizadas',
+                ganador_jugador_id,
+                ended_at,
+            });
         } catch (e) {
             console.error('guardar_respuestas error:', e);
             return ack?.({ success: false, msg: 'Error en servidor', error: String(e?.message || e) });

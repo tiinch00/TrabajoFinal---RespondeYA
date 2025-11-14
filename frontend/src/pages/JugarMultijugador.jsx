@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 import correcta from '/sounds/correcta.wav';
 import ficeSeconds from '/sounds/fiveSeconds.mp3';
@@ -11,6 +12,49 @@ import incorrecta from '/sounds/incorrecta.wav';
 import musicaPreguntas from '/sounds/musicaPreguntasEdit.mp3';
 import { useGame } from '../context/ContextJuego.jsx';
 import useSound from 'use-sound';
+
+// 2) Función pura que devuelve [ganador, perdedor] como objetos
+function getGanadorYPerdedor(creador, invitado, statsCreador, statsInvitado) {
+    if (!creador || !invitado || !statsCreador || !statsInvitado) {
+        return [null, null];
+    }
+
+    const jugadorIdCreador = Number(creador.jugador_id) || null;
+    const jugadorIdInvitado = Number(invitado.jugador_id) || null;
+
+    const pickWinner = (A, B, idA, idB) => {
+        if (A.total_correctas > B.total_correctas) return idA;
+        if (B.total_correctas > A.total_correctas) return idB;
+
+        if (A.total_tiempo_correctas_ms < B.total_tiempo_correctas_ms) return idA;
+        if (B.total_tiempo_correctas_ms < A.total_tiempo_correctas_ms) return idB;
+
+        return null;
+    };
+
+    const ganadorId = pickWinner(
+        statsCreador,
+        statsInvitado,
+        jugadorIdCreador,
+        jugadorIdInvitado
+    );
+
+    if (ganadorId == null) return [null, null];
+
+    const ganadorEsCreador = ganadorId === jugadorIdCreador;
+
+    // 🔥 A partir de acá es donde corregimos:
+    const ganador = ganadorEsCreador
+        ? { ...creador, ...statsCreador }
+        : { ...invitado, ...statsInvitado };
+
+    const perdedor = ganadorEsCreador
+        ? { ...invitado, ...statsInvitado }
+        : { ...creador, ...statsCreador };
+
+    return [ganador, perdedor];
+}
+
 
 // ===== util: PRNG determinístico y shuffle con seed (para que ambos vean lo mismo)
 function mulberry32(a) {
@@ -35,14 +79,14 @@ function traducirDificultad(d) {
     const x = String(d || '').toLowerCase();
     if (x === 'easy' || x === 'facíl' || x === 'facil') return 'facil';
     if (x === 'medium' || x === 'media' || x === 'normal') return 'normal';
-    if (x === 'hard' || x === 'dificíl' || x === 'dificil') return 'dificil';
+    if (x === 'hard' || x === 'difícil' || x === 'dificil') return 'dificil';
     return 'normal';
 }
 function tiempoPorPregunta(t) {
     const x = String(t || '').toLowerCase();
     if (x === 'facíl' || x === 'facil' || x === 'easy') return 15;
     if (x === 'media' || x === 'normal' || x === 'medium') return 12;
-    if (x === 'dificíl' || x === 'dificil' || x === 'hard') return 8;
+    if (x === 'difícil' || x === 'dificil' || x === 'hard') return 8;
     return 12;
 }
 
@@ -86,6 +130,11 @@ export default function JugarMultijugador() {
     const [mostrarContador, setMostrarContador] = useState(true);
     const [cronometroPausado, setCronometroPausado] = useState(false);
     const questionStartRef = useRef(null); // tiempo en responder por respuesta
+    const [partidasPreguntasDeLaPartida, setPartidasPreguntasDeLaPartida] = useState([]);
+    const [jugadorIdGanador, setJugadorIdGanador] = useState(null);
+
+    const [ganador, setGanador] = useState(null);
+    const [perdedor, setPerdedor] = useState(null);
 
     // === NUEVO: socket y buffer de respuestas por jugador ===
     const socketRef = useRef(null);
@@ -143,7 +192,7 @@ export default function JugarMultijugador() {
         } catch { }
     }, [config, location.state]);
 
-    console.log("config: ", config);
+    //console.log("config: ", config);
 
     // 1) Socket: traer/escuchar jugadores (con dedupe)
     useEffect(() => {
@@ -264,9 +313,6 @@ export default function JugarMultijugador() {
         })();
     }, [config, salaId]);
 
-    //console.log("preguntas: ", preguntas);
-    //console.log("preguntaActual: ", preguntaActual);
-
     // enviar jugadores a un nuevo socket para inicializar tablas:
     // estadisticas, partida_jugadores y partida_preguntas
     useEffect(() => {
@@ -275,24 +321,11 @@ export default function JugarMultijugador() {
         if (!config) return;                         // todavía no cargó config
         if (!creador || !invitado) return;           // esperamos a tener 2 jugadores
         if (!Array.isArray(preguntas) || preguntas.length === 0) return; // ✅
-
-        // (Opcional) compactar preguntas para payload liviano
-        // const preguntasCompactas = preguntas.map(p => ({
-        //     id: p.id ?? null,
-        //     enunciado: p.enunciado ?? '',
-        //     opciones: (p.Opciones || []).map(o => ({
-        //         id: o.id ?? null,
-        //         texto: o.texto ?? '',
-        //     })),
-        // }));
-
         // traigo la última config guardada
         let ultimaCfg = null;
         try {
             ultimaCfg = JSON.parse(localStorage.getItem('ultima_config_multijugador') || 'null');
         } catch { }
-
-        //console.log("@@@@preguntas antes de payload: ", preguntas);
 
         // 1) Tomo el partida_id de la config efectiva que vas a enviar
         const cfgEfectiva = ultimaCfg || config;
@@ -313,6 +346,8 @@ export default function JugarMultijugador() {
             };
         });
 
+        setPartidasPreguntasDeLaPartida(partida_preguntas_tabla);
+
         const payload = {
             salaId,
             config: ultimaCfg || config,
@@ -329,7 +364,7 @@ export default function JugarMultijugador() {
             //preguntas: preguntasCompactas,  // ← o este compacto
         };
 
-        //console.log("####payload: ", payload);
+        console.log("####payload: ", payload);
 
         socketRef.current.emit('crear_tablas_faltantes', payload, (ack) => {
             console.log('crear_tablas_faltantes → ack:', ack);
@@ -344,6 +379,7 @@ export default function JugarMultijugador() {
                 }
                 ppIdByPreguntaIdRef.current = map;
             }
+            console.log("ack: ", ack);
             if (ack?.estadisticas_map) {
                 // Espera algo como { [jugador_id]: estadistica_id }
                 estadisticaIdByJugadorIdRef.current = ack.estadisticas_map || {};
@@ -481,9 +517,9 @@ export default function JugarMultijugador() {
         //console.log('▶︎ Respuestas del jugador actual:', respuestas);
 
         if (otherId != null) {
-           // console.log('▶︎ Respuestas del otro jugador:', respuestasPorJugador[otherId] || []);
+            // console.log('▶︎ Respuestas del otro jugador:', respuestasPorJugador[otherId] || []);
         } else {
-           // console.log('▶︎ No se pudo identificar al otro jugador aún.');
+            // console.log('▶︎ No se pudo identificar al otro jugador aún.');
         }
 
         // (Opcional) Si querés ver todo el buffer por userId:
@@ -491,7 +527,40 @@ export default function JugarMultijugador() {
 
     }, [juegoTerminado, creador, invitado, respuestas, respuestasPorJugador, currentUserId]);
 
-    // === NUEVO: al terminar la partida, armo las 20 respuestas (2 jugadores x 10 preguntas) y las envío ===
+    const calcularPuntaje = (respuestasCor, tiempo, dificultad) => {
+        if (!respuestasCor || respuestasCor.length === 0) return 0;
+
+        let multiplicador = 1;
+        const diff = tiempo.toLowerCase();
+        if (diff.includes('facil') || diff.includes('easy')) multiplicador = 1;
+        if (diff.includes('media') || diff.includes('medium') || diff.includes('normal'))
+            multiplicador = 1.3;
+        if (diff.includes('dificil') || diff.includes('hard')) multiplicador = 1.6;
+
+        let puntos = 0;
+        respuestasCor.forEach((respuesta) => {
+            const tiempo = respuesta.tiempo; // en segundos
+            if (tiempo <= 3) puntos += 10;
+            else if (tiempo <= 5) puntos += 7;
+            else if (tiempo <= 8) puntos += 5;
+            else if (tiempo <= 12) puntos += 3;
+            else puntos += 1;
+        });
+        const dificult = dificultad.toLowerCase();
+        let puntosDificultad = 0;
+        if (dificult.includes('facíl') || dificult.includes('easy'))
+            puntosDificultad = 5 * respuestasCor.length;
+        if (dificult.includes('media') || dificult.includes('medium'))
+            puntosDificultad = 10 * respuestasCor.length;
+        if (dificult.includes('dificíl') || dificult.includes('hard'))
+            puntosDificultad = 15 * respuestasCor.length;
+        console.log(puntos);
+        console.log(puntosDificultad);
+        return Math.round((puntos + puntosDificultad) * multiplicador);
+    };
+
+    const [partidaCompleta, setPartidaCompleta] = useState(null);
+    // === NUEVO: al terminar la partida, armo las 20 respuestas (2 jugadores x 10 preguntas), calculo ganador y envío ===
     useEffect(() => {
         if (!juegoTerminado) return;
         if (!config?.partida_id) return;
@@ -499,75 +568,154 @@ export default function JugarMultijugador() {
         if (!Array.isArray(respuestas) || respuestas.length === 0) return;
         if (!socketRef.current) return;
 
-        // Top2 en el mismo orden que usaste
         const top2 = [creador, invitado].filter(Boolean);
         if (top2.length !== 2) return;
 
-        // helper: arma respuestas para un jugador dado su userId/jugador_id
+        const msToSeg = (ms) => (Number.isFinite(ms) ? Math.round(ms / 1000) : null);
+
+        // Construye estadísticas por jugador
+        const buildStats = (arrRespuestas) => {
+            const total_correctas = arrRespuestas.reduce((a, r) => a + (r.es_correcta ? 1 : 0), 0);
+            const total_incorrectas = arrRespuestas.length - total_correctas;
+
+            const tiemposMs = arrRespuestas.map(r =>
+                Number.isFinite(Number(r.tiempo_respuesta_ms)) ? Number(r.tiempo_respuesta_ms) : 0
+            );
+
+            const total_tiempo_ms = tiemposMs.reduce((a, b) => a + b, 0);
+
+            const tiemposCorrectasMs = arrRespuestas
+                .filter(r => r.es_correcta)
+                .map(r => Number(r.tiempo_respuesta_ms) || 0);
+
+            const total_tiempo_correctas_ms = tiemposCorrectasMs.reduce((a, b) => a + b, 0);
+
+            const respuestasCor = tiemposCorrectasMs.map(ms => ({ tiempo: msToSeg(ms) ?? 0 }));
+
+            const puntaje_total = calcularPuntaje(
+                respuestasCor,
+                String(config?.tiempo || ''),
+                String(config?.dificultad || '')
+            );
+
+            return {
+                total_correctas,
+                total_incorrectas,
+                total_tiempo_correctas_ms,
+                total_tiempo_ms,
+                puntaje_total,
+            };
+        };
+
+        // Construye las 10 respuestas para cada jugador
         const buildRespuestasPara = (jug) => {
             const jugadorId = Number(jug?.jugador_id) || null;
             if (!Number.isFinite(jugadorId)) return [];
 
-            // Tomo el array de respuestas según userId:
-            // - si soy yo: uso `respuestas`
-            // - si es el otro: saco de `respuestasPorJugador[userId]`
             const isMe = jug?.userId === currentUserId;
             const arr = isMe ? respuestas : (respuestasPorJugador[jug?.userId] || []);
 
-            // Por seguridad, si falta algo, completo con “Sin respuesta”
             const safe = Array.from({ length: 10 }, (_, i) => {
                 const r = arr[i];
                 if (r && typeof r === 'object') return r;
                 return { texto: 'Sin respuesta', es_correcta: false, tiempo_respuesta_ms: null };
             });
 
-            // Mapeo pregunta_idx -> ids y campos
             return safe.map((r, idx) => {
-                const q = preguntas[idx];                     // la i-ésima pregunta que ambos vieron
+                const q = preguntas[idx];
                 const preguntaId = Number(q?.id) || null;
 
-                // opcion elegida: si tiene id => es el id de la opción; si "Sin respuesta" => null
-                const opcionElegidaId = (r?.id != null && Number.isFinite(Number(r.id))) ? Number(r.id) : null;
+                const opcionElegidaId =
+                    (r?.id != null && Number.isFinite(Number(r.id))) ? Number(r.id) : null;
 
-                // es_correcta a 1/0
                 const esCorrecta = r?.es_correcta ? 1 : 0;
 
-                // tiempo en ms
-                const tms = Number.isFinite(Number(r?.tiempo_respuesta_ms)) ? Number(r.tiempo_respuesta_ms) : null;
-
-                // intento tomar partida_pregunta_id si lo guardamos en el ack anterior; si no, null (el server lo resuelve)
-                const partidaPreguntaId = (preguntaId != null) ? (ppIdByPreguntaIdRef.current[preguntaId] ?? null) : null;
-
-                // idem estadistica_id, si el server nos lo devolvió antes; si no, null (el server lo resuelve)
-                const estadisticaId = (jugadorId != null) ? (estadisticaIdByJugadorIdRef.current[jugadorId] ?? null) : null;
+                const tms = Number.isFinite(Number(r?.tiempo_respuesta_ms))
+                    ? Number(r.tiempo_respuesta_ms)
+                    : null;
 
                 return {
                     partida_id: Number(config.partida_id),
                     jugador_id: jugadorId,
                     pregunta_id: preguntaId,
-                    partida_pregunta_id: partidaPreguntaId,  // puede ir null
-                    opcion_elegida_id: opcionElegidaId,      // null si “Sin respuesta”
-                    estadistica_id: estadisticaId,           // puede ir null
-                    es_correcta: esCorrecta,                 // 1/0
-                    tiempo_respuesta_ms: tms,                // null si no mediste
-                    orden: idx + 1,                          // (opcional) por si lo querés en server
+                    partida_pregunta_id: partidasPreguntasDeLaPartida.find(
+                        (pp) => Number(pp.pregunta_id) === preguntaId
+                    )?.id || null,
+                    opcion_elegida_id: opcionElegidaId,
+                    estadistica_id: estadisticaIdByJugadorIdRef.current?.[jugadorId] ?? null,
+                    es_correcta: esCorrecta,
+                    tiempo_respuesta_ms: tms,
+                    orden: idx + 1,
                 };
             });
         };
 
+        // Armar las 20 filas derespuestas
         const respuestasCreador = buildRespuestasPara(creador);
         const respuestasInvitado = buildRespuestasPara(invitado);
 
-        const payloadGuardar = {
+        const statsCreador = buildStats(respuestasCreador);
+        const statsInvitado = buildStats(respuestasInvitado);
+
+        // Determina ganador/perdedor
+        const [ganadorObj, perdedorObj] =
+            getGanadorYPerdedor(creador, invitado, statsCreador, statsInvitado);
+
+        setGanador(ganadorObj);
+        setPerdedor(perdedorObj);
+
+        // Determinar ID ganador para enviar al server
+        const jugadorIdGanador =
+            ganadorObj ? Number(ganadorObj.jugador_id) : null;
+
+        setJugadorIdGanador(jugadorIdGanador);
+
+        // Armar payload final para guardar_respuestas
+        const payload = {
             salaId,
             partida_id: Number(config.partida_id),
-            respuestas: [...respuestasCreador, ...respuestasInvitado], // 20 filas
+            dificultad: String(config?.dificultad || ''),
+            tiempo: String(config?.tiempo || ''),
+            respuestas: [...respuestasCreador, ...respuestasInvitado],
+            resumen: {
+                jugadores: [
+                    {
+                        jugador_id: Number(creador.jugador_id),
+                        ...statsCreador,
+                        ganador: ganadorObj?.jugador_id === creador.jugador_id ? 1 : 0,
+                    },
+                    {
+                        jugador_id: Number(invitado.jugador_id),
+                        ...statsInvitado,
+                        ganador: ganadorObj?.jugador_id === invitado.jugador_id ? 1 : 0,
+                    },
+                ],
+                ganador_jugador_id: jugadorIdGanador,
+                ended_at: new Date().toISOString().slice(0, 19).replace("T", " "),
+            },
         };
 
-        socketRef.current.emit('guardar_respuestas', payloadGuardar, (ack) => {
+        setPartidaCompleta(payload);
+
+        // Emitir al servidor
+        socketRef.current.emit('guardar_respuestas', payload, (ack) => {
             console.log('guardar_respuestas → ack:', ack);
         });
-    }, [juegoTerminado, config?.partida_id, preguntas, respuestas, creador, invitado, currentUserId, respuestasPorJugador]);
+
+    }, [
+        juegoTerminado,
+        config?.partida_id,
+        preguntas,
+        respuestas,
+        creador,
+        invitado,
+        currentUserId,
+        respuestasPorJugador,
+        partidasPreguntasDeLaPartida
+    ]);
+
+
+
 
 
 
@@ -617,167 +765,287 @@ export default function JugarMultijugador() {
     }
 
     return (
-        <div className='w-full h-full text-white pt-5'>
+        <div className='w-full h-full text-white pt-5 mb-10'>
 
-            {/* === NUEVO CSS: reloj centrado arriba, como en “individual” === */}
-            <div className='w-full h-full text-white flex items-center justify-center'>
-                <div
-                    className={`rounded-3xl px-6 py-4 text-center shadow-2xl border-4 w-40 ${tiempoRestante <= 5 && tiempoRestante > 0
-                        ? 'bg-gradient-to-b from-red-500 to-orange-600 border-red-300/30 animate-pulse'
-                        : 'bg-gradient-to-b from-yellow-300/80 to-yellow-400/80 border-yellow-400'
-                        }`}
-                >
-                    <p className='text-sm font-bold text-gray-800 mb-2'>⏱️ TIEMPO</p>
-                    <p
-                        className={`text-5xl font-black ${tiempoRestante <= 5 && tiempoRestante > 0 ? 'text-white' : 'text-red-600'
-                            }`}
-                    >
-                        {tiempoRestante}
-                    </p>
-                    <p className='text-xs font-bold text-gray-800 mt-2'>segundos</p>
-                </div>
-            </div>
 
-            {/* === NUEVO CSS: layout en 5 columnas (jugador izq, centro, jugador der) === */}
-            <div className='grid grid-cols-5 gap-6 h-screen pt-10'>
-
-                {/* izquierda - Jugador 1 - creador */}
-                <div className='col-span-1 flex flex-col items-center justify-start'>
-                    <div className='bg-gradient-to-b from-blue-600/40 to-blue-700/70 rounded-2xl p-6 shadow-xl w-full'>
-                        <div className='flex flex-col items-center'>
-                            {creador ? (
-                                <>
-                                    {creador?.foto_perfil && creador?.foto_perfil !== `${API}/uploads/default.png` ? (
-                                        <img
-                                            src={abs(creador?.foto_perfil)}
-                                            alt='Creador'
-                                            className='w-24 h-24 rounded-full object-cover border-4 border-yellow-300 shadow-lg mb-4'
-                                        />
-                                    ) : (
-                                        <div className='w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-5xl mb-4 shadow-lg'>
-                                            👤
-                                        </div>
-                                    )}
-                                    <span className='bg-blue-800 px-4 py-2 rounded-full text-sm font-bold text-center text-yellow-300'>
-                                        {creador?.nombre || 'Creador'}
-                                    </span>
-                                    <span className='text-xs mt-2 opacity-70'>Creador</span>
-                                </>
-                            ) : (
-                                <div className='w-24 h-24 rounded-full bg-white/20' />
-                            )}
-                        </div>
+            {/* Centro - Preguntas */}
+            <div className='col-span-3 flex flex-col items-center justify-start'>
+                {loading ? (
+                    <div className='text-center space-y-4'>
+                        <p className='text-white text-2xl font-bold'>Cargando preguntas...</p>
+                        {alerta && <p className='text-white/80'>{alerta}</p>}
                     </div>
-                </div>
+                ) : alerta ? (
+                    <>
 
-                {/* Centro - Preguntas */}
-                <div className='col-span-3 flex flex-col items-center justify-start'>
-                    <div className='bg-gradient-to-r from-orange-500 to-pink-500 rounded-full px-8 py-3 mb-8 text-2xl font-black shadow-lg'>
-                        {String(config?.categoria || '').toUpperCase()}
-                    </div>
+                        {console.log("ganador: ", ganador)}
+                        {console.log("perdedor: ", perdedor)}
 
-                    {loading ? (
-                        <div className='text-center space-y-4'>
-                            <p className='text-white text-2xl font-bold'>Cargando preguntas...</p>
-                            {alerta && <p className='text-white/80'>{alerta}</p>}
-                        </div>
-                    ) : alerta ? (
-                        <div className='bg-red-500/20 border-2 border-red-500 text-red-200 p-6 rounded-2xl text-xl font-bold text-center'>
+                        <Link
+                            to='/'
+                            className='inline-flex items-center text-yellow-600 hover:text-yellow-800 mb-3 transition-colors'
+                        >
+                            <svg className='w-5 h-5 mr-2' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M15 19l-7-7 7-7' />
+                            </svg>
+                            volver
+                        </Link>
+
+                        {/* muestra "juego terminado" */}
+                        <div className='bg-red-500/20 border-2 border-red-500 text-red-200 p-6 mt-5 rounded-2xl text-xl font-bold text-center'>
                             {alerta}
                         </div>
-                    ) : preguntaActual && juegoIniciado ? (
-                        <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-8 w-full max-w-2xl shadow-2xl'>
-                            <div className='mb-6'>
-                                <span className='text-sm font-bold text-yellow-300'>Pregunta {contador + 1}/10</span>
-                            </div>
 
-                            <p className='text-2xl font-bold text-white mb-8 leading-relaxed'>
-                                {preguntaActual.enunciado}
-                            </p>
+                        {/* PODIO de juego terminado */}
+                        <div className='flex flex-row items-end mt-10'>
 
-                            <div className='space-y-4'>
-                                {preguntaActual.Opciones.map((opcion, index) => {
-                                    let colorClase =
-                                        'bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600';
+                            {/* ganador */}
+                            <div className='flex flex-col items-center'>
+                                {/* número 1 */}
+                                <span className='mb-2 w-10 h-10 rounded-full bg-yellow-400 text-slate-900 
+                                    flex items-center justify-center text-xl font-extrabold'>
+                                    1
+                                </span>
 
-                                    if (respuestaSeleccionada === opcion) {
-                                        colorClase = respuestaCorrecta
-                                            ? 'bg-gradient-to-r from-green-500 to-emerald-500 scale-105'
-                                            : 'bg-gradient-to-r from-red-500 to-pink-500 scale-105';
-                                    }
-
-                                    return (
-                                        <button
-                                            key={index}
-                                            className={`w-full rounded-xl py-4 px-6 cursor-pointer transition-all font-bold text-lg text-white shadow-lg border-2 border-transparent hover:border-yellow-300 disabled:opacity-50 ${colorClase}`}
-                                            onClick={() => handleGuardarRespuesta(opcion)}
-                                            disabled={!!respuestaSeleccionada}
-                                        >
-                                            {opcion.texto}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    ) : (
-                        <p className='text-xl text-gray-300'>No hay preguntas disponibles.</p>
-                    )}
-
-                    {juegoTerminado && (
-                        <div className='bg-black/50 rounded-2xl p-8 mt-8 w-full max-w-2xl'>
-                            {/*console.log(juegoTerminado)*/}
-                            {/*console.log(respuestas)*/}
-                            {/*console.log("RespuestasPorJugador: ", respuestasPorJugador)*/}
-                            <h2 className='text-2xl font-bold text-yellow-300 mb-6'>Resumen de Respuestas</h2>
-                            <div className='space-y-3 max-h-64 overflow-y-auto'>
-                                {respuestas.map((respuesta, index) => (
-                                    <div key={index} className='bg-purple-500/20 p-3 rounded-lg border border-purple-400'>
-                                        <p className='text-sm'>
-                                            <span className='font-bold text-yellow-300'>P{index + 1}:</span> {respuesta.texto}
-                                            <span
-                                                className={`ml-2 font-bold ${respuesta.es_correcta ? 'text-green-400' : 'text-red-400'
-                                                    }`}
-                                            >
-                                                {respuesta.es_correcta ? '✓' : '✗'}
-                                            </span>
-                                        </p>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                {/* derecha - Jugador 2 - invitado */}
-                <div className='col-span-1 flex flex-col items-center justify-start gap-4'>
-                    <div className='bg-gradient-to-b from-green-600/40 to-green-700/70 rounded-2xl p-6 shadow-xl w-full'>
-                        <div className='flex flex-col items-center'>
-                            {invitado ? (
-                                <>
-                                    {invitado.foto_perfil && invitado.foto_perfil !== `/uploads/default.png` ? (
-                                        <img
-                                            src={`${API}${invitado.foto_perfil}`}
-                                            alt='Invitado'
-                                            className='w-24 h-24 rounded-full object-cover border-4 border-green-300 shadow-lg mb-4'
-                                        />
-                                    ) : (
-                                        <div className='w-24 h-24 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-5xl mb-4 shadow-lg'>
-                                            👤
+                                <div className='w-52'>
+                                    <div className='flex flex-col items-center justify-start'>
+                                        <div className='bg-gradient-to-b from-blue-600/40 to-blue-700/70 p-6 shadow-xl w-full rounded-l-lg rounded-tr-lg'>
+                                            <div className='flex flex-col items-center'>
+                                            {console.log("ganadaor: desde adentro ", ganador)}
+                                                {ganador ? (
+                                                    
+                                                    <>
+                                                        {ganador?.foto_perfil && ganador?.foto_perfil !== `${API}/uploads/default.png` && ganador?.foto_perfil !== `/uploads/default.png` ? (
+                                                            <img
+                                                                src={abs(ganador?.foto_perfil)}
+                                                                alt='ganador'
+                                                                className='w-24 h-24 rounded-full object-cover border-4 border-yellow-300 shadow-lg mb-4'
+                                                            />
+                                                        ) : (
+                                                            <div className='w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-5xl mb-4 shadow-lg'>
+                                                                👤
+                                                            </div>
+                                                        )}
+                                                        <span className='bg-blue-900 px-4 py-2 rounded-full text-sm font-bold text-center text-yellow-300'>
+                                                            {ganador?.nombre || 'ganador'}
+                                                        </span>
+                                                        <span className='text-xs mt-2 opacity-70'>{ganador?.puntaje_total} puntos!</span>
+                                                    </>
+                                                ) : (
+                                                    <div className='w-24 h-24 rounded-full bg-white/20' />
+                                                )}
+                                            </div>
                                         </div>
-                                    )}
-                                    <span className='bg-green-800 px-4 py-2 rounded-full text-sm font-bold text-center text-yellow-300'>
-                                        {invitado?.nombre || 'Invitado'}
-                                    </span>
-                                    <span className='text-xs mt-2 opacity-70'>Invitado</span>
-                                </>
-                            ) : (
-                                <div className='w-24 h-24 rounded-full bg-white/20' />
-                            )}
-                        </div>
-                    </div>
-                </div>
+                                    </div>
+                                </div>
+                            </div>
 
+                            {/* perdedor */}
+                            <div className='flex flex-col items-center mt-6'>
+                                {/* número 2 */}
+                                <span className='mb-2 w-8 h-8 rounded-full bg-gray-300 text-slate-900 
+                                    flex items-center justify-center text-md font-bold'>
+                                    2
+                                </span>
+
+                                <div className='w-44'>
+                                    <div className='flex flex-col items-center gap-4'>
+                                        <div className='bg-gradient-to-b from-green-600/40 to-green-700/70 p-4 shadow-xl w-full rounded-r-lg'>
+                                            <div className='flex flex-col items-center '>
+                                                {perdedor ? (
+                                                    <>
+                                                        {perdedor.foto_perfil && perdedor.foto_perfil !== `/uploads/default.png` && perdedor?.foto_perfil !== `/uploads/default.png` ? (
+                                                            <img
+                                                                src={`${API}${perdedor.foto_perfil}`}
+                                                                alt='perdedor'
+                                                                className='w-20 h-20 rounded-full object-cover border-4 border-green-300 shadow-lg mb-4'
+                                                            />
+                                                        ) : (
+                                                            <div className='w-20 h-20 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-4xl mb-4 shadow-lg'>
+                                                                👤
+                                                            </div>
+                                                        )}
+                                                        <span className='bg-green-800 px-4 py-2 rounded-full text-sm font-bold text-center text-yellow-300'>
+                                                            {perdedor?.nombre || 'perdedor'}
+                                                        </span>
+                                                        <span className='text-xs mt-2 opacity-70'>{perdedor?.puntaje_total} puntos!</span>
+                                                    </>
+                                                ) : (
+                                                    <div className='w-20 h-20 rounded-full bg-white/20' />
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <div className='bg-black/50 mt-5 rounded-full w-96 text-center'>
+                            <p className=' text-xl font-bold text-gray-200 p-4'>
+                                {ganador
+                                    ? `¡El ganador es ${ganador?.nombre}!`
+                                    : 'Calculando ganador...'}
+                            </p>
+                        </div>
+
+
+                        {juegoTerminado && (
+                            // ==============================  Resumen de Respuestas =======================================
+                            <div className='bg-black/50 rounded-2xl p-8 mt-10 w-full max-w-2xl'>
+                                {/*console.log(juegoTerminado)*/}
+                                {/*console.log(respuestas)*/}
+                                {console.log("RespuestasPorJugador: ", respuestasPorJugador)}
+                                {console.log("partidaCompleta: ", partidaCompleta)}
+                                <h2 className='text-2xl font-bold text-yellow-300 mb-6'>Resumen de Respuestas</h2>
+                                <div className='space-y-3 max-h-64 overflow-y-auto'>
+                                    {respuestas.map((respuesta, index) => (
+                                        <div key={index} className='bg-purple-500/20 p-3 rounded-lg border border-purple-400'>
+                                            <p className='text-sm'>
+                                                <span className='font-bold text-yellow-300'>P{index + 1}:</span> {respuesta.texto}
+                                                <span
+                                                    className={`ml-2 font-bold ${respuesta.es_correcta ? 'text-green-400' : 'text-red-400'
+                                                        }`}
+                                                >
+                                                    {respuesta.es_correcta ? '✓' : '✗'}
+                                                </span>
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </>
+                ) : preguntaActual && juegoIniciado ? (
+                    <>
+
+                        {/* === NUEVO CSS: reloj centrado arriba, como en “individual” === */}
+                        <div className='w-full h-full text-white flex items-center justify-center'>
+                            <div
+                                className={`rounded-3xl px-6 py-4 text-center shadow-2xl border-4 w-40 ${tiempoRestante <= 5 && tiempoRestante > 0
+                                    ? 'bg-gradient-to-b from-red-500 to-orange-600 border-red-300/30 animate-pulse'
+                                    : 'bg-gradient-to-b from-yellow-300/80 to-yellow-400/80 border-yellow-400'
+                                    }`}
+                            >
+                                <p className='text-sm font-bold text-gray-800 mb-2'>⏱️ TIEMPO</p>
+                                <p
+                                    className={`text-5xl font-black ${tiempoRestante <= 5 && tiempoRestante > 0 ? 'text-white' : 'text-red-600'
+                                        }`}
+                                >
+                                    {tiempoRestante}
+                                </p>
+                                <p className='text-xs font-bold text-gray-800 mt-2'>segundos</p>
+                            </div>
+                        </div>
+
+                        {/* titulo de la categoria */}
+                        <div className='bg-gradient-to-r from-orange-500 to-pink-500 rounded-full px-8 py-3 mt-8 text-2xl font-black shadow-lg'>
+                            {String(config?.categoria || '').toUpperCase()}
+                        </div>
+
+                        {/* === NUEVO CSS: layout en 5 columnas (jugador izq, centro, jugador der) === */}
+                        <div className='grid grid-cols-3 gap-6 h-fit pt-10'>
+
+                            {/* izquierda - Jugador 1 - creador */}
+                            <div className='col-span-1 flex flex-col items-center justify-start'>
+                                <div className='bg-gradient-to-b from-blue-600/40 to-blue-700/70 rounded-2xl p-6 shadow-xl w-52'>
+                                    <div className='flex flex-col items-center'>
+                                        {creador ? (
+                                            <>
+                                                {creador?.foto_perfil && creador?.foto_perfil !== `${API}/uploads/default.png` ? (
+                                                    <img
+                                                        src={abs(creador?.foto_perfil)}
+                                                        alt='Creador'
+                                                        className='w-24 h-24 rounded-full object-cover border-4 border-yellow-300 shadow-lg mb-4'
+                                                    />
+                                                ) : (
+                                                    <div className='w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-5xl mb-4 shadow-lg'>
+                                                        👤
+                                                    </div>
+                                                )}
+                                                <span className='bg-blue-800 px-4 py-2 rounded-full text-sm font-bold text-center text-yellow-300'>
+                                                    {creador?.nombre || 'Creador'}
+                                                </span>
+                                                <span className='text-xs mt-2 opacity-70'>Creador</span>
+                                            </>
+                                        ) : (
+                                            <div className='w-24 h-24 rounded-full bg-white/20' />
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-8 w-full max-w-2xl shadow-2xl'>
+                                <div className='mb-6'>
+                                    <span className='text-sm font-bold text-yellow-300'>Pregunta {contador + 1}/10</span>
+                                </div>
+
+                                <p className='text-2xl font-bold text-white mb-8 leading-relaxed'>
+                                    {preguntaActual.enunciado}
+                                </p>
+
+                                <div className='space-y-4'>
+                                    {preguntaActual.Opciones.map((opcion, index) => {
+                                        let colorClase =
+                                            'bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600';
+
+                                        if (respuestaSeleccionada === opcion) {
+                                            colorClase = respuestaCorrecta
+                                                ? 'bg-gradient-to-r from-green-500 to-emerald-500 scale-105'
+                                                : 'bg-gradient-to-r from-red-500 to-pink-500 scale-105';
+                                        }
+
+                                        return (
+                                            <button
+                                                key={index}
+                                                className={`w-full rounded-xl py-4 px-6 cursor-pointer transition-all font-bold text-lg text-white shadow-lg border-2 border-transparent hover:border-yellow-300 disabled:opacity-50 ${colorClase}`}
+                                                onClick={() => handleGuardarRespuesta(opcion)}
+                                                disabled={!!respuestaSeleccionada}
+                                            >
+                                                {opcion.texto}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* derecha - Jugador 2 - invitado */}
+                            <div className='col-span-1 flex flex-col items-center justify-start gap-4'>
+                                <div className='bg-gradient-to-b from-green-600/40 to-green-700/70 rounded-2xl p-6 shadow-xl w-52'>
+                                    <div className='flex flex-col items-center'>
+                                        {invitado ? (
+                                            <>
+                                                {invitado.foto_perfil && invitado.foto_perfil !== `/uploads/default.png` ? (
+                                                    <img
+                                                        src={`${API}${invitado.foto_perfil}`}
+                                                        alt='Invitado'
+                                                        className='w-24 h-24 rounded-full object-cover border-4 border-green-300 shadow-lg mb-4'
+                                                    />
+                                                ) : (
+                                                    <div className='w-24 h-24 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-5xl mb-4 shadow-lg'>
+                                                        👤
+                                                    </div>
+                                                )}
+                                                <span className='bg-green-800 px-4 py-2 rounded-full text-sm font-bold text-center text-yellow-300'>
+                                                    {invitado?.nombre || 'Invitado'}
+                                                </span>
+                                                <span className='text-xs mt-2 opacity-70'>Invitado</span>
+                                            </>
+                                        ) : (
+                                            <div className='w-24 h-24 rounded-full bg-white/20' />
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </>
+                ) : (
+                    <p className='text-xl text-gray-300'>No hay preguntas disponibles.</p>
+                )}
             </div>
-        </div>
+
+
+        </div >
     );
 }

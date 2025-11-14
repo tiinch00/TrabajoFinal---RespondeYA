@@ -72,44 +72,32 @@ const store = async (req, res) => {
 };
 
 const update = async (req, res) => {
-  const { id } = req.params;
-  const { codigo, creador_id, categoria_id, max_jugadores, estado } = req.body;
-  if (creador_id && !creador_id) {
-    return res.status(400).json({ error: "creador_id cannot be changed" });
+  const id = Number(req.params.id); // es params por la url  
+  const { estado } = req.body;   // es body porque esta despues de la url con una coma (,)
+  
+  console.log({ id: typeof id });
+  console.log({ estado: typeof estado });
+  console.log("id: ", id );
+  console.log("estado: ", estado);
+
+  if (typeof estado !== 'string') {
+    return res.status(400).json({ error: "Valor de estado invalido" });
   }
-  if (creador_id) {
-    const creador = await User.findByPk(creador_id);
-    if (!creador) {
-      return res.status(400).json({ error: "Invalid creador_id" });
-    }
-  }
-  if (categoria_id) {
-    const categoria = await Categoria.findByPk(categoria_id);
-    if (!categoria) {
-      return res.status(400).json({ error: "Invalid categoria_id" });
-    }
-  }
-  if (max_jugadores !== undefined && max_jugadores !== 2) {
-    return res.status(400).json({ error: "max_jugadores must be 2" });
-  }
-  if (estado && !["esperando", "en_curso", "cancelada"].includes(estado)) {
-    return res.status(400).json({ error: "Invalid estado value" });
-  }
+
   try {
-    const sala = await Sala.findByPk(id);
+    const sala = await Sala.findByPk(Number(id));
+    console.log("objSala: ", sala);
     if (!sala) {
-      return res.status(404).json({ error: "Sala not found" });
+      return res.status(404).json({ error: "obj Sala no encontrada" });
     }
-    await sala.update({ codigo, creador_id, categoria_id, max_jugadores, estado });
+    await sala.update({ estado });
     res.json(sala);
+
   } catch (error) {
+    
     if (error.name === 'SequelizeUniqueConstraintError') {
       return res.status(409).json({ error: "Código de sala ya existe" });
-    }
-    if (error.name === 'SequelizeForeignKeyConstraintError') {
-      return res.status(400).json({ error: "Invalid creador_id or categoria_id" });
-    }
-    console.error(error);
+    }   
     return res.status(500).json({ error: "Internal server error" });
   }
 };
