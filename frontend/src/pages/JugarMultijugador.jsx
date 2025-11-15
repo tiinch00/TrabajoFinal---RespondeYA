@@ -1009,101 +1009,184 @@ export default function JugarMultijugador() {
                                 {alerta}
                             </div>
 
-                            {/* PODIO de juego terminado */}
-                            <div className='flex flex-row items-end mt-10'>
+                            {partidaCompleta?.resumen?.ganador_jugador_id != null ? ( // != permite null y undefined
+                                <>
+                                    {/* PODIO de juego terminado */}
+                                    <div className='flex flex-row items-end mt-10'>
 
-                                {/* ganador */}
-                                <div className='flex flex-col items-center'>
-                                    {/* número 1 */}
-                                    <span className='mb-2 w-10 h-10 rounded-full bg-yellow-400 text-slate-900 
+                                        {/* ganador */}
+                                        <div className='flex flex-col items-center'>
+                                            {/* número 1 */}
+                                            <span className='mb-2 w-10 h-10 rounded-full bg-yellow-400 text-slate-900 
                                     flex items-center justify-center text-xl font-extrabold'>
-                                        1
-                                    </span>
+                                                1
+                                            </span>
 
-                                    <div className='w-52'>
-                                        <div className='flex flex-col items-center justify-start'>
-                                            <div className='bg-gradient-to-b from-blue-600/40 to-blue-700/70 p-6 shadow-xl w-full rounded-l-lg rounded-tr-lg'>
-                                                <div className='flex flex-col items-center'>
-                                                    {ganador ? (
-
-                                                        <>
-                                                            {ganador?.foto_perfil && ganador?.foto_perfil !== `${API}/uploads/default.png` && ganador?.foto_perfil !== `/uploads/default.png` ? (
-                                                                <img
-                                                                    src={abs(ganador?.foto_perfil)}
-                                                                    alt='ganador'
-                                                                    className='w-24 h-24 rounded-full object-cover border-4 border-yellow-300 shadow-lg mb-4'
-                                                                />
+                                            <div className='w-52'>
+                                                <div className='flex flex-col items-center justify-start'>
+                                                    <div className='bg-gradient-to-b from-blue-600/40 to-blue-700/70 p-6 shadow-xl w-full rounded-l-lg rounded-tr-lg'>
+                                                        <div className='flex flex-col items-center'>
+                                                            {ganador ? (
+                                                                <>
+                                                                    {ganador?.foto_perfil && ganador?.foto_perfil !== `${API}/uploads/default.png` && ganador?.foto_perfil !== `/uploads/default.png` ? (
+                                                                        <img
+                                                                            src={abs(ganador?.foto_perfil)}
+                                                                            alt='ganador'
+                                                                            className='w-24 h-24 rounded-full object-cover border-4 border-yellow-300 shadow-lg mb-4'
+                                                                        />
+                                                                    ) : (
+                                                                        <div className='w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-5xl mb-4 shadow-lg'>
+                                                                            👤
+                                                                        </div>
+                                                                    )}
+                                                                    <span className='bg-blue-900 px-4 py-2 rounded-full text-sm font-bold text-center text-yellow-300'>
+                                                                        {ganador?.nombre || 'ganador'}
+                                                                    </span>
+                                                                    <span className='text-xs mt-2 opacity-70'>{ganador?.puntaje_total} puntos!</span>
+                                                                </>
                                                             ) : (
-                                                                <div className='w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-5xl mb-4 shadow-lg'>
-                                                                    👤
-                                                                </div>
+                                                                <div className='w-24 h-24 rounded-full bg-white/20' />
                                                             )}
-                                                            <span className='bg-blue-900 px-4 py-2 rounded-full text-sm font-bold text-center text-yellow-300'>
-                                                                {ganador?.nombre || 'ganador'}
-                                                            </span>
-                                                            <span className='text-xs mt-2 opacity-70'>{ganador?.puntaje_total} puntos!</span>
-                                                        </>
-                                                    ) : (
-                                                        <div className='w-24 h-24 rounded-full bg-white/20' />
-                                                    )}
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
 
-                                {/* perdedor */}
-                                <div className='flex flex-col items-center mt-6'>
-                                    {/* número 2 */}
-                                    <span className='mb-2 w-8 h-8 rounded-full bg-gray-300 text-slate-900 
+                                        {/* perdedor */}
+                                        <div className='flex flex-col items-center mt-6'>
+                                            {/* número 2 */}
+                                            <span className='mb-2 w-8 h-8 rounded-full bg-gray-300 text-slate-900 
                                     flex items-center justify-center text-md font-bold'>
-                                        2
-                                    </span>
+                                                2
+                                            </span>
 
-                                    <div className='w-44'>
-                                        <div className='flex flex-col items-center gap-4'>
-                                            <div className='bg-gradient-to-b from-green-600/40 to-green-700/70 p-4 shadow-xl w-full rounded-r-lg'>
-                                                <div className='flex flex-col items-center '>
-                                                    {perdedor ? (
-                                                        <>
-                                                            {perdedor.foto_perfil && perdedor.foto_perfil !== `/uploads/default.png` && perdedor?.foto_perfil !== `/uploads/default.png` ? (
-                                                                <img
-                                                                    src={`${API}${perdedor.foto_perfil}`}
-                                                                    alt='perdedor'
-                                                                    className='w-20 h-20 rounded-full object-cover border-4 border-green-300 shadow-lg mb-4'
-                                                                />
+                                            <div className='w-44'>
+                                                <div className='flex flex-col items-center gap-4'>
+                                                    <div className='bg-gradient-to-b from-green-600/40 to-green-700/70 p-4 shadow-xl w-full rounded-r-lg'>
+                                                        <div className='flex flex-col items-center '>
+                                                            {perdedor ? (
+                                                                <>
+                                                                    {perdedor.foto_perfil && perdedor.foto_perfil !== `/uploads/default.png` && perdedor?.foto_perfil !== `/uploads/default.png` ? (
+                                                                        <img
+                                                                            src={`${API}${perdedor.foto_perfil}`}
+                                                                            alt='perdedor'
+                                                                            className='w-20 h-20 rounded-full object-cover border-4 border-green-300 shadow-lg mb-4'
+                                                                        />
+                                                                    ) : (
+                                                                        <div className='w-20 h-20 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-4xl mb-4 shadow-lg'>
+                                                                            👤
+                                                                        </div>
+                                                                    )}
+                                                                    <span className='bg-green-800 px-4 py-2 rounded-full text-sm font-bold text-center text-yellow-300'>
+                                                                        {perdedor?.nombre || 'perdedor'}
+                                                                    </span>
+                                                                    <span className='text-xs mt-2 opacity-70'>{perdedor?.puntaje_total} puntos!</span>
+                                                                </>
                                                             ) : (
-                                                                <div className='w-20 h-20 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-4xl mb-4 shadow-lg'>
-                                                                    👤
-                                                                </div>
+                                                                <div className='w-20 h-20 rounded-full bg-white/20' />
                                                             )}
-                                                            <span className='bg-green-800 px-4 py-2 rounded-full text-sm font-bold text-center text-yellow-300'>
-                                                                {perdedor?.nombre || 'perdedor'}
-                                                            </span>
-                                                            <span className='text-xs mt-2 opacity-70'>{perdedor?.puntaje_total} puntos!</span>
-                                                        </>
-                                                    ) : (
-                                                        <div className='w-20 h-20 rounded-full bg-white/20' />
-                                                    )}
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
+
                                     </div>
-                                </div>
-
-                            </div>
-
-                            <div className='bg-black/50 mt-5 rounded-full w-96 text-center'>
-                                <p className=' text-xl font-bold text-gray-200 p-4'>
-                                    {ganador
-                                        ? `¡${ganador?.nombre} ha ganado esta partida!`
-                                        : 'Calculando ganador...'}
-                                </p>
-                            </div>
 
 
+                                    <div className='bg-black/50 mt-5 rounded-full w-96 text-center'>
+                                        <p className=' text-xl font-bold text-gray-200 p-4'>
+                                            {ganador
+                                                ? `¡${ganador?.nombre} ha ganado esta partida!`
+                                                : 'Calculando ganador...'}
+                                        </p>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    {/* PODIO de juego terminado */}
+                                    <div className='flex flex-row items-end mt-10'>
+
+                                        {/* ganador */}
+                                        <div className='flex flex-col items-center'>
+                                            <div className='w-52'>
+                                                <div className='flex flex-col items-center justify-start'>
+                                                    <div className='bg-gradient-to-b from-blue-600/40 to-blue-700/70 p-6 shadow-xl w-full rounded-l-lg rounded-tr-lg'>
+                                                        <div className='flex flex-col items-center'>
+                                                            {jugadores[0] ? (
+                                                                <>
+                                                                    {jugadores[0] ?.foto_perfil && jugadores[0] ?.foto_perfil !== `${API}/uploads/default.png` && jugadores[0] ?.foto_perfil !== `/uploads/default.png` ? (
+                                                                        <img
+                                                                            src={abs(jugadores[0] ?.foto_perfil)}
+                                                                            alt='jugador creador'
+                                                                            className='w-24 h-24 rounded-full object-cover border-4 border-yellow-300 shadow-lg mb-4'
+                                                                        />
+                                                                    ) : (
+                                                                        <div className='w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-5xl mb-4 shadow-lg'>
+                                                                            👤
+                                                                        </div>
+                                                                    )}
+                                                                    <span className='bg-blue-900 px-4 py-2 rounded-full text-sm font-bold text-center text-yellow-300'>
+                                                                        {jugadores[0] ?.nombre || 'jugador creador'}
+                                                                    </span>
+                                                                    {/* <span className='text-xs mt-2 opacity-70'>{ganador?.puntaje_total} puntos!</span> */}
+                                                                </>
+                                                            ) : (
+                                                                <div className='w-24 h-24 rounded-full bg-white/20' />
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* perdedor */}
+                                        <div className='flex flex-col items-center mt-10'>
+                                            <div className='w-52'>
+                                                <div className='flex flex-col items-center gap-4'>
+                                                    <div className='bg-gradient-to-b from-green-600/40 to-green-700/70 p-6 shadow-xl w-full rounded-r-lg'>
+                                                        <div className='flex flex-col items-center '>
+                                                            {jugadores[1] ? (
+                                                                <>
+                                                                    {jugadores[1].foto_perfil && jugadores[1].foto_perfil !== `/uploads/default.png` && jugadores[1]?.foto_perfil !== `/uploads/default.png` ? (
+                                                                        <img
+                                                                            src={`${API}${jugadores[1].foto_perfil}`}
+                                                                            alt='jugador invitado'
+                                                                            className='w-24 h-24 rounded-full object-cover border-4 border-green-300 shadow-lg mb-4'
+                                                                        />
+                                                                    ) : (
+                                                                        <div className='w-24 h-24 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-4xl mb-4 shadow-lg'>
+                                                                            👤
+                                                                        </div>
+                                                                    )}
+                                                                    <span className='bg-green-800 px-4 py-2 rounded-full text-sm font-bold text-center text-yellow-300'>
+                                                                        {jugadores[1]?.nombre || 'jugador invitado'}
+                                                                    </span>
+                                                                    {/* <span className='text-xs mt-2 opacity-70'>{perdedor?.puntaje_total} puntos!</span> */}
+                                                                </>
+                                                            ) : (
+                                                                <div className='w-24 h-24 rounded-full bg-white/20' />
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                    {console.log("jugadores: ", jugadores)}
+
+                                    <div className='bg-black/50 mt-5 rounded-full w-96 text-center'>
+                                        <p className=' text-xl font-bold text-gray-200 p-4'>
+                                            ¡La partida es un empate!
+                                        </p>
+                                    </div>
+                                </>
+                            )}
+
+                            {/*==============================  Resumen de Respuestas =======================================*/}
                             {juegoTerminado && (
-                                // ==============================  Resumen de Respuestas =======================================
                                 <div className='bg-black/50 rounded-2xl p-8 mt-10 w-full max-w-2xl'>
                                     {/*console.log(juegoTerminado)*/}
                                     {/*console.log(respuestas)*/}
@@ -1279,7 +1362,8 @@ export default function JugarMultijugador() {
                         <p className='text-xl text-gray-300'>No hay preguntas disponibles.</p>
                     )}
                 </div>
-            )}
-        </div>
+            )
+            }
+        </div >
     );
 }
