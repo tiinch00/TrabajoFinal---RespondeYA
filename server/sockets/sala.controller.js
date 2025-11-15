@@ -538,13 +538,8 @@ export default function registrarEventosSala(io, socket) {
             const jugadoresStats = Array.isArray(resumen?.jugadores) ? resumen.jugadores : null;
 
             // Si no vino ended_at, lo calculamos ahora
-            if (!ended_at) {
-                const formatearTS = (ts) => {
-                    const d = new Date(ts || Date.now());
-                    const pad = (n) => String(n).padStart(2, '0');
-                    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-                };
-                ended_at = formatearTS(Date.now());
+            if (!ended_at) {                
+                ended_at = formatearTimestampParaMySQL(Date.now());
             }
 
             // Si no vinieron stats por jugador, los calculamos a partir de respuestas

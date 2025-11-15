@@ -27,6 +27,12 @@ const Perfil = () => {
   const userId = user?.id;
   const jugador_id = user?.jugador_id;
   const [eliminando, setEliminando] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState({
+    open: false,
+    amigoId: null,
+    nombre: '',
+  });
+  const [confirmDeleting, setConfirmDeleting] = useState(false); // loading de borrar un amigo
 
   const modeTranslations = {
     individual: t('singlePlayer'),
@@ -108,6 +114,7 @@ const Perfil = () => {
   const [salaId, setSalaId] = useState(null);
 
   const [estadisticas, setEstadisticas] = useState([]); // array estadisticas
+  const [estadisticasTodas, setEstadisticasTodas] = useState([]);
 
   // hooks de foto de perfil
   const API = 'http://localhost:3006'; // URL base de tu API
@@ -481,7 +488,20 @@ const Perfil = () => {
       };
       localStorage.setItem('user', JSON.stringify(storedUser));
     } catch (err) {
-      setError(err.response?.data?.error || err.message);
+      const apiError = err.response?.data;
+
+      // Si viene el esquema de VALIDATION desde el backend
+      if (apiError?.error === 'VALIDATION' && apiError.fields) {
+        setFormErrors((prev) => ({
+          ...prev,
+          ...apiError.fields, // { name: '...', email: '...' }
+        }));
+      } else if (typeof apiError?.error === 'string') {
+        // error genérico de backend
+        setError(apiError.error);
+      } else {
+        setError(err.message);
+      }
     } finally {
       setSaving(false);
     }
@@ -583,10 +603,8 @@ const Perfil = () => {
 
   const eliminarAmigo = async (id) => {
     try {
-      // Idealmente debería ser DELETE, pero uso tu endpoint tal cual:
       const { data } = await axios.delete(`http://localhost:3006/amigos/eliminar/${id}`);
 
-      // actualiza el nuevo array de amigos
       setAmigos((prev) => prev.filter((a) => a.id !== id));
       setEliminado(true);
 
@@ -599,6 +617,7 @@ const Perfil = () => {
       console.error('Error al eliminar un amigo:', err);
     }
   };
+
 
   const handleAgregarAmigo = async (registroSala) => {
     try {
@@ -723,14 +742,19 @@ const Perfil = () => {
     }
   };
 
-  // obtiene un array de todas las estadisticas del jugador
   const getEstadisticas = async () => {
     try {
-      const { data } = await axios.get(
-        'http://localhost:3006/estadisticas/',
-        { params: { jugador_id } } // <-- params
+      // 🔹 SIN params → traemos TODAS las estadísticas
+      const { data } = await axios.get('http://localhost:3006/estadisticas/');
+
+      const todas = Array.isArray(data) ? data : [];
+      setEstadisticasTodas(todas); // 👈 guardamos el universo completo
+
+      // 🔹 De ahí sacamos SOLO las del jugador logueado
+      const soloMias = todas.filter(
+        (e) => Number(e.jugador_id) === Number(jugador_id)
       );
-      setEstadisticas(data);
+      setEstadisticas(soloMias); // 👈 esto lo usa tu UI como antes
     } catch (error) {
       console.log('@@@@ Error GET: estadisticas\n', error);
     }
@@ -763,6 +787,15 @@ const Perfil = () => {
         return m;
       }, new Map());
 
+      // 🔹 NUEVO: mapa de cantidad de ganadores por partida
+      const winnersByPartida = (estadisticasTodas ?? []).reduce((acc, est) => {
+        if (Number(est.posicion) > 0) {
+          const key = est.partida_id;
+          acc[key] = (acc[key] || 0) + 1;
+        }
+        return acc;
+      }, {});
+
       const contar = (arr) =>
         arr.reduce((acc, k) => ((acc[k] = (acc[k] || 0) + 1), acc), {});
 
@@ -787,7 +820,13 @@ const Perfil = () => {
           })
           .filter(Boolean);
 
+
+
         const resumenDificultad = contar(dificultadesPorPregunta);
+
+        // 🔹 NUEVO: flag de empate para ESTA estadística
+        const ganadoresEnPartida = winnersByPartida[e.partida_id] || 0;
+        const empate = ganadoresEnPartida > 1 && partida?.modo === 'multijugador';
 
         return {
           ...e,
@@ -811,6 +850,7 @@ const Perfil = () => {
           dificultad: dificultadesPorPregunta[0],
           resumenDificultad,
           total_preguntas_partida: pps.length,
+          empate,
         };
       });
 
@@ -874,6 +914,12 @@ const Perfil = () => {
           );
           //console.log("jugadoresDeUnaPartdia:", jugadoresDeUnaPartdia);
 
+          // 🔹 NUEVO: calcular empate usando estadisticas
+          const winnersEstaPartida = (estadisticasTodas ?? []).filter(
+            (est) => Number(est.partida_id) === idPartida && Number(est.posicion) > 0
+          );
+          const empate = winnersEstaPartida.length > 1;
+
           // 7) obtiene un array donde se verifica las preguntas que se eligieron al azar el orden de la partida (partida_preguntas)
           const preguntasDeLaPartida = partida_preguntas.filter(
             (e) => Number(e.partida_id) === idPartida
@@ -919,6 +965,7 @@ const Perfil = () => {
             respuestasDeLaPartida: respuestasDeLaPartida,
             preguntasIdsDeLaPartida: arrayPreguntasIdsDeLaPartida,
             opcionesDeRespuestas: opcionesDeLaPartida,
+            empate,
           };
         } else {
           //console.log("No hay un objeto");
@@ -968,12 +1015,37 @@ const Perfil = () => {
       timeDifficultyTranslations?.[e?.dificultad_tiempo] ??
       (e?.dificultad_tiempo ?? "");
 
+    // 🔹 NUEVO: etiqueta de resultado para el buscador
+    let etiquetaResultado = "";
+    if (e?.modo === "multijugador") {
+      if (e.empate) {
+        // importantes las palabras en castellano para que el user pueda buscar
+        etiquetaResultado = "empate draw";
+      } else if (Number(e.posicion) > 0) {
+        etiquetaResultado = "ganaste victoria win";
+      } else {
+        etiquetaResultado = "perdiste derrota loss";
+      }
+    } else if (e?.modo === "individual") {
+      etiquetaResultado = "practica entrenamiento";
+    }
+
     return normalize(
-      [etiquetaPractica, fecha, hora, modo, cat, diffPregunta, diffTiempo]
+      [
+        etiquetaPractica,
+        etiquetaResultado, // 👈 ahora “empate”, “ganaste”, etc. forman parte del texto buscable
+        fecha,
+        hora,
+        modo,
+        cat,
+        diffPregunta,
+        diffTiempo,
+      ]
         .filter(Boolean)
         .join(" ")
     );
   };
+
 
   // buscador de partidas
   const handleSearch = () => {
@@ -1195,6 +1267,7 @@ const Perfil = () => {
     opciones,
     respuestas,
     partidaIdSeleccionada,
+    estadisticasTodas,
   ]);
 
   // 2)  efecto b
@@ -1882,7 +1955,7 @@ const Perfil = () => {
         )}
       </div>
 
-      {/* ====================================================================================== */}
+      {/* =============================== Mi Perfil ======================================================= */}
 
       {/* Mi Perfil */}
       <div className='mt-4 space-y-4'>
@@ -2078,87 +2151,69 @@ const Perfil = () => {
                 </div>
               ) : (
                 <ul className=''>
-                  {/* {console.log('visible: ', visible)} */}
+                  {console.log('visible: ', visible)}
                   {(visible ?? []).map((e, index) => {
-                    const globalIndex = startIndex + index; // índice global del item
+                    const globalIndex = startIndex + index;
+
+                    // 🔹 elegimos etiqueta y color según estado
+                    let etiqueta;
+                    let claseColor;
+
+                    if (e?.modo === 'individual') {
+                      etiqueta = 'Práctica';
+                      claseColor = 'text-yellow-400';
+                    } else if (e.empate) {
+                      etiqueta = 'Empate';
+                      claseColor = 'text-blue-400';
+                    } else if (e.posicion > 0) {
+                      etiqueta = t('youWon');
+                      claseColor = 'text-green-500';
+                    } else {
+                      etiqueta = t('youLoss');
+                      claseColor = 'text-red-500';
+                    }
+
                     return (
                       <motion.li
                         key={e.id}
                         className='border rounded-xl p-4 bg-white/10 hover:bg-white/20 
-                        flex space-x-4 mb-2 cursor-pointer'
+        flex space-x-4 mb-2 cursor-pointer'
                         whileTap={{ scale: 1.05 }}
                         onClick={() => {
-                          // si lo querés para resaltar el li, usamos el índice global
                           setSelectedEstadisticas(globalIndex);
-                          // esta es la clave real que usaremos en el modal
                           setPartidaIdSeleccionada(e.partida_id);
                           setModalEstadisticaAbierto(true);
                         }}
                       >
-                        {e.posicion > 0 ? (
-                          <div className='flex flex-row gap-5'>
-                            {e?.modo == 'individual' ? (
-                              <p className='text-yellow-400'>Práctica</p>
-                            ) : (
-                              <p className='text-green-500'>{t('youWon')}</p>
-                            )}
-                            <p className='text-white'>
-                              {t('date')}: {formatDateDMYLocal(e?.ended_at) ?? '-'}
-                            </p>
-                            <p className='text-white'>
-                              {t('dateHs')}: {formatTimeHMLocal(e?.ended_at) ?? '-'}
-                            </p>
-                            <p className='text-white'>
-                              {t('mode')}: {modeTranslations[e?.modo] ?? '-'}
-                            </p>
-                            <p className='text-white'>
-                              {t('category')}:{' '}
-                              {categoryTranslations[e?.categoria] ?? '-'}
-                            </p>
-                            <p className='text-white'>
-                              {t('dificultyquestion')}:{' '}
-                              {difficultyTranslations[e?.dificultad] ?? '-'}
-                            </p>
-                            <p className='text-white'>
-                              {t('dificultytime')}:{' '}
-                              {timeDifficultyTranslations[e?.dificultad_tiempo] ?? '-'}
-                            </p>
-                          </div>
-                        ) : (
-                          <div className='flex flex-row gap-5'>
-                            {e?.modo == 'individual' ? (
-                              <p className='text-yellow-400'>Práctica</p>
-                            ) : (
-                              <p className='text-red-500'>{t('youLoss')}</p>
-                            )}
-                            <p className='text-white'>
-                              {t('date')}: {formatDateDMYLocal(e?.ended_at) ?? '-'}
-                            </p>
-                            <p className='text-white'>
-                              {t('dateHs')}: {formatTimeHMLocal(e?.ended_at) ?? '-'}
-                            </p>
-                            <p className='text-white'>
-                              {t('mode')}: {modeTranslations[e?.modo] ?? '-'}
-                            </p>
-                            <p className='text-white'>
-                              {t('category')}:{' '}
-                              {categoryTranslations[e?.categoria] ?? '-'}
-                            </p>
-                            <p className='text-white'>
-                              {t('dificultyquestion')}:{' '}
-                              {difficultyTranslations[e?.dificultad] ?? '-'}
-                            </p>
-                            <p className='text-white'>
-                              {t('dificultytime')}:{' '}
-                              {timeDifficultyTranslations[e?.dificultad_tiempo] ?? '-'}
-                            </p>
-                          </div>
-                        )}
+                        <div className='flex flex-row gap-5'>
+                          <p className={claseColor}>{etiqueta}</p>
+                          <p className='text-white'>
+                            {t('date')}: {formatDateDMYLocal(e?.ended_at) ?? '-'}
+                          </p>
+                          <p className='text-white'>
+                            {t('dateHs')}: {formatTimeHMLocal(e?.ended_at) ?? '-'}
+                          </p>
+                          <p className='text-white'>
+                            {t('mode')}: {modeTranslations[e?.modo] ?? '-'}
+                          </p>
+                          <p className='text-white'>
+                            {t('category')}: {categoryTranslations[e?.categoria] ?? '-'}
+                          </p>
+                          <p className='text-white'>
+                            {t('dificultyquestion')}:{' '}
+                            {difficultyTranslations[e?.dificultad] ?? '-'}
+                          </p>
+                          <p className='text-white'>
+                            {t('dificultytime')}:{' '}
+                            {timeDifficultyTranslations[e?.dificultad_tiempo] ?? '-'}
+                          </p>
+                        </div>
                       </motion.li>
                     );
                   })}
                 </ul>
-              )}
+              )
+              }
 
               {/* Paginado: aparece solo si hay más de 5 */}
               {total > PAGE_SIZE && (
@@ -2290,17 +2345,16 @@ const Perfil = () => {
                     >
                       {/* {console.log('partidaSeleccionada: ', partidaSeleccionada)} */}
                       <p className='p-1'>
-                        <strong>{t('mode')}:</strong> {partidaSeleccionada.modo ?? '—'}
+                        <strong>{t('position')}:</strong>{' '}
+                        {partidaSeleccionada.modo === 'individual'
+                          ? 'Práctica'
+                          : partidaSeleccionada.empate
+                            ? 'Empate'
+                            : partidaSeleccionada.posicion > 0
+                              ? t('won')      // ganaste
+                              : t('youLoss')  // perdiste
+                        }
                       </p>
-                      {partidaSeleccionada.posicion > 0 ? (
-                        <p className='p-1'>
-                          <strong>{t('position')}:</strong> {t('won')}
-                        </p>
-                      ) : (
-                        <p className='p-1'>
-                          <strong>{t('position')}:</strong> {t('youWon')}
-                        </p>
-                      )}
                       <p className='p-1'>
                         <strong>{t('scoreGeneral')}:</strong>{' '}
                         {partidaSeleccionada.puntaje_total}
@@ -2910,9 +2964,15 @@ const Perfil = () => {
                     <motion.button
                       type='button'
                       className='bg-red-500 hover:bg-red-600 rounded w-32 cursor-pointer 
-                         justify-self-end text-white py-1.5'
+                        justify-self-end text-white py-1.5'
                       whileTap={{ scale: 1.1 }}
-                      onClick={() => eliminarAmigo(amigo.id)}
+                      onClick={() =>
+                        setConfirmDelete({
+                          open: true,
+                          amigoId: amigo.id,
+                          nombre: usuario?.name ?? 'este amigo',
+                        })
+                      }
                     >
                       {t('deleteFriend')}
                     </motion.button>
@@ -2956,7 +3016,78 @@ const Perfil = () => {
             </p>
           )}
         </div>
+
+        <AnimatePresence>
+          {confirmDelete.open && (
+            <motion.div
+              key='confirm-delete-friend'
+              className='fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center'
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              {/* Caja del modal */}
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0, y: 10 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, y: 10 }}
+                className='bg-slate-900/95 border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl'
+              >
+                <h3 className='text-xl font-semibold text-white mb-2'>
+                  {t('deleteFriend')}
+                </h3>
+                <p className='text-sm text-slate-100 mb-4'>
+                  ¿Seguro que querés eliminar a{' '}
+                  <span className='font-semibold text-red-300'>
+                    {confirmDelete.nombre}
+                  </span>{' '}
+                  de tu lista de amigos?
+                </p>
+
+                <div className='flex justify-end gap-3'>
+                  <button
+                    type='button'
+                    className='px-4 py-2 rounded-lg bg-slate-600 text-white hover:bg-slate-500 cursor-pointer'
+                    onClick={() =>
+                      setConfirmDelete({
+                        open: false,
+                        amigoId: null,
+                        nombre: '',
+                      })
+                    }
+                  >
+                    {t('cancel') ?? 'Cancelar'}
+                  </button>
+
+                  <button
+                    type='button'
+                    className='px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-60 cursor-pointer'
+                    disabled={confirmDeleting}
+                    onClick={async () => {
+                      try {
+                        setConfirmDeleting(true);
+                        await eliminarAmigo(confirmDelete.amigoId);
+                      } finally {
+                        setConfirmDeleting(false);
+                        setConfirmDelete({
+                          open: false,
+                          amigoId: null,
+                          nombre: '',
+                        });
+                      }
+                    }}
+                  >
+                    {confirmDeleting ? 'Eliminando...' : t('deleteFriend')}
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
+
+
+
 
     </div>
   );

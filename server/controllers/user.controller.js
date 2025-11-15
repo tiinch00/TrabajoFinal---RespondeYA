@@ -45,13 +45,32 @@ const store = async (req, res) => {
     res.status(201).json(user);
   } catch (error) {
     if (error.name === 'SequelizeUniqueConstraintError') {
-      return res.status(400).json({ error: 'Email already exists' });
+      const fieldErrors = {};
+
+      (error.errors || []).forEach((e) => {
+        if (e.path === 'email') {
+          fieldErrors.email = 'El email ya está en uso';
+        }
+        if (e.path === 'name') {
+          fieldErrors.name = 'El nombre de usuario ya está en uso';
+        }
+      });
+
+      if (!Object.keys(fieldErrors).length) {
+        return res
+          .status(400)
+          .json({ error: 'Ya existe un usuario con esos datos' });
+      }
+
+      return res.status(400).json({
+        error: 'VALIDATION',
+        fields: fieldErrors,
+      });
     }
     console.error(error);
     return res.status(500).send('Internal server error');
   }
 };
-
 const update = async (req, res) => {
   const { id } = req.params;
   const { name, email, password } = req.body;
@@ -74,8 +93,31 @@ const update = async (req, res) => {
     res.json(safe);
   } catch (error) {
     if (error.name === 'SequelizeUniqueConstraintError') {
-      return res.status(400).json({ error: 'Email already exists' });
+      // armamos un objeto con errores por campo
+      const fieldErrors = {};
+
+      (error.errors || []).forEach((e) => {
+        if (e.path === 'email') {
+          fieldErrors.email = 'El email ya está en uso';
+        }
+        if (e.path === 'name') {
+          fieldErrors.name = 'El nombre de usuario ya está en uso';
+        }
+      });
+
+      // si por alguna razón no detecta campo, mandamos algo genérico
+      if (!Object.keys(fieldErrors).length) {
+        return res
+          .status(400)
+          .json({ error: 'Ya existe un usuario con esos datos' });
+      }
+
+      return res.status(400).json({
+        error: 'VALIDATION',
+        fields: fieldErrors,
+      });
     }
+
     console.error(error);
     return res.status(500).send('Internal server error');
   }

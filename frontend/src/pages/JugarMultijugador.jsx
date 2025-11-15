@@ -15,6 +15,21 @@ import { useGame } from '../context/ContextJuego.jsx';
 import useSound from 'use-sound';
 import { useTranslation } from 'react-i18next';
 
+function formatearTimestampParaMySQL(timestampEnMilisegundos) {
+    const MS_3HS = 3 * 60 * 60 * 1000;
+    const fecha = new Date(Number(timestampEnMilisegundos) - MS_3HS);
+
+    // Usamos métodos para construir el string en formato 'YYYY-MM-DD HH:MM:SS'
+    const anio = fecha.getFullYear();
+    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+    const dia = String(fecha.getDate()).padStart(2, '0');
+    const horas = String(fecha.getHours()).padStart(2, '0');
+    const minutos = String(fecha.getMinutes()).padStart(2, '0');
+    const segundos = String(fecha.getSeconds()).padStart(2, '0');
+
+    return `${anio}-${mes}-${dia} ${horas}:${minutos}:${segundos}`;
+}
+
 // ===== util: PRNG determinístico y shuffle con seed (para que ambos vean lo mismo)
 function mulberry32(a) {
     return function () {
@@ -769,7 +784,7 @@ export default function JugarMultijugador() {
                             },
                         ],
                         ganador_jugador_id: jugadorIdGanador,
-                        ended_at: new Date().toISOString().slice(0, 19).replace("T", " "),
+                        ended_at: formatearTimestampParaMySQL(Date.now()),
                     },
                 };
 
@@ -816,7 +831,7 @@ export default function JugarMultijugador() {
                         },
                     ],
                     ganador_jugador_id: jugadorIdGanador,
-                    ended_at: new Date().toISOString().slice(0, 19).replace("T", " "),
+                    ended_at: (Date.now()),
                 },
             };
 
@@ -1116,9 +1131,9 @@ export default function JugarMultijugador() {
                                                         <div className='flex flex-col items-center'>
                                                             {jugadores[0] ? (
                                                                 <>
-                                                                    {jugadores[0] ?.foto_perfil && jugadores[0] ?.foto_perfil !== `${API}/uploads/default.png` && jugadores[0] ?.foto_perfil !== `/uploads/default.png` ? (
+                                                                    {jugadores[0]?.foto_perfil && jugadores[0]?.foto_perfil !== `${API}/uploads/default.png` && jugadores[0]?.foto_perfil !== `/uploads/default.png` ? (
                                                                         <img
-                                                                            src={abs(jugadores[0] ?.foto_perfil)}
+                                                                            src={abs(jugadores[0]?.foto_perfil)}
                                                                             alt='jugador creador'
                                                                             className='w-24 h-24 rounded-full object-cover border-4 border-yellow-300 shadow-lg mb-4'
                                                                         />
@@ -1128,7 +1143,7 @@ export default function JugarMultijugador() {
                                                                         </div>
                                                                     )}
                                                                     <span className='bg-blue-900 px-4 py-2 rounded-full text-sm font-bold text-center text-yellow-300'>
-                                                                        {jugadores[0] ?.nombre || 'jugador creador'}
+                                                                        {jugadores[0]?.nombre || 'jugador creador'}
                                                                     </span>
                                                                     {/* <span className='text-xs mt-2 opacity-70'>{ganador?.puntaje_total} puntos!</span> */}
                                                                 </>

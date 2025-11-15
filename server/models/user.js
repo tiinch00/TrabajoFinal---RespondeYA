@@ -17,6 +17,7 @@ const User = sequelize.define(
     },
     name: {
       type: DataTypes.STRING(255),
+      unique: true, //para que solo se pueda usar una vez el name
       allowNull: false, //requiere que el campo sea no null
     },
     email: {
