@@ -151,6 +151,8 @@
   "date": "Fecha",
   "dateHs": "Hora",
   "dificulty": "Dificultad",
+  "dificultyquestion": "Dificultad de pregunta",
+  "dificultytime": "Dificultad de tiempo",
   "category": "Categoria",
   "deleteFriend": "Eliminar amigo",
   "noHaveFriend": "No tienes amigos guardado...",

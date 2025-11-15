@@ -151,6 +151,8 @@
   "date": "Date",
   "dateHs": "Time",
   "dificulty": "Difficulty",
+  "dificultyquestion": "Difficulty question",
+  "dificultytime": "Difficulty time",
   "category": "Category",
   "deleteFriend": "Delete Friend",
   "noHaveFriend": "You have no friends saved...",

@@ -97,12 +97,20 @@ export default function registrarEventosSala(io, socket) {
                             //console.log("Sala creada en la DB para nuevaSala: ", nuevaSala);
                             if (nuevaSala) {                             
                                 try {
+                                    
+                                    let tiempoDificultad = '';
+                                    if(datos.tiempo == 'Media'){
+                                        tiempoDificultad = 'normal';
+                                    } else {
+                                        tiempoDificultad = datos.tiempo;
+                                    }
+
                                     const nuevaPartida = await Partida.create({
                                         sala_id: nuevaSala.id,
                                         categoria_id: objCategoria.id,
                                         modo: "multijugador",
                                         total_preguntas: 10,
-                                        dificultad_tiempo: datos.tiempo,
+                                        dificultad_tiempo: tiempoDificultad,
                                         dificultad_pregunta: datos.dificultad,
                                         estado: "pendiente",
                                         created_at: formatearTimestampParaMySQL(datos.timestamp),
@@ -122,9 +130,9 @@ export default function registrarEventosSala(io, socket) {
                                             sala_id: nuevaSala.id,
                                         }
                                     };
-                                    console.log("@@@ Sala  tiempo: ",  datos.tiempo);
-                                    console.log("@@@ Sala dificultad: ", datos.dificultad);
-                                    console.log("@@@ Sala creada en la DB para sala: ", sala);
+                                    // console.log("@@@ Sala  tiempo: ",  datos.tiempo);
+                                    // console.log("@@@ Sala dificultad: ", datos.dificultad);
+                                    // console.log("@@@ Sala creada en la DB para sala: ", sala);
                                     salas.set(idPartida, sala);
 
                                     // envia el socket con success del primer try

@@ -2,9 +2,9 @@ import { DataTypes } from 'sequelize';
 import sequelize from './sequelize.js';
 
 const Amigo = sequelize.define('Amigo', {
-  id: { 
+  id: {
     type: DataTypes.INTEGER.UNSIGNED,
-    primaryKey: true, 
+    primaryKey: true,
     autoIncrement: true
   },
   jugador_id: {
@@ -15,9 +15,9 @@ const Amigo = sequelize.define('Amigo', {
     type: DataTypes.INTEGER.UNSIGNED,
     allowNull: false,
     validate: {
-      notSameAsUsuario(value) {
-        if (value === this.usuario_id) {
-          throw new Error('Usuario_id and amigo_id cannot be the same');
+      notSameAsJugador(value) {
+        if (value === this.jugador_id) {
+          throw new Error('jugador_id y amigo_id no pueden ser iguales');
         }
       }
     }

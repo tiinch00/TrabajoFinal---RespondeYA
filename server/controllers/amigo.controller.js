@@ -1,36 +1,28 @@
-import { Amigo } from '../models/associations.js';
+import { Amigo, Jugador, User } from '../models/associations.js';
 
-const index = async (req, res) => {
-
-  const { jugador_id } = req.params;
-
+export const index = async (req, res) => {
   try {
-    if (jugador_id !== undefined && jugador_id !== null) {
-      const jugadorId = Number(jugador_id);
+    const { jugador_id, amigo_id } = req.query;
 
-      // si no es un numero entero, envia un error
-      if (!Number.isInteger(jugadorId)) {
-        return res.status(400).json({ error: "Numero incorrecto, jugador_id inválido." });
-      }
+    const where = {};
+    if (jugador_id) where.jugador_id = Number(jugador_id);
+    if (amigo_id) where.amigo_id = Number(amigo_id);
 
-      // obtiene todos los avatares del jugador
-      const rows = await Amigo.findAll({
-        where: { jugador_id: jugadorId },
-        order: [["aceptado_at", "DESC"]], // opcional, ordena por fecha
-      });
+    const amigos = await Amigo.findAll({
+      where,
+      order: [
+        ['aceptado_en', 'DESC'], // 👈 nombre correcto
+        ['creado_en', 'DESC'],   // opcional como desempate
+      ],
+    });
 
-      // devuelve una lista (vacía o con datos de los avatares)
-      return res.json(rows);
-
-    } else {
-      const amigos = await Amigo.findAll();
-      res.json(amigos);
-    }
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ error: "Internal server error" });
+    return res.json(amigos);
+  } catch (err) {
+    console.error('GET /amigos error:', err);
+    return res.status(500).json({ error: err.message });
   }
 };
+
 
 
 const show = async (req, res) => {
@@ -49,28 +41,36 @@ const show = async (req, res) => {
 
 
 const store = async (req, res) => {
-  const { usuario_id, amigo_id, aceptado_en } = req.body;
-  if (!usuario_id || !amigo_id) {
-    return res.status(400).json({ error: "Usuario_id and amigo_id are required" });
+  const { jugador_id, amigo_id, aceptado_en } = req.body;
+
+  if (!jugador_id || !amigo_id) {
+    return res.status(400).json({ error: "jugador_id and amigo_id are required" });
   }
-  if (usuario_id === amigo_id) {
-    return res.status(400).json({ error: "Usuario_id and amigo_id cannot be the same" });
+  if (jugador_id === amigo_id) {
+    return res.status(400).json({ error: "jugador_id and amigo_id cannot be the same" });
   }
-  //usuarios existen?
-  const usuario = await User.findByPk(usuario_id);
-  const amigo = await User.findByPk(amigo_id);
-  if (!usuario || !amigo) {
-    return res.status(400).json({ error: "Invalid usuario_id or amigo_id" });
-  }
+
   try {
-    const amigo = await Amigo.create({ usuario_id, amigo_id, aceptado_en });
-    res.status(201).json(amigo);
+    const jugador = await Jugador.findByPk(jugador_id); // dueño de la lista
+    const amigoUsuario = await User.findByPk(amigo_id); // usuario al que agrego
+
+    if (!jugador || !amigoUsuario) {
+      return res.status(400).json({ error: "Invalid jugador_id or amigo_id" });
+    }
+
+    const nuevoAmigo = await Amigo.create({
+      jugador_id,
+      amigo_id,
+      aceptado_en: aceptado_en || null,     // 👈 null = pendiente
+    });
+
+    return res.status(201).json(nuevoAmigo);
   } catch (error) {
-    if (error.name === 'SequelizeUniqueConstraintError') {
+    if (error.name === "SequelizeUniqueConstraintError") {
       return res.status(400).json({ error: "Friendship already exists" });
     }
-    if (error.name === 'SequelizeForeignKeyConstraintError') {
-      return res.status(400).json({ error: "Invalid usuario_id or amigo_id" });
+    if (error.name === "SequelizeForeignKeyConstraintError") {
+      return res.status(400).json({ error: "Invalid jugador_id or amigo_id" });
     }
     console.error(error);
     return res.status(500).send("Internal server error");
@@ -78,39 +78,34 @@ const store = async (req, res) => {
 };
 
 
+
 const update = async (req, res) => {
   const { id } = req.params;
-  const { usuario_id, amigo_id, aceptado_en } = req.body;
-  if (!usuario_id || !amigo_id) {
-    return res.status(400).json({ error: "Usuario_id and amigo_id are required" });
-  }
-  if (usuario_id === amigo_id) {
-    return res.status(400).json({ error: "Usuario_id and amigo_id cannot be the same" });
-  }
-  const usuario = await User.findByPk(usuario_id);
-  const amigo = await User.findByPk(amigo_id);
-  if (!usuario || !amigo) {
-    return res.status(400).json({ error: "Invalid usuario_id or amigo_id" });
-  }
+  const { aceptado_en } = req.body;
+
   try {
     const amigo = await Amigo.findByPk(id);
     if (!amigo) {
       return res.status(404).json({ error: "amigo not found" });
     }
 
-    await amigo.update({ usuario_id, amigo_id, aceptado_en });
-    res.json(amigo);
+    await amigo.update({
+      aceptado_en: aceptado_en || new Date(),
+    });
+
+    return res.json(amigo);
   } catch (error) {
-    if (error.name === 'SequelizeUniqueConstraintError') {
+    if (error.name === "SequelizeUniqueConstraintError") {
       return res.status(400).json({ error: "Friendship already exists" });
     }
-    if (error.name === 'SequelizeForeignKeyConstraintError') {
-      return res.status(400).json({ error: "Invalid usuario_id or amigo_id" });
+    if (error.name === "SequelizeForeignKeyConstraintError") {
+      return res.status(400).json({ error: "Invalid jugador_id or amigo_id" });
     }
     console.error(error);
     return res.status(500).json({ error: "Internal server error" });
   }
 };
+
 
 const destroy = async (req, res) => {
   const { id } = req.params;

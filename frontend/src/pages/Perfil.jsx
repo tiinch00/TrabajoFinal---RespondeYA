@@ -11,6 +11,16 @@ import { getCroppedImg } from '../utils/cropImage.js';
 import { useAuth } from '../context/auth-context.jsx';
 import { useTranslation } from 'react-i18next';
 
+// normalizador simple (tildes, mayúsculas, espacios) y evita errores con null/undefined/objetos raros.
+function normalize(s) {
+  return (s ?? "")
+    .toString()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
 const Perfil = () => {
   const { t } = useTranslation();
   const { user, updateUser } = useAuth();
@@ -28,6 +38,12 @@ const Perfil = () => {
     'Conocimiento General': t('generalKnowLedge'),
     Geografía: t('geography'),
     Informatica: t('informatic'),
+  };
+
+  const timeDifficultyTranslations = {
+    facil: t('easy'),
+    normal: t('medium'),
+    dificil: t('hard'),
   };
 
   const difficultyTranslations = {
@@ -52,6 +68,7 @@ const Perfil = () => {
 
   const [editMode, setEditMode] = useState(false); // boton editar datos de perfil
   const [saving, setSaving] = useState(false); // boton de guardar los datos de formulario de editar perfil
+  const [friendsSearch, setFriendsSearch] = useState("");
 
   const [modalEstadisticaAbierto, setModalEstadisticaAbierto] = useState(null);
   const [selectedEstadisticasResultadosDePartidas, setSelectedEstadisticasResultadosDePartidas] =
@@ -105,10 +122,38 @@ const Perfil = () => {
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   const [tempImageUrl, setTempImageUrl] = useState(null); // URL de la imagen original para cropear
 
+  // agregar un amigo
+  const [addingFriendId, setAddingFriendId] = useState(null);
+  const [friendMessage, setFriendMessage] = useState(null);
+
+  // solicitudes que me llegan
+  const [friendRequests, setFriendRequests] = useState([]);
+  const [friendRequestsDetails, setFriendRequestsDetails] = useState([]);
+
+  // detalles de amigos aceptados
+  const [friendsDetails, setFriendsDetails] = useState([]);
+
+  // --- filtro de amigos por nombre ---
+  const normalizedFriendQuery = normalize(friendsSearch);
+
+  const filteredFriendsDetails = (friendsDetails ?? []).filter(({ usuario }) => {
+    if (!normalizedFriendQuery) return true; // sin filtro, devuelve todos
+    const nameNorm = normalize(usuario?.name ?? "");
+    return nameNorm.includes(normalizedFriendQuery);
+  });
+
+  // para botones de aceptar/cancelar
+  const [processingRequestId, setProcessingRequestId] = useState(null);
+
   // errores o inicializaciones
   const [error, setError] = useState(null); // mensaje de error en general
   const [loadingPerfil, setLoadingPerfil] = useState(true); // verifica si el perfil esta y carga la pagina
-  const [form, setForm] = useState({ name: '', email: '', password: '' }); // hook de inicializacion del formulario
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+  });// hook de inicializacion del formulario
   const [formErrors, setFormErrors] = useState({}); // error del formulario
 
   // buscador de partidas - estado para el input y la lista filtrada
@@ -118,11 +163,21 @@ const Perfil = () => {
   // --- estado de paginado ---
   const PAGE_SIZE = 5; // cada 5 li hace el paginado
   const [currentPage, setCurrentPage] = useState(1);
+  // --- paginado solicitudes de amistad ---
+  const REQUESTS_PAGE_SIZE = 5;
+  const [requestsPage, setRequestsPage] = useState(1);
+  // --- paginado de amigos ---
+  const FRIENDS_PAGE_SIZE = 5;
+  const [friendsPage, setFriendsPage] = useState(1);
 
   // cuando cambia la lista filtrada, volvemos a página 1
   useEffect(() => {
     setCurrentPage(1);
   }, [listaFiltrada]);
+
+  useEffect(() => {
+    setRequestsPage(1);
+  }, [friendRequestsDetails]);
 
   // cálculo de páginas e items visibles
   const total = (listaFiltrada?.length ?? 0);
@@ -130,6 +185,37 @@ const Perfil = () => {
   const startIndex = (currentPage - 1) * PAGE_SIZE;
   const endIndex = Math.min(startIndex + PAGE_SIZE, total);
   const visible = (listaFiltrada ?? []).slice(startIndex, endIndex);
+
+  // ====== paginado solicitudes ======
+  const totalRequests = friendRequestsDetails.length;
+  const totalRequestsPages = Math.max(
+    1,
+    Math.ceil(totalRequests / REQUESTS_PAGE_SIZE)
+  );
+  const requestsStartIndex = (requestsPage - 1) * REQUESTS_PAGE_SIZE;
+  const requestsEndIndex = requestsStartIndex + REQUESTS_PAGE_SIZE;
+  const visibleFriendRequests = friendRequestsDetails.slice(
+    requestsStartIndex,
+    requestsEndIndex
+  );
+
+  // ====== paginado amigos ======
+  const totalFriends = filteredFriendsDetails.length;
+  const totalFriendsPages = Math.max(
+    1,
+    Math.ceil(totalFriends / FRIENDS_PAGE_SIZE)
+  );
+  const friendsStartIndex = (friendsPage - 1) * FRIENDS_PAGE_SIZE;
+  const friendsEndIndex = friendsStartIndex + FRIENDS_PAGE_SIZE;
+  const visibleFriends = filteredFriendsDetails.slice(
+    friendsStartIndex,
+    friendsEndIndex
+  );
+
+  // si cambia la lista o el filtro, volvemos a página 1
+  useEffect(() => {
+    setFriendsPage(1);
+  }, [friendsDetails, friendsSearch])
 
   // handlers
   const goPrev = () => setCurrentPage(p => Math.max(1, p - 1));
@@ -153,7 +239,12 @@ const Perfil = () => {
         //console.log(data);
         if (!alive) return;
         setPerfil(data);
-        setForm({ name: data.name || '', email: data.email || '', password: '' });
+        setForm({
+          name: data.name || '',
+          email: data.email || '',
+          password: '',
+          confirmPassword: '',
+        });
       } catch (err) {
         if (!alive) return;
         setError(err.response?.data?.error || err.message);
@@ -314,19 +405,40 @@ const Perfil = () => {
   // valida el formulario de editar los datos del jugador
   const validate = () => {
     const errs = {};
-    if (!form.name.trim()) errs.name = 'El nombre es obligatorio';
-    if (!form.email.trim()) errs.email = 'El email es obligatorio';
-    else {
-      const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!re.test(form.email.trim())) errs.email = 'Email inválido';
+
+    // Nombre obligatorio
+    if (!form.name.trim()) {
+      errs.name = 'El nombre es obligatorio';
     }
-    // password es opcional; si lo completan, debe tener min 6
+
+    // Email obligatorio + formato
+    if (!form.email.trim()) {
+      errs.email = 'El email es obligatorio';
+    } else {
+      const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!re.test(form.email.trim())) {
+        errs.email = 'Email inválido';
+      }
+    }
+
+    // Password opcional, pero si lo completan:
     if (form.password && form.password.trim().length < 6) {
       errs.password = 'La contraseña debe tener al menos 6 caracteres';
     }
+
+    // Confirmación: solo valida si se completó la contraseña
+    if (form.password) {
+      if (!form.confirmPassword.trim()) {
+        errs.confirmPassword = 'Confirmá la contraseña';
+      } else if (form.confirmPassword.trim() !== form.password.trim()) {
+        errs.confirmPassword = 'Las contraseñas no coinciden';
+      }
+    }
+
     setFormErrors(errs);
     return Object.keys(errs).length === 0;
   };
+
 
   // funcion que guarda y hace llamar
   // la funcion de validar los datos del formulario para guardar los datos del jugador
@@ -354,7 +466,11 @@ const Perfil = () => {
       setPerfil(data);
       setEditMode(false);
       updateUser(data); // data = { id, name, email, role, foto_perfil, ... }
-      setForm((f) => ({ ...f, password: '' }));
+      setForm((f) => ({
+        ...f,
+        password: '',
+        confirmPassword: '',
+      }));
 
       // actualizamos localStorage para que el Header refleje el cambio
       const storedUser = {
@@ -423,18 +539,47 @@ const Perfil = () => {
     return out;
   };
 
-  // obtiene todos los amigos del jugador_id
   const getAmigos = async () => {
     try {
-      const { data } = await axios.get(
-        'http://localhost:3006/amigos',
-        { params: { jugador_id } } // <-- params
-      );
-      setAmigos(data);
+      if (!jugador_id) return;
+
+      // 1) Amigos donde YO soy jugador_id
+      const [comoJugadorRes, comoAmigoRes] = await Promise.all([
+        axios.get('http://localhost:3006/amigos', {
+          params: { jugador_id },   // yo en la columna jugador_id
+        }),
+        axios.get('http://localhost:3006/amigos', {
+          params: { amigo_id: jugador_id },  // yo en la columna amigo_id
+        }),
+      ]);
+
+      const lista1 = Array.isArray(comoJugadorRes.data) ? comoJugadorRes.data : [];
+      const lista2 = Array.isArray(comoAmigoRes.data) ? comoAmigoRes.data : [];
+
+      // 2) Merge + dedupe por id
+      const mapa = new Map();
+      [...lista1, ...lista2].forEach((a) => {
+        if (!a || a.id == null) return;
+        // si ya existe, me quedo con la que tenga aceptado_en seteado
+        if (!mapa.has(a.id)) {
+          mapa.set(a.id, a);
+        } else {
+          const prev = mapa.get(a.id);
+          if (!prev.aceptado_en && a.aceptado_en) {
+            mapa.set(a.id, a);
+          }
+        }
+      });
+
+      // 3) Sólo amigos aceptados (para el listado de "Mis Amigos")
+      const soloAceptados = [...mapa.values()].filter((a) => !!a.aceptado_en);
+
+      setAmigos(soloAceptados);
     } catch (error) {
       console.log('@@@@ Error GET: amigos\n', error);
     }
   };
+
 
   const eliminarAmigo = async (id) => {
     try {
@@ -454,6 +599,49 @@ const Perfil = () => {
       console.error('Error al eliminar un amigo:', err);
     }
   };
+
+  const handleAgregarAmigo = async (registroSala) => {
+    try {
+      setFriendMessage(null);
+
+      if (!jugador_id) {
+        setFriendMessage("No se encontró tu jugador_id");
+        return;
+      }
+
+      // el contrincante es un jugador, no un user
+      const amigoJugadorId = registroSala?.jugador?.id;
+      if (!amigoJugadorId) {
+        setFriendMessage("No se encontró el jugador del contrincante");
+        return;
+      }
+
+      setAddingFriendId(amigoJugadorId);
+
+      const payload = {
+        jugador_id: Number(jugador_id),       // yo
+        amigo_id: Number(amigoJugadorId),     // el otro jugador
+        aceptado_en: null,                    // pendiente
+      };
+
+      const { data } = await axios.post(
+        "http://localhost:3006/amigos/create",
+        payload
+      );
+
+      // lo guardo en mi lista local de amigos (pendiente)
+      setAmigos((prev) => [...prev, data]);
+      setFriendMessage("Solicitud enviada ✅");
+    } catch (err) {
+      const msg = err.response?.data?.error || err.message;
+      setFriendMessage(msg);
+    } finally {
+      setAddingFriendId(null);
+    }
+  };
+
+
+
 
   // obtiene un objeto categoria
   const getCategorias = async (id) => {
@@ -559,78 +747,74 @@ const Perfil = () => {
   };
 
   const inventarioInforCompletaDeTodasLasPartidas = () => {
-    if (Array.isArray(partidas) && Array.isArray(categorias) && Array.isArray(preguntas) && Array.isArray(partidas)) {
-
-      // Índices para joins rápidos
+    if (
+      Array.isArray(partidas) &&
+      Array.isArray(categorias) &&
+      Array.isArray(preguntas) &&
+      Array.isArray(partidas)
+    ) {
       const partidasById = new Map(partidas.map(p => [p.id, p]));
       const categoriasById = new Map(categorias.map(c => [c.id, c]));
       const preguntasById = new Map(preguntas.map(q => [q.id, q]));
 
-      // Agrupo partida_preguntas por partida_id (1→N)
       const ppByPartida = partida_preguntas.reduce((m, pp) => {
         if (!m.has(pp.partida_id)) m.set(pp.partida_id, []);
         m.get(pp.partida_id).push(pp);
         return m;
       }, new Map());
 
-      // Helper: cuenta ocurrencias en un array de strings
       const contar = (arr) =>
         arr.reduce((acc, k) => ((acc[k] = (acc[k] || 0) + 1), acc), {});
 
-      // JOIN principal: por cada estadística, traigo todo lo demás
       const joined = estadisticas.map(e => {
         const partida = partidasById.get(e.partida_id) || null;
 
-        // Datos de la partida
         const modo = partida?.modo ?? null;
         const categoria_id = partida?.categoria_id ?? null;
         const categoria = categoriasById.get(categoria_id)?.nombre ?? null;
         const created_at = partida?.created_at ?? null;
         const started_at = partida?.started_at ?? null;
         const ended_at = partida?.ended_at ?? null;
+        const dificultad_pregunta = partida?.dificultad_pregunta ?? null;
+        const dificultad_tiempo = partida?.dificultad_tiempo ?? null;
 
-        // Todas las preguntas de esa partida
         const pps = ppByPartida.get(e.partida_id) || [];
 
-        // Dificultades: mapeo cada pregunta → dificultad en `preguntas`
-        const dificultadesPorPregunta = pps.map(pp => {
-          const q = preguntasById.get(pp.pregunta_id);
-          return q?.dificultad || null;
-        }).filter(Boolean);
+        const dificultadesPorPregunta = pps
+          .map(pp => {
+            const q = preguntasById.get(pp.pregunta_id);
+            return q?.dificultad || null;
+          })
+          .filter(Boolean);
 
-        // Resumen de dificultades (conteo por nivel)
         const resumenDificultad = contar(dificultadesPorPregunta);
 
         return {
-          // Campos originales de estadistica
           ...e,
-
-          // Enriquecidos
           modo,
           categoria_id,
           categoria,
           created_at,
           started_at,
           ended_at,
-
-          // Info de preguntas de la partida
-          preguntasDeLaPartida: pps.map(({ pregunta_id, orden, question_text_copy, correct_option_id_copy, correct_option_text_copy }) => ({
-            pregunta_id, orden, question_text_copy, correct_option_id_copy, correct_option_text_copy
-          })),
-
-          // Niveles de dificultad por pregunta y su resumen
-          dificultad: dificultadesPorPregunta[0],          // ej: ["facil","facil","normal","dificil",...]
-          resumenDificultad,                // ej: { facil: 5, normal: 3, dificil: 2 }
-
-          // (Opcional) total de preguntas de esta partida
+          dificultad_pregunta,
+          dificultad_tiempo,
+          preguntasDeLaPartida: pps.map(
+            ({ pregunta_id, orden, question_text_copy, correct_option_id_copy, correct_option_text_copy }) => ({
+              pregunta_id,
+              orden,
+              question_text_copy,
+              correct_option_id_copy,
+              correct_option_text_copy,
+            })
+          ),
+          dificultad: dificultadesPorPregunta[0],
+          resumenDificultad,
           total_preguntas_partida: pps.length,
         };
       });
 
-      //console.log("joined: ", joined);
-
       return joined;
-
     } else {
       console.log('Alguno de los arrays no es un array:', { partidas, categorias, preguntas });
       return [];
@@ -759,26 +943,36 @@ const Perfil = () => {
     setListaFiltrada(listaObjetosPartidaInformacion);
   }, [listaObjetosPartidaInformacion]);
 
-  // normalizador simple (tildes, mayúsculas, espacios) y evita errores con null/undefined/objetos raros.
-  const normalize = (s) => {
-    return (s ?? "")
-      .toString()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toLowerCase()
-      .trim();
-  };
-
 
   // construye el “texto buscable” para cada item
   const buildHaystack = (e) => {
-    const etiquetaPractica = e?.modo === "individual" ?? "practica" ?? "multijugador" ?? "";
+    const etiquetaPractica =
+      e?.modo === "individual"
+        ? "practica"
+        : e?.modo === "multijugador"
+          ? "multijugador"
+          : "";
+
     const fecha = formatDateDMYLocal(e?.ended_at) ?? "-";   // ej: 11/11/2025
     const hora = formatTimeHMLocal(e?.ended_at) ?? "-";    // ej: 23:35
     const modo = modeTranslations[e?.modo] ?? e?.modo ?? "";
     const cat = categoryTranslations[e?.categoria] ?? e?.categoria ?? "";
-    const diff = difficultyTranslations[e?.dificultad] ?? e?.dificultad ?? "";
-    return normalize([etiquetaPractica, fecha, hora, modo, cat, diff].filter(Boolean).join(" "));
+
+    // dificultad de PREGUNTA (texto traducido o crudo)
+    const diffPregunta =
+      difficultyTranslations[e?.dificultad_pregunta ?? e?.dificultad] ??
+      (e?.dificultad_pregunta ?? e?.dificultad ?? "");
+
+    // dificultad de TIEMPO (texto traducido o crudo)
+    const diffTiempo =
+      timeDifficultyTranslations?.[e?.dificultad_tiempo] ??
+      (e?.dificultad_tiempo ?? "");
+
+    return normalize(
+      [etiquetaPractica, fecha, hora, modo, cat, diffPregunta, diffTiempo]
+        .filter(Boolean)
+        .join(" ")
+    );
   };
 
   // buscador de partidas
@@ -921,17 +1115,42 @@ const Perfil = () => {
 
   const fmtMs = (ms) => (Number(ms) / 1000).toFixed(1) + ' segundos';
 
-  // arriba del JSX (dentro del componente, antes del return)
-  const respuestasEspecificas = objetoPartidaCompleto?.respuestasDeLaPartida ?? [];
+  // 1) Todas las respuestas de la partida
+  const respuestasBrutas = objetoPartidaCompleto?.respuestasDeLaPartida ?? [];
+
+  // 2) Me quedo SOLO con las respuestas del jugador logueado
+  const respuestasEspecificas = respuestasBrutas.filter(
+    (r) => Number(r.jugador_id) === Number(jugador_id)
+  );
+
+  // 3) A partir de ahí armo los Maps
   const elegidaPorPregunta = new Map(
     respuestasEspecificas.map((r) => [Number(r.pregunta_id), Number(r.opcion_elegida_id)])
   );
+
   const correctaPorPregunta = new Map(
     respuestasEspecificas.map((r) => [Number(r.pregunta_id), Number(r.es_correcta) > 0])
   );
+
   const tiempoPorPregunta = new Map(
     respuestasEspecificas.map((r) => [Number(r.pregunta_id), Number(r.tiempo_respuesta_ms)])
   );
+
+  const getFriendRequests = async () => {
+    try {
+      if (!jugador_id) return; // por las dudas
+
+      const { data } = await axios.get("http://localhost:3006/amigos", {
+        params: { amigo_id: jugador_id }, // 👈 ahora jugador_id
+      });
+
+      // solo solicitudes pendientes
+      const pendientes = (data ?? []).filter((a) => !a.aceptado_en);
+      setFriendRequests(pendientes);
+    } catch (error) {
+      console.log("@@@@ Error GET: friend requests\n", error);
+    }
+  };
 
   useEffect(() => {
     let alive = true;
@@ -945,12 +1164,11 @@ const Perfil = () => {
           getPreguntas(),
           getOpciones(),
           getPartidaJugadores(),
-          //getObjSala(),
-          //getArraySalaJugadores(),
           getPartdias(),
           getPartidaPreguntas(),
           getEstadisticas(),
           getRespuestas(),
+          getFriendRequests(),
         ]);
       } finally {
         if (!alive) return;
@@ -1109,6 +1327,214 @@ const Perfil = () => {
     };
   }, [algunModalAbierto]);
 
+  // console.log(partidaIdSeleccionada);
+
+  // Buscar la partida seleccionada por partidaIdSeleccionada
+  const partidaSeleccionada =
+    listaObjetosPartidaInformacion?.find(
+      (p) => Number(p.partida_id) === Number(partidaIdSeleccionada)
+    ) ?? null;
+
+  // Sala actual de la partida (si existe)
+  const salaIdActual = objetoPartidaCompleto?.partida?.[0]?.sala_id ?? null;
+
+  // Jugadores que participaron en esa sala
+  const jugadoresSalaActual = Array.isArray(arrayUsuariosJugadores)
+    ? arrayUsuariosJugadores.filter(
+      (sj) =>
+        salaIdActual != null &&
+        Number(sj.sala_id) === Number(salaIdActual)
+    )
+    : [];
+
+  // Contrincantes = todos menos el jugador logueado
+  const contrincantes = jugadoresSalaActual.filter(
+    (sj) => Number(sj.jugador_id) !== Number(jugador_id)
+  );
+
+  // Por ahora mostramos solo el primero (si hay)
+  const contrincante = contrincantes[0] ?? null;
+
+  // Relación (si existe) entre YO y el contrincante
+  const relacionConContrincante = contrincante
+    ? amigos.find((a) => {
+      const miJid = Number(jugador_id);
+      const otroJid = Number(contrincante?.jugador?.id);
+
+      const jidA = Number(a.jugador_id);
+      const jidB = Number(a.amigo_id);
+
+      // ¿La relación es entre yo y el contrincante, en cualquier orden?
+      const esMismaPareja =
+        (jidA === miJid && jidB === otroJid) ||
+        (jidA === otroJid && jidB === miJid);
+
+      return esMismaPareja;
+    })
+    : null;
+
+  const esAmigo = !!relacionConContrincante && !!relacionConContrincante.aceptado_en;
+  const pendienteConContrincante =
+    !!relacionConContrincante && !relacionConContrincante.aceptado_en;
+
+
+  const handleAceptarSolicitud = async (solicitudId) => {
+    try {
+      setProcessingRequestId(solicitudId);
+
+      const aceptado_en = new Date().toISOString();
+      const idNum = Number(solicitudId);
+
+      // 1) Aviso al backend que esta solicitud quedó aceptada
+      await axios.put(`http://localhost:3006/amigos/${solicitudId}`, {
+        aceptado_en,
+      });
+
+      // 2) La saco de las solicitudes pendientes (UI de arriba)
+      setFriendRequests((prev) =>
+        prev.filter((r) => Number(r.id) !== idNum)
+      );
+
+      // 3) Actualizo "amigos" localmente para que el effect de friendsDetails la vea
+      setAmigos((prev) => {
+        // ¿ya existe un registro con ese id en amigos?
+        const existe = prev.some((a) => Number(a.id) === idNum);
+
+        if (existe) {
+          // lo actualizo agregando aceptado_en
+          return prev.map((a) =>
+            Number(a.id) === idNum ? { ...a, aceptado_en } : a
+          );
+        }
+
+        // si no existe, la busco en friendRequests (estado actual del componente)
+        const original = friendRequests.find(
+          (r) => Number(r.id) === idNum
+        );
+
+        if (original) {
+          // la agrego con aceptado_en seteado
+          return [...prev, { ...original, aceptado_en }];
+        }
+
+        // fallback: si no la encuentro, devuelvo igual
+        return prev;
+      });
+    } catch (err) {
+      console.error('Error al aceptar solicitud:', err);
+    } finally {
+      setProcessingRequestId(null);
+    }
+  };
+
+
+
+
+  const handleRechazarSolicitud = async (solicitudId) => {
+    try {
+      setProcessingRequestId(solicitudId);
+      await axios.delete(
+        `http://localhost:3006/amigos/eliminar/${solicitudId}`
+      );
+      setFriendRequests((prev) => prev.filter((r) => r.id !== solicitudId));
+    } catch (err) {
+      console.error("Error al rechazar solicitud:", err);
+    } finally {
+      setProcessingRequestId(null);
+    }
+  };
+
+
+  useEffect(() => {
+    let cancel = false;
+
+    (async () => {
+      try {
+        const aceptados = (amigos ?? [])
+          .filter(Boolean)
+          .filter((a) => !!a.aceptado_en);
+
+        if (!aceptados.length) {
+          if (!cancel) setFriendsDetails([]);
+          return;
+        }
+
+        const miJid = Number(jugador_id); // 👈 tu jugador_id
+
+        const detalles = await Promise.all(
+          aceptados.map(async (a) => {
+            // Detectar quién es "el otro":
+            const jidA = Number(a.jugador_id);
+            const jidB = Number(a.amigo_id);
+
+            const otroJugadorId =
+              miJid === jidA
+                ? jidB        // yo soy jugador_id → amigo es el otro
+                : miJid === jidB
+                  ? jidA        // yo soy amigo_id → jugador_id es el otro
+                  : jidB;       // fallback por las dudas
+
+            const jugador = await getJugador(otroJugadorId).catch((err) => {
+              console.error('Error en getJugador(otroJugadorId):', otroJugadorId, err);
+              return null;
+            });
+
+            let usuario = null;
+            if (jugador?.user_id) {
+              usuario = await getUsuario(jugador.user_id).catch((err) => {
+                console.error('Error en getUsuario(jugador.user_id):', jugador.user_id, err);
+                return null;
+              });
+            }
+
+            return { amigo: a, jugador, usuario };
+          })
+        );
+
+        if (!cancel) {
+          setFriendsDetails(detalles);
+        }
+      } catch (err) {
+        console.error('Error construyendo friendsDetails:', err);
+        if (!cancel) setFriendsDetails([]);
+      }
+    })();
+
+    return () => {
+      cancel = true;
+    };
+  }, [amigos, jugador_id]); // 👈 agregá jugador_id en deps
+
+
+
+
+  useEffect(() => {
+    (async () => {
+      if (!friendRequests.length) {
+        setFriendRequestsDetails([]);
+        return;
+      }
+
+      const detalles = await Promise.all(
+        friendRequests.map(async (req) => {
+          const jugador = await getJugador(req.jugador_id);
+          let usuario = null;
+          if (jugador?.user_id) {
+            usuario = await getUsuario(jugador.user_id);
+          }
+          return { solicitud: req, jugador, usuario };
+        })
+      );
+
+      setFriendRequestsDetails(detalles);
+    })();
+  }, [friendRequests]);
+
+  // useEffect(() => {
+  //   console.log('📌 amigos:', amigos);
+  //   console.log('📌 friendsDetails:', friendsDetails);
+  // }, [amigos, friendsDetails]);
+
   // verifica datos para correr perfil o envia mensaje de errores visual en la interfaz
   if (!userId) return <p className='text-red-600'>{t('noUser')}.</p>;
   if (error)
@@ -1120,7 +1546,6 @@ const Perfil = () => {
   if (loadingPerfil) return <p className='text-white'>{t('loadingPerfil')}</p>;
   if (!perfil) return <p className='text-red-600'>{t('noPerfil')}.</p>;
 
-  // console.log(partidaIdSeleccionada);
 
   return (
     <div className='w-[70%] mb-6 mt-20'>
@@ -1477,7 +1902,12 @@ const Perfil = () => {
               className='px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'
               onClick={() => {
                 setEditMode(true);
-                setForm({ name: perfil.name || '', email: perfil.email || '', password: '' });
+                setForm({
+                  name: perfil.name || '',
+                  email: perfil.email || '',
+                  password: '',
+                  confirmPassword: '',
+                });
                 setFormErrors({});
               }}
             >
@@ -1523,6 +1953,21 @@ const Perfil = () => {
               {formErrors.password && <p className='text-red-500 text-sm'>{formErrors.password}</p>}
             </div>
 
+            <div>
+              <label className='block text-sm mb-1'>Confirmar contraseña</label>
+              <input
+                type='password'
+                name='confirmPassword'
+                value={form.confirmPassword}
+                onChange={handleChange}
+                className='w-full px-3 py-2 rounded text-black bg-white/90 hover:bg-white'
+                placeholder='Repetí la nueva contraseña'
+              />
+              {formErrors.confirmPassword && (
+                <p className='text-red-500 text-sm'>{formErrors.confirmPassword}</p>
+              )}
+            </div>
+
             <div className='flex gap-2'>
               <button
                 type='submit'
@@ -1536,7 +1981,12 @@ const Perfil = () => {
                 onClick={() => {
                   setEditMode(false);
                   setFormErrors({});
-                  setForm((f) => ({ ...f, password: '' }));
+                  setForm({
+                    name: perfil.name || '',
+                    email: perfil.email || '',
+                    password: '',
+                    confirmPassword: '',
+                  });
                 }}
                 className='px-4 py-2 rounded bg-gray-500 text-white hover:bg-gray-600 cursor-pointer'
               >
@@ -1571,8 +2021,10 @@ const Perfil = () => {
             </button>
           </div>
 
-          {estadisticas.length === 0 ? (          
-            <p className='indent-2 text-white'> { 'No encontramos resultados' ?? t('noResultsMatches')}:</p>
+          {estadisticas.length === 0 ? (
+            <p className='indent-2 text-white'>
+              {'No encontramos resultados' ?? t('noResultsMatches')}:
+            </p>
           ) : (
             <div>
               {/* buscador de estadísticas */}
@@ -1586,51 +2038,49 @@ const Perfil = () => {
                 />
                 {search && (
                   <button
-                    type="button"
+                    type='button'
                     onClick={handleClear}
-                    className="absolute top-0 right-8 h-full px-2 text-slate-600 hover:text-black cursor-pointer"
-                    aria-label="Limpiar búsqueda"
-                    title="Limpiar"
+                    className='absolute top-0 right-8 h-full px-2 text-slate-600 hover:text-black cursor-pointer'
+                    aria-label='Limpiar búsqueda'
+                    title='Limpiar'
                   >
                     ✕
                   </button>
                 )}
 
                 <button
-                  type="button"
+                  type='button'
                   onClick={handleSearch}
-                  className="absolute h-full top-0 right-0 flex items-center rounded-r-xl 
+                  className='absolute h-full top-0 right-0 flex items-center rounded-r-xl 
                 bg-slate-800 hover:bg-slate-700 px-2 border border-transparent text-sm transition-all 
-                  shadow-sm hover:shadow text-white cursor-pointer"
+                  shadow-sm hover:shadow text-white cursor-pointer'
                 >
                   {/* ícono lupa */}
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                    fill="currentColor" className="w-4 h-4">
-                    <path fillRule="evenodd" clipRule="evenodd"
-                      d="M10.5 3.75a6.75 6.75 0 1 0 0 13.5 6.75 6.75 0 0 0 0-13.5ZM2.25 10.5a8.25 8.25 0 1 1 14.59 5.28l4.69 4.69a.75.75 0 1 1-1.06 1.06l-4.69-4.69A8.25 8.25 0 0 1 2.25 10.5Z" />
+                  <svg
+                    xmlns='http://www.w3.org/2000/svg'
+                    viewBox='0 0 24 24'
+                    fill='currentColor'
+                    className='w-4 h-4'
+                  >
+                    <path
+                      fillRule='evenodd'
+                      clipRule='evenodd'
+                      d='M10.5 3.75a6.75 6.75 0 1 0 0 13.5 6.75 6.75 0 0 0 0-13.5ZM2.25 10.5a8.25 8.25 0 1 1 14.59 5.28l4.69 4.69a.75.75 0 1 1-1.06 1.06l-4.69-4.69A8.25 8.25 0 0 1 2.25 10.5Z'
+                    />
                   </svg>
                 </button>
               </div>
 
-              {/*console.log("primera visualizacion de partidas listaObjetosPartidaInformacion:\n", listaObjetosPartidaInformacion)*/}
-
-              {/* listado de las partidas (estadisticas) */}
               {/* listado / mensaje */}
               {(listaFiltrada?.length ?? 0) === 0 && hasQuery ? (
-                <div className="p-3 rounded-xl bg-white/10 text-white">
-                  {'No encontramos resultados' ??  t('noResults')}: <b> "{search}"</b>
-                  <button
-                    type="button"
-                    onClick={handleClear}
-                    className="ml-3 px-2 py-1 text-sm rounded-lg bg-slate-800 hover:bg-slate-700"
-                  >
-                    {'Limpiar' ?? t('clear')}
-                  </button>
+                <div className='p-3 rounded-xl bg-white/10 text-white'>
+                  {'No encontramos resultados' ?? t('noResults')}: <b> "{search}"</b>
                 </div>
               ) : (
                 <ul className=''>
+                  {/* {console.log('visible: ', visible)} */}
                   {(visible ?? []).map((e, index) => {
-                    const globalIndex = startIndex + index; // para usar tu index original si lo necesitás
+                    const globalIndex = startIndex + index; // índice global del item
                     return (
                       <motion.li
                         key={e.id}
@@ -1638,20 +2088,20 @@ const Perfil = () => {
                         flex space-x-4 mb-2 cursor-pointer'
                         whileTap={{ scale: 1.05 }}
                         onClick={() => {
-                          setSelectedEstadisticas(index);
+                          // si lo querés para resaltar el li, usamos el índice global
+                          setSelectedEstadisticas(globalIndex);
+                          // esta es la clave real que usaremos en el modal
                           setPartidaIdSeleccionada(e.partida_id);
                           setModalEstadisticaAbierto(true);
                         }}
                       >
                         {e.posicion > 0 ? (
                           <div className='flex flex-row gap-5'>
-                            {e?.modo == "individual" ? (
+                            {e?.modo == 'individual' ? (
                               <p className='text-yellow-400'>Práctica</p>
-                            )
-                              :
-                              (
-                                <p className='text-green-500'>{t('youWon')}</p>
-                              )}
+                            ) : (
+                              <p className='text-green-500'>{t('youWon')}</p>
+                            )}
                             <p className='text-white'>
                               {t('date')}: {formatDateDMYLocal(e?.ended_at) ?? '-'}
                             </p>
@@ -1662,22 +2112,25 @@ const Perfil = () => {
                               {t('mode')}: {modeTranslations[e?.modo] ?? '-'}
                             </p>
                             <p className='text-white'>
-                              {t('category')}: {categoryTranslations[e?.categoria] ?? '-'}
+                              {t('category')}:{' '}
+                              {categoryTranslations[e?.categoria] ?? '-'}
                             </p>
                             <p className='text-white'>
-                              {t('dificulty')}: {difficultyTranslations[e?.dificultad] ?? '-'}
+                              {t('dificultyquestion')}:{' '}
+                              {difficultyTranslations[e?.dificultad] ?? '-'}
+                            </p>
+                            <p className='text-white'>
+                              {t('dificultytime')}:{' '}
+                              {timeDifficultyTranslations[e?.dificultad_tiempo] ?? '-'}
                             </p>
                           </div>
                         ) : (
                           <div className='flex flex-row gap-5'>
-                            {e?.modo == "individual" ? (
+                            {e?.modo == 'individual' ? (
                               <p className='text-yellow-400'>Práctica</p>
-                            )
-                              :
-                              (
-                                <p className='text-red-500'>{t('youLoss')}</p>
-                              )
-                            }
+                            ) : (
+                              <p className='text-red-500'>{t('youLoss')}</p>
+                            )}
                             <p className='text-white'>
                               {t('date')}: {formatDateDMYLocal(e?.ended_at) ?? '-'}
                             </p>
@@ -1688,44 +2141,51 @@ const Perfil = () => {
                               {t('mode')}: {modeTranslations[e?.modo] ?? '-'}
                             </p>
                             <p className='text-white'>
-                              {t('category')}: {categoryTranslations[e?.categoria] ?? '-'}
+                              {t('category')}:{' '}
+                              {categoryTranslations[e?.categoria] ?? '-'}
                             </p>
                             <p className='text-white'>
-                              {t('dificulty')}: {difficultyTranslations[e?.dificultad] ?? '-'}
+                              {t('dificultyquestion')}:{' '}
+                              {difficultyTranslations[e?.dificultad] ?? '-'}
+                            </p>
+                            <p className='text-white'>
+                              {t('dificultytime')}:{' '}
+                              {timeDifficultyTranslations[e?.dificultad_tiempo] ?? '-'}
                             </p>
                           </div>
                         )}
                       </motion.li>
                     );
                   })}
-                </ul>)}
+                </ul>
+              )}
 
               {/* Paginado: aparece solo si hay más de 5 */}
               {total > PAGE_SIZE && (
-                <div className="mt-3 flex items-center justify-between gap-2">
-                  <span className="text-white/80 text-sm">
-                    { 'Mostrando' ?? t('showing')} {startIndex + 1}–{endIndex} {'de' ?? t('of')} {total}
+                <div className='mt-3 flex items-center justify-between gap-2'>
+                  <span className='text-white/80 text-sm'>
+                    {'Mostrando' ?? t('showing')} {startIndex + 1}–{endIndex}{' '}
+                    {'de' ?? t('of')} {total}
                   </span>
 
-                  <div className="flex items-center gap-1">
+                  <div className='flex items-center gap-1'>
                     <button
-                      type="button"
+                      type='button'
                       onClick={goPrev}
                       disabled={currentPage === 1}
-                      className="px-3 py-1 rounded-lg bg-white/10 text-white disabled:opacity-50 hover:bg-white/20"
+                      className='px-3 py-1 rounded-lg bg-white/10 text-white disabled:opacity-50 hover:bg-white/20'
                     >
                       ‹
                     </button>
 
-                    {/* numeritos simples; si querés compactar, podés limitar a +-2 del current */}
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
                       <button
                         key={p}
-                        type="button"
+                        type='button'
                         onClick={() => goTo(p)}
                         className={`px-3 py-1 rounded-lg ${p === currentPage
-                            ? 'bg-slate-800 text-white'
-                            : 'bg-white/10 text-white hover:bg-white/20'
+                          ? 'bg-slate-800 text-white'
+                          : 'bg-white/10 text-white hover:bg-white/20'
                           }`}
                       >
                         {p}
@@ -1733,22 +2193,21 @@ const Perfil = () => {
                     ))}
 
                     <button
-                      type="button"
+                      type='button'
                       onClick={goNext}
                       disabled={currentPage === totalPages}
-                      className="px-3 py-1 rounded-lg bg-white/10 text-white disabled:opacity-50 hover:bg-white/20"
+                      className='px-3 py-1 rounded-lg bg-white/10 text-white disabled:opacity-50 hover:bg-white/20'
                     >
                       ›
                     </button>
                   </div>
                 </div>
               )}
-
             </div>
           )}
 
           {/* div overlay absoluto en toda la pantalla) */}
-          {selectedEstadisticas !== null && (
+          {selectedEstadisticas !== null && partidaSeleccionada && (
             <div className='fixed inset-0 z-50 bg-black/50 backdrop-blur-sm mt-22 '>
               {/* fonde desenfocado */}
               <motion.div
@@ -1756,9 +2215,8 @@ const Perfil = () => {
                 initial={{ opacity: 0, y: 10, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 10 }}
-                // 1) wrapper del modal: altura limitada + columna + oculta desborde externo
                 className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
-                  w-[95vw] max-w-5xl max-h-[900px] h-[600px] rounded-2xl
+                  w-[95vw] max-w-5xl max-h-[800px] h-[720px] rounded-2xl
                   bg-gradient-to-b from-violet-900 via-purple-700 to-purple-900
                 text-white shadow-2xl p-3 
                   flex flex-col overflow-hidden'
@@ -1813,6 +2271,7 @@ const Perfil = () => {
                         '
                         onClick={() => {
                           setSelectedEstadisticas(null);
+                          setPartidaIdSeleccionada(null);
                           setSelectedEstRespuestas(null);
                           setSelectedEstGraficaDeRespuestas(null);
                           setSelectedEstResumen(true);
@@ -1829,11 +2288,11 @@ const Perfil = () => {
                       className='bg-gradient-to-b from-purple-800 via-purple-700 to-purple-800
                       rounded-xl p-4 mt-1 text-xl flex-1 min-h-0 text-[28px]'
                     >
+                      {/* {console.log('partidaSeleccionada: ', partidaSeleccionada)} */}
                       <p className='p-1'>
-                        <strong>{t('mode')}:</strong>{' '}
-                        {listaObjetosPartidaInformacion[selectedEstadisticas]?.modo ?? '—'}
+                        <strong>{t('mode')}:</strong> {partidaSeleccionada.modo ?? '—'}
                       </p>
-                      {listaObjetosPartidaInformacion[selectedEstadisticas].posicion > 0 ? (
+                      {partidaSeleccionada.posicion > 0 ? (
                         <p className='p-1'>
                           <strong>{t('position')}:</strong> {t('won')}
                         </p>
@@ -1844,43 +2303,105 @@ const Perfil = () => {
                       )}
                       <p className='p-1'>
                         <strong>{t('scoreGeneral')}:</strong>{' '}
-                        {listaObjetosPartidaInformacion[selectedEstadisticas].puntaje_total}
+                        {partidaSeleccionada.puntaje_total}
                       </p>
                       <p className='p-1'>
                         <strong>{t('category')}:</strong>{' '}
-                        {categoryTranslations[listaObjetosPartidaInformacion[selectedEstadisticas].categoria] ?? '—'}
+                        {categoryTranslations[partidaSeleccionada.categoria] ?? '—'}
                       </p>
                       <p className='p-1'>
                         <strong>{t('date')}:</strong>{' '}
-                        {formatDateDMYLocal(
-                          listaObjetosPartidaInformacion[selectedEstadisticas]?.ended_at
-                        ) ?? '—'}{' '}
-                        {formatTimeHMLocal(
-                          listaObjetosPartidaInformacion[selectedEstadisticas]?.ended_at
-                        ) ?? '—'}
+                        {formatDateDMYLocal(partidaSeleccionada?.ended_at) ?? '—'}{' '}
+                        {formatTimeHMLocal(partidaSeleccionada?.ended_at) ?? '—'}
                       </p>
                       <p className='p-1'>
                         <strong>{t('rightAnswer')}:</strong>{' '}
-                        {listaObjetosPartidaInformacion[selectedEstadisticas].total_correctas}
+                        {partidaSeleccionada.total_correctas}
                       </p>
                       <p className='p-1'>
                         <strong>{t('wrongAnswer')}:</strong>{' '}
-                        {listaObjetosPartidaInformacion[selectedEstadisticas].total_incorrectas}
+                        {partidaSeleccionada.total_incorrectas}
                       </p>
                       <p className='p-1'>
                         <strong>{t('questionDificulty')}:</strong>{' '}
-                        {difficultyTranslations[
-                          listaObjetosPartidaInformacion[selectedEstadisticas]?.dificultad
+                        {difficultyTranslations[partidaSeleccionada?.dificultad] ?? '—'}
+                      </p>
+                      <p className='p-1'>
+                        <strong>{t('dificultytime')}:</strong>{' '}
+                        {timeDifficultyTranslations[
+                          partidaSeleccionada?.dificultad_tiempo
                         ] ?? '—'}
                       </p>
-                      {/* <p className="p-1"><strong>Dificultad de tiempo:</strong> {listaObjetosPartidaInformacion[selectedEstadisticas]?.dificultad_tiempo ?? "—"}</p> */}
                       <p className='p-1'>
                         <strong>{t('matchTime')}:</strong>{' '}
-                        {fmtMsDetallado(
-                          listaObjetosPartidaInformacion[selectedEstadisticas].tiempo_total_ms
-                        )}
+                        {fmtMsDetallado(partidaSeleccionada.tiempo_total_ms)}
                       </p>
                     </div>
+
+                    {/* Sección Contrincante */}
+                    {objetoPartidaCompleto?.partida?.[0]?.modo === 'multijugador' && contrincante && (
+                      <div className='mt-4 pt-3 border-t border-purple-600/60 text-[22px]'>
+                        <h3 className='font-semibold mb-3'>Contrincante</h3>
+
+                        <div className='flex items-center gap-4'>
+                          {/* Foto del contrincante */}
+                          <div className='w-16 h-16 rounded-full overflow-hidden bg-black/30 flex items-center justify-center'>
+                            {contrincante.usuario?.foto_perfil ? (
+                              <img
+                                src={`${API}${contrincante.usuario.foto_perfil}`}
+                                alt={contrincante.usuario?.name ?? 'Contrincante'}
+                                className='w-16 h-16 object-cover'
+                              />
+                            ) : (
+                              <span className='text-2xl'>👤</span>
+                            )}
+                          </div>
+
+                          {/* Nombre y correo */}
+                          <div className='flex flex-col'>
+                            <span className='font-semibold'>
+                              {contrincante.usuario?.name ?? '—'}
+                            </span>
+                            <span className='text-sm text-purple-200'>
+                              {contrincante.usuario?.email ?? '—'}
+                            </span>
+
+                            {friendMessage && (
+                              <span className='mt-1 text-xs text-purple-200'>
+                                {friendMessage}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Botón Agregar amigo */}
+                          <button
+                            type='button'
+                            disabled={
+                              esAmigo ||
+                              pendienteConContrincante ||
+                              addingFriendId === contrincante.jugador?.id
+                            }
+                            onClick={() => handleAgregarAmigo(contrincante)}
+                            className={`ml-auto px-4 py-2 rounded-xl text-sm cursor-pointer
+                        ${esAmigo
+                                ? 'bg-green-700/70 text-white cursor-default'
+                                : pendienteConContrincante
+                                  ? 'bg-yellow-600/80 text-white cursor-default'
+                                  : 'bg-pink-600 hover:bg-pink-700 text-white disabled:opacity-60'
+                              }`}
+                          >
+                            {esAmigo
+                              ? 'Amigos'
+                              : pendienteConContrincante
+                                ? 'Pendiente'
+                                : addingFriendId === contrincante.jugador?.id
+                                  ? 'Agregando...'
+                                  : 'Agregar amigo'}
+                          </button>
+
+                        </div>
+                      </div>
+                    )}
                   </>
                 )}
 
@@ -1933,6 +2454,7 @@ const Perfil = () => {
                         hover:text-fuchsia-500 hover:drop-shadow-[0_4px_8px_#000000]'
                         onClick={() => {
                           setSelectedEstadisticas(null);
+                          setPartidaIdSeleccionada(null);
                           setSelectedEstRespuestas(null);
                           setSelectedEstGraficaDeRespuestas(null);
                           setSelectedEstResumen(true);
@@ -1953,16 +2475,15 @@ const Perfil = () => {
                       bg-gradient-to-b from-purple-800 via-purple-700 to-purple-800
                       rounded-xl'
                       >
-                        {/*console.log("objetoPartidaCompleto: ", objetoPartidaCompleto)*/}
-                        {/*console.log(objetoPartidaCompleto.respuestasDeLaPartida)*/}
+                        {/* {console.log('objetoPartidaCompleto: ', objetoPartidaCompleto)} */}
 
                         <div className='flex flex-row gap-2 mb-2 sticky top-0 p-2 bg-purple-800'>
                           <button
                             onClick={() =>
                               setOpenPreguntaIds(
                                 new Set(
-                                  (objetoPartidaCompleto?.preguntasDeLaPartida ?? []).map((e) =>
-                                    Number(e.pregunta_id ?? e.id)
+                                  (objetoPartidaCompleto?.preguntasDeLaPartida ?? []).map(
+                                    (e) => Number(e.pregunta_id ?? e.id)
                                   )
                                 )
                               )
@@ -1982,84 +2503,106 @@ const Perfil = () => {
 
                         {objetoPartidaCompleto?.preguntasDeLaPartida?.length ? (
                           <ul className='p-2'>
-                            {(objetoPartidaCompleto?.preguntasDeLaPartida ?? []).map((e, index) => (
-                              <motion.li
-                                key={Number(e.pregunta_id ?? e.id)}
-                                className='border rounded-xl p-3 odd:bg-black/5 even:bg-black/30 flex flex-col mb-2'
-                                whileTap={{ scale: 1.01 }}
-                              >
-                                <button
-                                  type='button'
-                                  className='text-left w-full cursor-pointer hover:bg-black/30 rounded p-0.5 text-[20px]'
-                                  onClick={() => togglePregunta(Number(e.pregunta_id ?? e.id))}
+                            {(objetoPartidaCompleto?.preguntasDeLaPartida ?? []).map(
+                              (e, index) => (
+                                <motion.li
+                                  key={Number(e.pregunta_id ?? e.id)}
+                                  className='border rounded-xl p-3 odd:bg-black/5 even:bg-black/30 flex flex-col mb-2'
+                                  whileTap={{ scale: 1.01 }}
                                 >
-                                  <span className='shrink-0 inline-flex items-center justify-center w-7 h-7 font-semibold'>
-                                    {`${index + 1})`}
-                                  </span>
+                                  <button
+                                    type='button'
+                                    className='text-left w-full cursor-pointer hover:bg-black/30 rounded p-0.5 text-[20px]'
+                                    onClick={() =>
+                                      togglePregunta(Number(e.pregunta_id ?? e.id))
+                                    }
+                                  >
+                                    <span className='shrink-0 inline-flex items-center justify-center w-7 h-7 font-semibold'>
+                                      {`${index + 1})`}
+                                    </span>
 
-                                  <span className='leading-snug'>{e.question_text_copy}</span>
-                                </button>
+                                    <span className='leading-snug'>
+                                      {e.question_text_copy}
+                                    </span>
+                                  </button>
 
-                                {openPreguntaIds.has(Number(e.pregunta_id ?? e.id)) && (
-                                  <div className='mt-2'>
-                                    {(objetoPartidaCompleto?.opcionesDeRespuestas ?? [])
-                                      .filter(
-                                        (o) =>
-                                          Number(o.pregunta_id) === Number(e.pregunta_id ?? e.id)
-                                      )
-                                      .map((o) => (
-                                        <span
-                                          key={o.id}
-                                          className={[
-                                            'block mb-1 indent-2 rounded text-[22px] border',
-                                            (() => {
-                                              const qId = Number(e.pregunta_id ?? e.id);
-                                              const chosenId = elegidaPorPregunta.get(qId);
-                                              const userCorrect = !!correctaPorPregunta.get(qId);
-                                              const isChosen = chosenId === Number(o.id);
-                                              const isOptionCorrect = !!o.es_correcta;
+                                  {openPreguntaIds.has(Number(e.pregunta_id ?? e.id)) && (
+                                    <div className='mt-2'>
+                                      {(objetoPartidaCompleto?.opcionesDeRespuestas ?? [])
+                                        .filter(
+                                          (o) =>
+                                            Number(o.pregunta_id) ===
+                                            Number(e.pregunta_id ?? e.id)
+                                        )
+                                        .map((o) => (
+                                          <span
+                                            key={o.id}
+                                            className={[
+                                              'block mb-1 indent-2 rounded text-[22px] border',
+                                              (() => {
+                                                const qId = Number(
+                                                  e.pregunta_id ?? e.id
+                                                );
+                                                const chosenId =
+                                                  elegidaPorPregunta.get(qId);
+                                                const userCorrect =
+                                                  !!correctaPorPregunta.get(qId);
+                                                const isChosen =
+                                                  chosenId === Number(o.id);
+                                                const isOptionCorrect =
+                                                  !!o.es_correcta;
 
-                                              if (isChosen) {
-                                                return userCorrect
-                                                  ? 'bg-green-600/30 border-green-500'
-                                                  : 'bg-red-600/30 border-red-500';
-                                              }
-                                              // Si NO es la elegida pero es la correcta → amarillo
-                                              if (isOptionCorrect) {
-                                                return 'bg-yellow-600/35 border-yellow-500';
-                                              }
-                                              return 'bg-gray-800/30 hover:bg-gray-800/50 border-transparent';
-                                            })(),
-                                          ].join(' ')}
-                                        >
-                                          {(() => {
-                                            const qId = Number(e.pregunta_id ?? e.id);
-                                            const chosenId = elegidaPorPregunta.get(qId);
-                                            const userCorrect = !!correctaPorPregunta.get(qId);
-                                            const isChosen = chosenId === Number(o.id);
-                                            const isOptionCorrect = !!o.es_correcta;
+                                                if (isChosen) {
+                                                  return userCorrect
+                                                    ? 'bg-green-600/30 border-green-500'
+                                                    : 'bg-red-600/30 border-red-500';
+                                                }
+                                                if (isOptionCorrect) {
+                                                  return 'bg-yellow-600/35 border-yellow-500';
+                                                }
+                                                return 'bg-gray-800/30 hover:bg-gray-800/50 border-transparent';
+                                              })(),
+                                            ].join(' ')}
+                                          >
+                                            {(() => {
+                                              const qId = Number(
+                                                e.pregunta_id ?? e.id
+                                              );
+                                              const chosenId =
+                                                elegidaPorPregunta.get(qId);
+                                              const userCorrect =
+                                                !!correctaPorPregunta.get(qId);
+                                              const isChosen =
+                                                chosenId === Number(o.id);
+                                              const isOptionCorrect =
+                                                !!o.es_correcta;
 
-                                            if (isChosen) return userCorrect ? '✅ ' : '❌ ';
-                                            if (isOptionCorrect) return '🥲 '; // correcta no elegida
-                                            return '';
-                                          })()}
-                                          {o.texto ?? o.option_text ?? '—'}
-                                        </span>
-                                      ))}
-                                  </div>
-                                )}
-                                {/* tiempo de respuesta (al abrir) */}
-                                {openPreguntaIds.has(Number(e.pregunta_id ?? e.id)) && (
-                                  <div className='mt-1 text-sm opacity-80'>
-                                    {t('answerTime')}:{' '}
-                                    {/* <b>{formatMs(tiempoPorPregunta.get(Number(e.pregunta_id ?? e.id)))}</b> */}
-                                    <b>
-                                      {fmtMs(tiempoPorPregunta.get(Number(e.pregunta_id ?? e.id)))}
-                                    </b>
-                                  </div>
-                                )}
-                              </motion.li>
-                            ))}
+                                              if (isChosen)
+                                                return userCorrect ? '✅ ' : '❌ ';
+                                              if (isOptionCorrect) return '🥲 ';
+                                              return '';
+                                            })()}
+                                            {o.texto ?? o.option_text ?? '—'}
+                                          </span>
+                                        ))}
+                                    </div>
+                                  )}
+                                  {/* tiempo de respuesta (al abrir) */}
+                                  {openPreguntaIds.has(Number(e.pregunta_id ?? e.id)) && (
+                                    <div className='mt-1 text-sm opacity-80'>
+                                      {t('answerTime')}:{' '}
+                                      <b>
+                                        {fmtMs(
+                                          tiempoPorPregunta.get(
+                                            Number(e.pregunta_id ?? e.id)
+                                          )
+                                        )}
+                                      </b>
+                                    </div>
+                                  )}
+                                </motion.li>
+                              )
+                            )}
                           </ul>
                         ) : (
                           <span>{t('answerList')}</span>
@@ -2108,10 +2651,7 @@ const Perfil = () => {
                             setSelectedEstGraficaDeRespuestas(true);
                             setSelectedEstRespuestas(false);
                           }}
-                          className='text-fuchsia-500 rounded p-2                            
-                            [text-shadow:_0_4px_8px_#000000]
-                          '
-                        // [text-shadow:_0_8px_8px_rgb(99_102_241_/_0.8)]
+                          className='text-fuchsia-500 rounded p-2 [text-shadow:_0_4px_8px_#000000]'
                         >
                           {t('answerGrafics')}
                         </button>
@@ -2123,6 +2663,7 @@ const Perfil = () => {
                         aria-label='Cerrar'
                         onClick={() => {
                           setSelectedEstadisticas(null);
+                          setPartidaIdSeleccionada(null);
                           setSelectedEstRespuestas(null);
                           setSelectedEstGraficaDeRespuestas(null);
                           setSelectedEstResumen(true);
@@ -2136,19 +2677,9 @@ const Perfil = () => {
                     </div>
 
                     {/* grafica lineal de respuestas */}
-                    <div
-                      //ref={listRef}
-                      className='text-xl rounded p-1.5 mt-1 flex-1 min-h-0'
-                    >
+                    <div className='text-xl rounded p-1.5 mt-1 flex-1 min-h-0'>
                       {objetoPartidaCompleto.partida[0].modo == 'individual' ? (
-                        //<span className="p-2 text-[20px]">Grafica lineal de respuestas...</span>
-                        //grafica de respuesta de simpleBarChart
-                        //<SimpleBarChart objPartidaIdInformacion={objetoPartidaCompleto}
-
-                        //grafica de respuesta de la api quickchart.js
                         <div className='bg-gradient-to-b from-purple-800 via-purple-700 to-purple-800 rounded-xl'>
-                          {/* objetoPartidaCompleto */}
-                          {/* <h3 className="mt-4">Vertical axis labels - indiviual</h3> */}
                           <ChartVerticalLabels
                             arregloCompleto={objetoPartidaCompleto}
                             className=' mt-1 p-1'
@@ -2156,8 +2687,6 @@ const Perfil = () => {
                         </div>
                       ) : (
                         <div>
-                          {/* varias lineas - multijugador */}
-                          {/* <h3 className="mt-4">Multiline labels - multijugador</h3>*/}
                           <ChartMultilineLabels
                             arregloCompleto={objetoPartidaCompleto}
                             className=' bg-gradient-to-b from-purple-800 via-purple-700 to-purple-800 rounded-xl mt-4'
@@ -2194,8 +2723,6 @@ const Perfil = () => {
           </div>
           {estadisticas.length !== 0 ? (
             <>
-              {/* <h3 className="mt-4">QCChartStable</h3> */}
-              {/* config={null} */}
               <QCChartStable
                 arregloCompleto={{ listaObjetosPartidaInformacion, categorias }}
                 className='bg-gradient-to-b from-purple-800 via-purple-700 to-purple-800  mt-4 rounded p-4 pl-1'
@@ -2209,21 +2736,135 @@ const Perfil = () => {
         </div>
       )}
 
+
+      {/* ============================= Solicitudes de amistad ================================================= */}
+
+      <div className='mb-6 mt-8 bg-white/10 rounded-xl p-1'>
+        <h2 className='text-xl text-white font-semibold mb-3 mt-2 indent-2'>
+          Solicitudes de amistad
+        </h2>
+
+        {friendRequestsDetails.length === 0 ? (
+          <p className='indent-2 text-white mb-4'>
+            No tenés solicitudes pendientes.
+          </p>
+        ) : (
+          <>
+            <div className='mb-2 p-0.5 space-y-2'>
+              {visibleFriendRequests.map(({ solicitud, usuario }) => (
+                <div
+                  key={solicitud.id}
+                  className='border rounded-xl p-4 bg-white/10 hover:bg-white/20 
+                    mb-2 flex items-center justify-between gap-4'
+                >
+                  <div className='flex items-center gap-3'>
+                    <div className='w-12 h-12 rounded-full overflow-hidden bg-black/30 flex items-center justify-center'>
+                      {usuario?.foto_perfil ? (
+                        <img
+                          src={`${API}${usuario.foto_perfil}`}
+                          alt={usuario?.name ?? 'Jugador'}
+                          className='w-12 h-12 object-cover'
+                        />
+                      ) : (
+                        <span className='text-2xl'>👤</span>
+                      )}
+                    </div>
+                    <div className='flex flex-col'>
+                      <span className='font-semibold'>
+                        {usuario?.name ?? '—'}
+                      </span>
+                      <span className='text-sm text-purple-200'>
+                        {usuario?.email ?? '—'}
+                      </span>
+                      <span className='text-xs text-purple-200'>
+                        Puntaje: {usuario?.puntaje ?? '—'} · País: {usuario?.pais ?? '—'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className='flex gap-2'>
+                    <button
+                      type='button'
+                      onClick={() => handleAceptarSolicitud(solicitud.id)}
+                      disabled={processingRequestId === solicitud.id}
+                      className='px-3 py-1.5 rounded bg-green-600 hover:bg-green-700 
+                         text-white text-sm cursor-pointer disabled:opacity-60'
+                    >
+                      {processingRequestId === solicitud.id ? 'Aceptando...' : 'Aceptar'}
+                    </button>
+                    <button
+                      type='button'
+                      onClick={() => handleRechazarSolicitud(solicitud.id)}
+                      disabled={processingRequestId === solicitud.id}
+                      className='px-3 py-1.5 rounded bg-gray-600 hover:bg-gray-700 
+                         text-white text-sm cursor-pointer disabled:opacity-60'
+                    >
+                      {processingRequestId === solicitud.id ? 'Cancelando...' : 'Cancelar'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {totalRequestsPages > 1 && (
+              <div className='flex items-center justify-end gap-2 px-2 pb-2 text-sm text-white'>
+                <button
+                  type='button'
+                  onClick={() =>
+                    setRequestsPage((p) => Math.max(1, p - 1))
+                  }
+                  disabled={requestsPage === 1}
+                  className='px-2 py-1 rounded bg-white/10 disabled:opacity-40'
+                >
+                  « Anterior
+                </button>
+                <span>
+                  Página {requestsPage} de {totalRequestsPages}
+                </span>
+                <button
+                  type='button'
+                  onClick={() =>
+                    setRequestsPage((p) => Math.min(totalRequestsPages, p + 1))
+                  }
+                  disabled={requestsPage === totalRequestsPages}
+                  className='px-2 py-1 rounded bg-white/10 disabled:opacity-40'
+                >
+                  Siguiente »
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+
       {/* ============================= Mis Amigos ================================================= */}
 
-      {/* Mis amigos */}
-      <div className='mb-6 mt-8 bg-white/10 rounded-xl p-1'>
-        <h2 className='text-xl text-white font-semibold mb-3 mt-2 indent-2'>{t('friends')}</h2>
+      <div className='mb-6 mt-4 bg-white/10 rounded-xl p-1'>
+        <h2 className='text-xl text-white font-semibold mb-1 mt-2 indent-2'>
+          {t('friends')}
+        </h2>
+
+        {/* Input de búsqueda */}
+        <div className='px-2 mb-2'>
+          <input
+            type='text'
+            value={friendsSearch}
+            onChange={(e) => setFriendsSearch(e.target.value)}
+            placeholder='Buscar amigo por nombre...'
+            className='w-full px-3 py-1.5 rounded-lg bg-black/30 text-white text-sm 
+                 border border-white/20 focus:outline-none focus:ring-1 focus:ring-purple-400'
+          />
+        </div>
 
         <div>
-          {/* Mensaje de amigo eliminado */}
           <AnimatePresence>
             {eliminado && (
               <motion.p
                 key='toast'
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0, transition: { duration: 0.25 } }}
-                exit={{ opacity: 0, y: 8, transition: { duration: 0.8 } }} // salida lenta
+                exit={{ opacity: 0, y: 8, transition: { duration: 0.8 } }}
                 className='bg-green-600 text-white mb-4 px-4 py-2 rounded shadow-lg z-[100]'
               >
                 {t('friendDeleted')}
@@ -2231,68 +2872,92 @@ const Perfil = () => {
             )}
           </AnimatePresence>
 
-          {/* divs de cada amigo */}
-          {amigos.length > 0 ? (
-            // lista de amigos
-            <div className='mb-2 p-0.5'>
-              {/* buscador de amigos */}
-              <div className='relative inline-block mb-4'>
-                <input
-                  className='bg-white/90 hover:bg-white w-[75%] indent-2 border rounded-xl px-1 py-2 text-black placeholder-black/70'
-                  placeholder={t('findFriend')}
-                />
-
-                <button
-                  type='button'
-                  onClick={handleSearch}
-                  className='absolute h-full w-fit top-0 right-0 flex items-center rounded-r-xl 
-                bg-slate-800 px-2 border border-transparent text-sm 
-                  transition-all shadow-sm hover:shadow focus:bg-slate-700 active:bg-slate-700 
-                  disabled:pointer-events-none disabled:opacity-50 cursor-pointer'
-                >
-                  <svg
-                    xmlns='http://www.w3.org/2000/svg'
-                    viewBox='0 0 24 24'
-                    fill='currentColor'
-                    className='w-4 h-4'
+          {filteredFriendsDetails.length > 0 ? (
+            <>
+              <div className='mb-2 p-0.5 space-y-2'>
+                {visibleFriends.map(({ amigo, usuario }) => (
+                  <div
+                    key={amigo.id}
+                    className='border rounded-xl p-4 bg-white/10 hover:bg-white/20 
+                      mb-2 flex items-center justify-between gap-4'
                   >
-                    <path
-                      fillRule='evenodd'
-                      clipRule='evenodd'
-                      d='M10.5 3.75a6.75 6.75 0 1 0 0 13.5 6.75 6.75 0 0 0 0-13.5ZM2.25 10.5a8.25 8.25 0 1 1 14.59 5.28l4.69 4.69a.75.75 0 1 1-1.06 1.06l-4.69-4.69A8.25 8.25 0 0 1 2.25 10.5Z'
-                    />
-                  </svg>
-                </button>
+                    <div className='flex items-center gap-3'>
+                      {/* {console.log("usuario: ", usuario)} */}
+                      <div className='w-12 h-12 rounded-full overflow-hidden bg-black/30 flex items-center justify-center'>
+                        {usuario?.foto_perfil ? (
+                          <img
+                            src={`${API}${usuario.foto_perfil}`}
+                            alt={usuario?.name ?? 'Amigo'}
+                            className='w-12 h-12 object-cover'
+                          />
+                        ) : (
+                          <span className='text-2xl'>👤</span>
+                        )}
+                      </div>
+                      <div className='flex flex-col'>
+                        <span className='font-semibold text-white'>
+                          {usuario?.name ?? '—'}
+                        </span>
+                        <span className='text-sm text-purple-200'>
+                          {usuario?.email ?? '—'}
+                        </span>
+                        <span className='text-xs text-purple-200'>
+                          {/* Puntaje: {usuario?.puntaje ?? '—'} ·*/} País: {usuario?.pais ?? '—'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <motion.button
+                      type='button'
+                      className='bg-red-500 hover:bg-red-600 rounded w-32 cursor-pointer 
+                         justify-self-end text-white py-1.5'
+                      whileTap={{ scale: 1.1 }}
+                      onClick={() => eliminarAmigo(amigo.id)}
+                    >
+                      {t('deleteFriend')}
+                    </motion.button>
+                  </div>
+                ))}
               </div>
 
-              {amigos.map((e) => (
-                <div
-                  key={e.id}
-                  className='border rounded-xl p-4 bg-white/10 hover:bg-white/20 
-                mb-2 grid grid-cols-2'
-                >
-                  <p>
-                    <strong>Amigo_id:</strong> {e.amigo_id}
-                  </p>
-
-                  <motion.button
+              {totalFriendsPages > 1 && (
+                <div className='flex items-center justify-end gap-2 px-2 pb-2 text-sm text-white'>
+                  <button
                     type='button'
-                    className='bg-red-500 hover:bg-red-600 rounded w-32 cursor-pointer 
-                    justify-self-end'
-                    whileTap={{ scale: 1.3 }}
-                    onClick={() => eliminarAmigo(e.id)}
+                    onClick={() =>
+                      setFriendsPage((p) => Math.max(1, p - 1))
+                    }
+                    disabled={friendsPage === 1}
+                    className='px-2 py-1 rounded bg-white/10 disabled:opacity-40'
                   >
-                    {t('deleteFriend')}
-                  </motion.button>
+                    « Anterior
+                  </button>
+                  <span>
+                    Página {friendsPage} de {totalFriendsPages}
+                  </span>
+                  <button
+                    type='button'
+                    onClick={() =>
+                      setFriendsPage((p) => Math.min(totalFriendsPages, p + 1))
+                    }
+                    disabled={friendsPage === totalFriendsPages}
+                    className='px-2 py-1 rounded bg-white/10 disabled:opacity-40'
+                  >
+                    Siguiente »
+                  </button>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           ) : (
-            // lista de amigos vacio
-            <p className='indent-2 text-white mb-4'> {t('noHaveFriend')}</p>
+            <p className='indent-2 text-white mb-4'>
+              {friendsDetails.length === 0
+                ? t('noHaveFriend')
+                : 'No se encontraron amigos con ese nombre.'}
+            </p>
           )}
         </div>
       </div>
+
     </div>
   );
 };

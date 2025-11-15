@@ -1186,12 +1186,7 @@ export default function JugarMultijugador() {
                                         </div>
                                     </div>
                                 </div>
-
-
-
-
-
-
+                                {/* Mesaje: Siguiente Pregunta... */}
                                 {mostrarEspera ? (
                                     <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-8 w-full max-w-2xl shadow-2xl text-center'>
                                         <div className='flex flex-col items-center justify-center gap-4'>
@@ -1248,41 +1243,6 @@ export default function JugarMultijugador() {
                                         </div>
                                     </div>
                                 )}
-
-
-                                {/* <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-8 w-full max-w-2xl shadow-2xl'>
-                                    <div className='mb-6'>
-                                        <span className='text-sm font-bold text-yellow-300'>Pregunta {contador + 1}/10</span>
-                                    </div>
-
-                                    <p className='text-2xl font-bold text-white mb-8 leading-relaxed'>
-                                        {preguntaActual.enunciado}
-                                    </p>
-
-                                    <div className='space-y-4'>
-                                        {preguntaActual.Opciones.map((opcion, index) => {
-                                            let colorClase =
-                                                'bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600';
-
-                                            if (respuestaSeleccionada === opcion) {
-                                                colorClase = respuestaCorrecta
-                                                    ? 'bg-gradient-to-r from-green-500 to-emerald-500 scale-105'
-                                                    : 'bg-gradient-to-r from-red-500 to-pink-500 scale-105';
-                                            }
-
-                                            return (
-                                                <button
-                                                    key={index}
-                                                    className={`w-full rounded-xl py-4 px-6 cursor-pointer transition-all font-bold text-lg text-white shadow-lg border-2 border-transparent hover:border-yellow-300 disabled:opacity-50 ${colorClase}`}
-                                                    onClick={() => handleGuardarRespuesta(opcion)}
-                                                    disabled={!!respuestaSeleccionada}
-                                                >
-                                                    {opcion.texto}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                </div> */}
 
                                 {/* derecha - Jugador 2 - invitado */}
                                 <div className='col-span-1 flex flex-col items-center justify-start gap-4'>
