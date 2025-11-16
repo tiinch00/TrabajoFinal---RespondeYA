@@ -7,8 +7,13 @@ export default function registrarEventosChat(io, socket) {
             username: String(msg?.username || 'anonymous'),
             text: String(msg?.text || ''),
             createdAt: new Date().toISOString(),
+
+            // 👇 NUEVO: propagamos la foto que viene del cliente
+            foto_perfil: msg?.foto_perfil ?? null,
         };
-        io.emit('chat:message', payload);   // broadcast global
+
+        io.emit('chat:message', payload);   // ahora incluye foto_perfil
+
         if (typeof ack === 'function') ack({ ok: true });
     });
 }

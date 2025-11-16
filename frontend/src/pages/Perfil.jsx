@@ -34,6 +34,9 @@ const Perfil = () => {
   });
   const [confirmDeleting, setConfirmDeleting] = useState(false); // loading de borrar un amigo
 
+  // NUEVO: solo para el botón "Mis avatares" de abajo
+  const [showAvatarsList, setShowAvatarsList] = useState(false);
+
   const modeTranslations = {
     individual: t('singlePlayer'),
     multijugador: t('multiPlayer'),
@@ -63,12 +66,15 @@ const Perfil = () => {
   // botones hooks
   const [selectedPerfil, setSelectedPerfil] = useState(false); // boton de perfil 👤
   const [selectedPefilEditar, setSelectedPefilEditar] = useState(false); // abrir el modal del boton "editar" foto de perfil
-  const [selectedAvatar, setSelectedAvatar] = useState(null); // boton mis avatares
-
-  // no lo uso aun=======================================
-  // aun no se usa (para cambiar la foto del avatar del perfil)
+  const [selectedAvatar, setSelectedAvatar] = useState(false); // boton mis avatares
   const [avatarIdSeleccionado, setAvatarIdSeleccionado] = useState(null); // cuando elige un avatar dentro del listado
-  // =======================================================
+  const [avatarConfirm, setAvatarConfirm] = useState({
+    open: false,
+    avatar: null,
+  });
+  const [applyingAvatar, setApplyingAvatar] = useState(false);
+  const [avatarDetalle, setAvatarDetalle] = useState(null); // avatar seleccionado solo para ver detalle
+
 
   const [partidaIdSeleccionada, setPartidaIdSeleccionada] = useState(null);
 
@@ -118,7 +124,7 @@ const Perfil = () => {
 
   // hooks de foto de perfil
   const API = 'http://localhost:3006'; // URL base de tu API
-  const [foto, setFoto] = useState(user.foto_perfil);
+  const [foto, setFoto] = useState(null);
   const [preview, setPreview] = useState(null); // URL local de previsualización
   const [subiendo, setSubiendo] = useState(false);
   const fileInputRef = useRef(null);
@@ -128,6 +134,10 @@ const Perfil = () => {
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   const [tempImageUrl, setTempImageUrl] = useState(null); // URL de la imagen original para cropear
+  const hayPreview = !!preview;
+  const hayFotoGuardada = !!perfil?.foto_perfil;
+  const hayAlgoParaMostrar = hayPreview || hayFotoGuardada;
+  const [showDeleteBar, setShowDeleteBar] = useState(false);
 
   // agregar un amigo
   const [addingFriendId, setAddingFriendId] = useState(null);
@@ -265,6 +275,52 @@ const Perfil = () => {
     };
   }, [userId]);
 
+  const resolveFotoPerfil = () => {
+    // 1) Si estás viendo un preview local (File recortado)
+    if (preview) return preview;
+
+    // si no hay nada en BD, no devolvemos nada → se muestra el 👤
+    const fp = perfil?.foto_perfil;
+    if (!fp) return null;
+
+    // 2) si viene de /assets/... (public del frontend)
+    if (fp.startsWith('/assets/')) {
+      return fp; // ej: /assets/avatares/avatar1.png
+    }
+
+    // 3) si ya es una URL absoluta (http/https)
+    if (/^https?:\/\//.test(fp)) {
+      return fp;
+    }
+
+    // 4) caso normal: ruta relativa que sirve el backend (/uploads/...)
+    return `${API}${fp}`;
+  };
+
+  const resolveFotoAjena = (fp) => {
+    if (!fp) return null;
+
+    // 1) si viene de /assets/... (public del frontend)
+    if (fp.startsWith('/assets/')) {
+      return fp;
+    }
+
+    // 2) si ya es una URL absoluta
+    if (/^https?:\/\//.test(fp)) {
+      return fp;
+    }
+
+    // 3) caso normal: ruta relativa que sirve tu backend
+    return `${API}${fp}`;
+  };
+
+
+  const fotoUrl =
+    avatarConfirm.open && avatarConfirm.avatar
+      ? avatarConfirm.avatar.preview_url
+      : resolveFotoPerfil();
+
+
   // al elegir archivo
   const onPickFile = (e) => {
     const f = e.target.files?.[0];
@@ -294,20 +350,34 @@ const Perfil = () => {
     URL.revokeObjectURL(tempImageUrl);
     setTempImageUrl(null);
   };
+  // que aparezca "eliminar foto" cuando hay un avatar como foto de perfil
+  //const hasFotoActual = !!(preview || perfil?.foto_perfil);
 
   const cancelarCrop = () => {
     setCropModalOpen(false);
+
+    // liberar la URL del preview si existe
     if (preview) {
-      setPreview(null);
-      setFoto(null);
+      URL.revokeObjectURL(preview);
     }
+
+    // liberar URL temporal de la imagen original
     if (tempImageUrl) {
       URL.revokeObjectURL(tempImageUrl);
-      setTempImageUrl(null);
     }
+
+    // limpiar estados locales SIEMPRE
+    setPreview(null);
+    setFoto(null);
+    setTempImageUrl(null);
+
     // limpiar input
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
+
+
 
   const subirFoto = async () => {
     if (!foto || !perfil?.id) return;
@@ -363,12 +433,22 @@ const Perfil = () => {
   };
 
   const cancelarFotoLocal = () => {
-    if (foto == null || preview == null) {
-      setFoto(null);
-      setPreview(null);
+    // si hay preview (URL.createObjectURL), la liberamos
+    if (preview) {
+      URL.revokeObjectURL(preview);
     }
-    if (fileInputRef.current) fileInputRef.current.value = '';
+
+    setPreview(null);      // sacar la previsualización
+    setFoto(null);         // olvidarse del File que habías elegido
+    setTempImageUrl(null); // por las dudas, limpiar la imagen original del crop
+    setCropModalOpen(false);
+
+    // limpiar el input file
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
+
 
   // liberar la URL del preview cuando cambie (higiene)
   useEffect(() => {
@@ -377,31 +457,89 @@ const Perfil = () => {
     };
   }, [preview]);
 
+  const handleApplyAvatar = async () => {
+    if (!avatarConfirm.avatar || !user?.id) return;
+
+    try {
+      setApplyingAvatar(true);
+      const token = localStorage.getItem('token');
+
+      const { data } = await axios.put(
+        `http://localhost:3006/users/${user.id}/avatar`,
+        { avatarUrl: avatarConfirm.avatar.preview_url },
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+      );
+
+      // usuario actualizado sin password
+      setPerfil(data);
+      setFoto(data.foto_perfil);
+
+      updateUser({
+        ...user,
+        foto_perfil: data.foto_perfil,
+      });
+
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+      localStorage.setItem(
+        'user',
+        JSON.stringify({
+          ...storedUser,
+          foto_perfil: data.foto_perfil,
+        })
+      );
+
+      // cierro modales
+      setAvatarConfirm({ open: false, avatar: null });
+      setSelectedAvatar(false);
+      setSelectedPefilEditar(false);
+    } catch (err) {
+      console.error('Error aplicando avatar:', err);
+      setError(err.response?.data?.error || err.message);
+    } finally {
+      setApplyingAvatar(false);
+    }
+  };
+
   const eliminarFoto = async () => {
-    if (!user?.id || !user?.foto_perfil) return;
-    const ok = window.confirm('¿Seguro querés eliminar tu foto de perfil?');
-    if (!ok) return;
+    // si no hay foto en BD, no hacemos nada
+    if (!user?.id || !perfil?.foto_perfil) {
+      setShowDeleteBar(false);
+      return;
+    }
 
     try {
       setEliminando(true);
       const token = localStorage.getItem('token');
+
       await axios.delete(`http://localhost:3006/users/${user.id}/foto`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
 
-      // 1) limpiar estado local
+      // limpiar estados
       setPreview(null);
       setFoto(null);
-      if (fileInputRef.current) fileInputRef.current.value = '';
 
-      // 2) actualizar usuario global (Header se refresca solo)
-      updateUser({ ...user, foto_perfil: null });
+      setPerfil(prev => ({
+        ...prev,
+        foto_perfil: null,
+      }));
+
+      updateUser({
+        ...user,
+        foto_perfil: null,
+      });
+
+      setShowDeleteBar(false); // 👈 cierro la barrita
     } catch (err) {
       console.error('Error eliminando foto:', err);
+      setError(err.response?.data?.error || err.message);
     } finally {
       setEliminando(false);
     }
   };
+
+
+
 
   // funcion que hace reemplazar los datos del jugador
   const handleChange = (e) => {
@@ -1107,13 +1245,6 @@ const Perfil = () => {
     }
   };
 
-  const segundaParteInvetario = () => {
-    if (Array.isArray(arraySalaJugadores)) {
-    } else {
-      console.log('No es un array:');
-    }
-  };
-
   // toggle para abri una o mas preguntas en el detalle completo de una partida
   const togglePregunta = (id) => {
     setOpenPreguntaIds((prev) => {
@@ -1122,8 +1253,6 @@ const Perfil = () => {
       return next;
     });
   };
-
-
 
   const formatDateDMYLocal = (isoString) => {
     if (!isoString) return '';
@@ -1144,16 +1273,6 @@ const Perfil = () => {
     const mm = String(dPlus3.getMinutes()).padStart(2, '0');
     return `${hh}:${mm}`;
   };
-
-  // const formatMs = (ms) => {
-  //   if (ms == null || Number.isNaN(Number(ms))) return "—";
-  //   const s = Number(ms) / 1000;
-  //   //  mm:ss.mmm
-  //   const mm = Math.floor(s / 60).toString().padStart(2, "0");
-  //   const ss = Math.floor(s % 60).toString().padStart(2, "0");
-  //   const mmm = Math.floor((s - Math.floor(s)) * 1000).toString().padStart(3, "0");
-  //   return `${mm}:${ss}.${mmm}`;
-  // };
 
   // ej: fmtCrono(600000);  // "10:00.000"
   const fmtCrono = (ms) => {
@@ -1356,14 +1475,7 @@ const Perfil = () => {
 
       if (!cancel) {
         // Reemplazo directo (lo más simple y evita duplicados)
-        setArrayUsuariosJugadores(compuesto);
-
-        // Si querés ACUMULAR sin duplicar por sala_id+jugador_id, usá esto en cambio:
-        // setArrayUsuariosJugadores(prev => {
-        //   const seen = new Set(prev.map(x => `${x.sala_id}-${x.jugador_id}`));
-        //   const nuevos = compuesto.filter(x => !seen.has(`${x.sala_id}-${x.jugador_id}`));
-        //   return [...prev, ...nuevos];
-        // });
+        setArrayUsuariosJugadores(compuesto);;
       }
     })();
 
@@ -1372,15 +1484,6 @@ const Perfil = () => {
     };
   }, [arraySalaJugadores]);
 
-  //Inyectando al objetoPartidaCompleto sin loops
-  /*useEffect(() => {
-    if (!objetoPartidaCompleto) return;
-    objetoPartidaCompletobjetoPartidaCompleto(prev => ({
-      ...prev,
-      usuarios_jugadores: arrayUsuariosJugadores,  // o el nombre que prefieras
-    }));
-  }, [arrayUsuariosJugadores]);*/
-
   useEffect(() => {
     const objDos = inventarioInforCompletaDeTodasLasPartidas(); // debe ser una funcion pura (sin setState adentro)
     setListaObjetosPartidaInformacion((prev) =>
@@ -1388,17 +1491,34 @@ const Perfil = () => {
     );
   }, [partidas, preguntas, categorias, estadisticas]);
 
-  //
+  // verifica los modales abiertos asi despues no desaparece el cursor vertical
   const algunModalAbierto =
-    selectedPerfil || selectedEstadisticas || modalEstadisticaAbierto || selectedAvatar !== null;
+    !!selectedPerfil ||
+    !!selectedEstadisticas ||
+    !!modalEstadisticaAbierto ||
+    !!selectedAvatar ||        // ahora sí: trata null / false como false
+    !!showAvatarsList ||
+    !!avatarConfirm.open;
+  // verifica los estados de los modales asi despues no desaparece el cursor vertical
   useEffect(() => {
     if (!algunModalAbierto) return;
+
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
+
     return () => {
       document.body.style.overflow = prev;
     };
-  }, [algunModalAbierto]);
+  }, [
+    algunModalAbierto,
+    selectedPerfil,
+    selectedEstadisticas,
+    modalEstadisticaAbierto,
+    selectedAvatar,
+    showAvatarsList,
+    avatarConfirm.open,
+  ]);
+
 
   // console.log(partidaIdSeleccionada);
 
@@ -1631,17 +1751,11 @@ const Perfil = () => {
           role='button'
           aria-pressed={selectedPerfil}
         >
-          {foto == null ? (
+          {!fotoUrl ? (
             <p>👤</p>
           ) : (
             <img
-              src={
-                preview
-                  ? preview
-                  : perfil?.foto_perfil
-                    ? `${API}${perfil.foto_perfil}` // el server devuelve ruta relativa
-                    : 'https://placehold.co/128x128?text=Foto' // placeholder opcional
-              }
+              src={fotoUrl}   // 👈 AHORA USA fotoUrl
               alt='Foto de perfil'
               className='w-32 h-32 rounded-full object-cover bg-white/20'
             />
@@ -1661,186 +1775,363 @@ const Perfil = () => {
               bg-black/5 backdrop-blur-sm 
                 flex items-center justify-center mt-22'
           >
-            <button
-              type='button'
-              aria-label='Cerrar'
-              className='absolute top-2 right-2 rounded-full w-9 h-9 
-                              grid place-items-center text-red-600 hover:text-red-500 active:scale-95 
-                              cursor-pointer text-2xl'
-              onClick={() => setSelectedPerfil(false)}
-            >
-              ✕
-            </button>
-
             <div className='relative inline-block'>
-              {foto == null ? (
+              <button
+                type='button'
+                aria-label='Cerrar'
+                className='absolute top-0 left-[260px] rounded-full w-9 h-9 
+                              grid place-items-center text-red-600 hover:text-red-500 active:scale-95 
+                              cursor-pointer text-4xl'
+                onClick={() => setSelectedPerfil(false)}
+              >
+                ✕
+              </button>
+              {!fotoUrl ? (
                 <p className='text-[190px] bg-gray-200/90 rounded-full text-center'>👤</p>
               ) : (
                 <img
-                  src={
-                    preview
-                      ? preview
-                      : perfil?.foto_perfil
-                        ? `${API}${perfil.foto_perfil}` // el server devuelve ruta relativa
-                        : 'https://placehold.co/128x128?text=Foto' // placeholder opcional
-                  }
+                  src={fotoUrl}
                   alt='Foto de perfil'
                   className='w-68 h-68 rounded-full object-cover bg-white/20'
                 />
               )}
-
-              {selectedPefilEditar ? (
-                <div
-                  className='absolute left-8 top-56 
-                      
+              {selectedPefilEditar && !avatarConfirm.open && (
+                <>
+                  {/* si showDeleteBar es true, oculto el ul */}
+                  {!showDeleteBar && (
+                    <div
+                      className='absolute left-8 top-56                       
                     bg-white text-black rounded-2xl px-3 py-3'
-                >
-                  <ul>
-                    {/* Elegir de la biblioteca */}
+                    >
+                      <ul>
+                        {/* Elegir de la biblioteca */}
+                        <li className='flex flex-row gap-2'>
+                          <div>
+                            {/* Input file oculto */}
+                            <input
+                              id='file-picker'
+                              ref={fileInputRef}
+                              type='file'
+                              accept='image/*'
+                              className='sr-only'
+                              onChange={onPickFile}
+                            />
 
-                    <li className='flex flex-row gap-2'>
-                      <div>
-                        {/* Input file oculto */}
-                        <input
-                          id='file-picker'
-                          ref={fileInputRef}
-                          type='file'
-                          accept='image/*'
-                          className='sr-only'
-                          onChange={onPickFile}
-                        />
-
-                        {/* Botón visible */}
-                        <label
-                          htmlFor='file-picker'
-                          className='rounded-md text-black hover:text-gray-600 cursor-pointer'
-                        >
-                          Elegir de la biblioteca
-                        </label>
-
-                        <div className='flex flex-row'>
-                          {/* Guardar */}
-                          {preview && (
-                            <button
-                              type='button'
-                              onClick={subirFoto}
-                              disabled={subiendo}
-                              className='p-1 rounded-md bg-violet-600 hover:bg-violet-800 text-white disabled:opacity-50 cursor-pointer'
+                            {/* Botón visible */}
+                            <label
+                              htmlFor='file-picker'
+                              className='rounded-md text-black hover:text-gray-600 cursor-pointer'
                             >
-                              {subiendo ? 'Subiendo...' : 'Guardar foto'}
-                            </button>
-                          )}
+                              Elegir de la biblioteca
+                            </label>
 
-                          {/* Cancelar */}
-                          {preview && (
-                            <button
-                              type='button'
-                              onClick={cancelarFotoLocal}
-                              className='ml-2 px-3 py-1.5 rounded-md bg-gray-600 hover:bg-gray-800  text-white cursor-pointer'
-                            >
-                              Cancelar
-                            </button>
-                          )}
-                        </div>
+                            {/* Modal de recorte */}
+                            {cropModalOpen && (
+                              <div className='fixed inset-0 z-50 bg-black/60 flex items-center justify-center'>
+                                <div className='bg-white rounded-2xl p-4 w-[90vw] max-w-xl'>
+                                  <div className='relative w-full h-[60vh] max-h-[70vh] bg-black/5 rounded'>
+                                    {tempImageUrl && (
+                                      <Cropper
+                                        image={tempImageUrl}
+                                        crop={crop}
+                                        zoom={zoom}
+                                        aspect={1} // cuadrado (ideal para avatar)
+                                        cropShape='round' // círculo visual (opcional)
+                                        showGrid={false}
+                                        onCropChange={setCrop}
+                                        onZoomChange={setZoom}
+                                        onCropComplete={onCropComplete}
+                                      />
+                                    )}
+                                  </div>
 
-                        {/* Preview = pre vista de la for=to recortada (recortada, si ya aplicaste recorte) */}
-                        {/*preview && (
-                          <div className="mt-3">
-                            <img src={preview} alt="preview" className="w-40 h-40 rounded-full object-cover" />
-                          </div>
-                        )*/}
-
-                        {/* Modal de recorte */}
-                        {cropModalOpen && (
-                          <div className='fixed inset-0 z-50 bg-black/60 flex items-center justify-center'>
-                            <div className='bg-white rounded-2xl p-4 w-[90vw] max-w-xl'>
-                              <div className='relative w-full h-[60vh] max-h-[70vh] bg-black/5 rounded'>
-                                {tempImageUrl && (
-                                  <Cropper
-                                    image={tempImageUrl}
-                                    crop={crop}
-                                    zoom={zoom}
-                                    aspect={1} // cuadrado (ideal para avatar)
-                                    cropShape='round' // círculo visual (opcional)
-                                    showGrid={false}
-                                    onCropChange={setCrop}
-                                    onZoomChange={setZoom}
-                                    onCropComplete={onCropComplete}
-                                  />
-                                )}
-                              </div>
-
-                              {/* Controles */}
-                              <div className='mt-4 flex items-center justify-between'>
-                                <input
-                                  type='range'
-                                  min={1}
-                                  max={3}
-                                  step={0.01}
-                                  value={zoom}
-                                  onChange={(e) => setZoom(Number(e.target.value))}
-                                  className='w-2/3 cursor-pointer'
-                                />
-                                <div className='flex gap-2'>
-                                  <button
-                                    type='button'
-                                    className='px-3 ml-1 py-1.5 rounded bg-gray-200 hover:bg-gray-400 cursor-pointer'
-                                    onClick={cancelarCrop}
-                                  >
-                                    Cancelar
-                                  </button>
-                                  <button
-                                    type='button'
-                                    className='px-3 py-1.5 rounded bg-violet-600 hover:bg-violet-800 text-white cursor-pointer'
-                                    onClick={aplicarRecorte}
-                                  >
-                                    Aplicar recorte
-                                  </button>
+                                  {/* Controles */}
+                                  <div className='mt-4 flex items-center justify-between'>
+                                    <input
+                                      type='range'
+                                      min={1}
+                                      max={3}
+                                      step={0.01}
+                                      value={zoom}
+                                      onChange={(e) => setZoom(Number(e.target.value))}
+                                      className='w-2/3 cursor-pointer'
+                                    />
+                                    <div className='flex gap-2'>
+                                      <button
+                                        type='button'
+                                        className='px-3 ml-1 py-1.5 rounded bg-gray-200 hover:bg-gray-400 cursor-pointer'
+                                        onClick={cancelarCrop}
+                                      >
+                                        Cancelar
+                                      </button>
+                                      <button
+                                        type='button'
+                                        className='px-3 py-1.5 rounded bg-violet-600 hover:bg-violet-800 text-white cursor-pointer'
+                                        onClick={async () => {
+                                          await aplicarRecorte();          // 1) genera el preview y cierra el crop modal
+                                          setSelectedPefilEditar(false);   // 2) cierra el menú de editar
+                                        }}
+                                      >
+                                        Aplicar recorte
+                                      </button>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                      <button
-                        type='button'
-                        aria-label='Cerrar'
-                        className='text-end rounded-full w-3 h-6 hover:text-red/5 cursor-pointer text-md text-red-600 hover:text-red-500'
-                        onClick={() => setSelectedPefilEditar(false)}
-                      >
-                        ✕
-                      </button>
-                    </li>
+                          <button
+                            type='button'
+                            aria-label='Cerrar'
+                            className='text-end rounded-full w-3 h-6 hover:text-red/5 cursor-pointer text-md text-red-600 hover:text-red-500'
+                            onClick={() => setSelectedPefilEditar(false)}
+                          >
+                            ✕
+                          </button>
+                        </li>
 
-                    <li className='cursor-pointer hover:text-gray-600'>Elegir un avatar</li>
-                    {foto && (
-                      <li className='cursor-pointer hover:text-red-700 text-red-500'>
-                        <button
-                          type='button'
-                          onClick={eliminarFoto}
-                          disabled={eliminando}
-                          className=' cursor-pointer hover:text-red-500 text-red-600 disabled:opacity-50'
+                        {/* Elegir avatar */}
+                        <li
+                          className='cursor-pointer hover:text-gray-600'
+                          onClick={() => {
+                            setSelectedAvatar(true);
+                          }}
                         >
-                          {eliminando ? 'Eliminando...' : 'Eliminar foto'}
-                        </button>
-                      </li>
+                          Elegir un avatar
+                        </li>
+
+                        {/* eliminar foto de perfil y bd */}
+                        {fotoUrl && (
+                          <li className='cursor-pointer hover:text-red-700 text-red-500'>
+                            <button
+                              type='button'
+                              onClick={() => setShowDeleteBar(true)}
+                              disabled={eliminando}
+                              className=' cursor-pointer hover:text-red-500 text-red-600 disabled:opacity-50'
+                            >
+                              {eliminando ? 'Eliminando...' : 'Eliminar foto'}
+                            </button>
+                          </li>
+                        )}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* acá vamos a meter la barrita de confirmación de borrado */}
+                  <AnimatePresence>
+                    {showDeleteBar && (
+                      <motion.div
+                        key='eliminar-foto-bar'
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        className='absolute left-34 w-72 top-68 mt-1 -translate-x-1/2
+                      bg-black/80 text-white rounded-2xl px-4 py-4 shadow-2xl'
+                      >
+                        <div className='flex justify-center'>
+                          <span className='text-md mr-2 text-center w-full'>
+                            ¿Seguro que querés eliminar tu foto de perfil?
+                          </span>
+                        </div>
+
+                        <div className='flex flex-row gap-4 mt-4 justify-center'>
+                          <button
+                            type='button'
+                            onClick={() => setShowDeleteBar(false)}
+                            className='px-3 py-1.5 rounded-md bg-gray-600 hover:bg-gray-800 text-white text-sm cursor-pointer'
+                          >
+                            Cancelar
+                          </button>
+
+                          <button
+                            type='button'
+                            onClick={eliminarFoto}
+                            disabled={eliminando}
+                            className='px-3 py-1.5 rounded-md bg-red-600 hover:bg-red-700 text-white text-sm disabled:opacity-50 cursor-pointer'
+                          >
+                            {eliminando ? 'Eliminando...' : 'Eliminar'}
+                          </button>
+                        </div>
+                      </motion.div>
                     )}
-                  </ul>
-                </div>
-              ) : (
+                  </AnimatePresence>
+                </>
+              )}
+
+              {/* BOTÓN EDITAR: solo si NO hay confirmación de avatar */}
+              {!selectedPefilEditar && !avatarConfirm.open && (
                 <motion.button
                   type='button'
                   whileTap={{ scale: 0.9 }}
                   whileHover={{ scale: 1.05 }}
                   className='absolute left-46 top-60 -translate-y-1/2 ml-4
-                                rounded-full px-2 py-2 bg-black text-white 
-                                cursor-pointer text-sm'
+                rounded-full px-2 py-2 bg-black text-white 
+                cursor-pointer text-sm'
                   aria-pressed={selectedPefilEditar}
                   onClick={() => setSelectedPefilEditar(true)}
                 >
                   Editar
                 </motion.button>
               )}
+
+              {/* barra de confirmación de avatar */}
+              <AnimatePresence>
+                {avatarConfirm.open && avatarConfirm.avatar && (
+                  <motion.div
+                    key='confirm-avatar-bar'
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className='absolute left-1/2 w-72 top-full mt-1 -translate-x-1/2
+      bg-black/80 text-white rounded-2xl px-4 py-4 shadow-2xl'
+                  >
+                    <div className='flex justify-center'>
+                      <span className='text-md text-center text-slate-200 mt-1'>
+                        ¿Quieres usar este avatar?
+                      </span>
+                    </div>
+
+                    <div className='flex justify-center gap-3 mt-4'>
+                      <button
+                        type='button'
+                        className='px-3 py-1.5 rounded-md bg-slate-600 text-white hover:bg-slate-500 cursor-pointer text-sm'
+                        onClick={() => setAvatarConfirm({ open: false, avatar: null })}
+                      >
+                        {t('cancel') ?? 'Cancelar'}
+                      </button>
+
+                      <button
+                        type='button'
+                        className='px-3 py-1.5 rounded-md bg-violet-600 hover:bg-violet-800 text-white disabled:opacity-60 cursor-pointer text-sm'
+                        disabled={applyingAvatar}
+                        onClick={handleApplyAvatar}
+                      >
+                        {applyingAvatar ? 'Aplicando...' : 'Usar avatar'}
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+
+              {/* 🔹 mini-modal de guardar/cancelar debajo de la foto */}
+              <AnimatePresence>
+                {preview && !cropModalOpen && (
+                  <motion.div
+                    key='guardar-foto-bar'
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className='absolute left-1/2 w-72 top-full mt-1 -translate-x-1/2
+                    bg-black/80 text-white rounded-2xl px-4 py-4 shadow-2xl'
+                  >
+                    <div className='flex justify-center'>
+                      <span className='text-md mr-2 text-center w-full'>
+                        ¿Quieres guardar esta foto?
+                      </span>
+                    </div>
+
+                    <div className='flex flex-row gap-4 mt-4 justify-center'>
+                      <button
+                        type='button'
+                        onClick={cancelarFotoLocal}
+                        className='px-3 py-1.5 rounded-md bg-gray-600 hover:bg-gray-800 text-white text-sm cursor-pointer'
+                      >
+                        Cancelar
+                      </button>
+
+                      <button
+                        type='button'
+                        onClick={subirFoto}
+                        disabled={subiendo}
+                        className='px-3 py-1.5 rounded-md bg-violet-600 hover:bg-violet-800 text-white text-sm disabled:opacity-50 cursor-pointer'
+                      >
+                        {subiendo ? 'Subiendo...' : 'Guardar foto'}
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* MODAL: listado de avatares */}
+              <AnimatePresence>
+                {selectedAvatar && (
+                  <motion.div
+                    key='modal-avatares'
+                    className='fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center'
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <motion.div
+                      onClick={(e) => e.stopPropagation()}
+                      initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.98 }}
+                      className='relative w-[95vw] max-w-4xl max-h-[80vh] bg-indigo-900 text-white rounded-2xl shadow-2xl p-6 flex flex-col'
+                    >
+                      <button
+                        type='button'
+                        aria-label='Cerrar'
+                        className='absolute top-3 right-3 rounded-full w-9 h-9 
+                          grid place-items-center hover:bg-black/10 active:scale-95 
+                          cursor-pointer text-2xl'
+                        onClick={() => {
+                          setSelectedAvatar(false);
+                          setAvatarIdSeleccionado(null);
+                        }}
+                      >
+                        ✕
+                      </button>
+
+                      <h2 className='text-xl font-semibold mb-1'>Mis avatares</h2>
+                      <p className='text-sm text-indigo-100 mb-4'>
+                        Elegí un avatar para usar como foto de perfil.
+                      </p>
+
+                      <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 overflow-y-auto pr-1'>
+                        {inventarioAvataresDos().map((item) => {
+                          const isSelected = Number(avatarIdSeleccionado) === Number(item.id);
+                          return (
+                            <motion.button
+                              key={item.id}
+                              type='button'
+                              whileTap={{ scale: 0.97 }}
+                              className={`border rounded-2xl p-3 bg-white/10 hover:bg-white/20 cursor-pointer
+                                flex flex-col items-center gap-2
+                              ${isSelected ? 'ring-2 ring-fuchsia-400 border-fuchsia-400' : ''}`}
+                              onClick={() => {
+                                setAvatarIdSeleccionado(item.id);
+                                // guardo qué avatar se quiere aplicar
+                                setAvatarConfirm({
+                                  open: true,
+                                  avatar: item,
+                                });
+
+                                // cierro el modal de la lista de avatares
+                                setSelectedAvatar(false);
+
+                                // opcional: cierro el menú de edición si querés
+                                //setSelectedPefilEditar(false);
+                              }}
+                            >
+                              <img
+                                src={item.preview_url}
+                                alt={`Avatar ${item.nombre}`}
+                                className='w-24 h-24 rounded-full object-cover'
+                              />
+                              <span className='font-semibold text-center text-sm'>
+                                {item.nombre}
+                              </span>
+                            </motion.button>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
             </div>
           </motion.div>
         )}
@@ -1852,106 +2143,153 @@ const Perfil = () => {
 
       {/* ====================================================================================== */}
 
-      {/* boton "mis avatares" */}
+      {/* botón "mis avatares" */}
       <div className='flex flex-col items-center mt-6 h-fit w-full'>
         <motion.button
           className='bg-fuchsia-500 hover:bg-pink-500/90 text-white rounded-xl w-32 h-8 mb-4 cursor-pointer'
           whileTap={{ scale: 1.2 }}
           onClick={() => {
-            setSelectedAvatar(true);
+            setShowAvatarsList(true);   // ahora usa showAvatarsList
           }}
           type='button'
-        //aria-pressed={selectedAvatar}
         >
           {t('myavatars')}
         </motion.button>
 
         {/* lista de avatares del jugador */}
-        {inventarioAvataresDos().length === 0 && selectedAvatar ? (
-          <div>
-            <div className='fixed h-full inset-0 z-50 bg-black/50 backdrop-blur-sm'>
-              <motion.div
-                onClick={(e) => e.stopPropagation()} // evita que el click burbujee al overlay
-                initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 10 }}
-                className='absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
-                      w-full max-w-8/12 h-fit rounded-2xl bg-indigo-900 text-white p-6 shadow-2xl'
+        {inventarioAvataresDos().length === 0 && showAvatarsList ? (
+          <div className='fixed h-full inset-0 z-50 bg-black/50 backdrop-blur-sm'>
+            <motion.div
+              onClick={(e) => e.stopPropagation()}
+              initial={{ opacity: 0, y: 10, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10 }}
+              className='absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
+                  w-full max-w-8/12 h-fit rounded-2xl bg-indigo-900 text-white p-6 shadow-2xl'
+            >
+              <button
+                type='button'
+                aria-label='Cerrar'
+                className='absolute top-2 right-2 rounded-full w-9 h-9 
+                    grid place-items-center hover:bg-black/5 active:scale-95 
+                    cursor-pointer text-2xl'
+                onClick={() => setShowAvatarsList(false)}
               >
-                <button
-                  type='button'
-                  aria-label='Cerrar'
-                  className='absolute top-2 right-2 rounded-full w-9 h-9 
-                              grid place-items-center hover:bg-black/5 active:scale-95 
-                              cursor-pointer text-2xl'
-                  onClick={() => setSelectedAvatar(null)}
-                >
-                  ✕
-                </button>
-                <h2 className='w-48 p-2'>{t('avatarsList')}</h2>
-
-                <hr />
-
-                <p className='mt-3 text-center'>{t('noHaveAvatars')}</p>
-              </motion.div>
-            </div>
+                ✕
+              </button>
+              <h2 className='w-48 p-2'>{t('avatarsList')}</h2>
+              <hr />
+              <p className='mt-3 text-center'>{t('noHaveAvatars')}</p>
+            </motion.div>
           </div>
         ) : (
-          <div>
-            {selectedAvatar && (
+          <>
+            {showAvatarsList && (
               <div className='fixed h-full inset-0 z-50 bg-black/50 backdrop-blur-sm'>
                 <motion.div
-                  onClick={(e) => e.stopPropagation()} // evita que el click burbujee al overlay
+                  onClick={(e) => e.stopPropagation()}
                   initial={{ opacity: 0, y: 10, scale: 0.98 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10 }}
                   className='absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
-                      w-full max-w-8/12 h-fit rounded-2xl bg-indigo-900 text-white p-6 shadow-2xl'
+          w-full max-w-3xl h-fit rounded-2xl bg-indigo-900 text-white p-6 shadow-2xl'
                 >
+                  {/* Cerrar modal completo */}
                   <button
                     type='button'
                     aria-label='Cerrar'
                     className='absolute top-2 right-2 rounded-full w-9 h-9 
-                              grid place-items-center hover:bg-black/5 active:scale-95 
-                              cursor-pointer text-2xl'
-                    onClick={() => setSelectedAvatar(null)}
+            grid place-items-center hover:bg-black/5 active:scale-95 
+            cursor-pointer text-2xl'
+                    onClick={() => {
+                      setShowAvatarsList(false);
+                      setAvatarDetalle(null); // por las dudas, limpiamos
+                    }}
                   >
                     ✕
                   </button>
 
-                  <div>
-                    <h2 className='w-48 p-2'>Lista de mis avatares</h2>
+                  {/* SI NO hay avatarDetalle → se muestra la LISTA en grid */}
+                  {!avatarDetalle && (
+                    <>
+                      <h2 className='w-full text-lg font-semibold mb-2'>
+                        Lista de mis avatares
+                      </h2>
+                      <hr />
 
-                    <hr />
-
-                    <ul className='flex flex-row gap-3 mt-4 w-full max-w-md'>
-                      {inventarioAvataresDos().map((item) => (
-                        <motion.li
-                          key={`${item.id}`}
-                          className='border rounded-xl p-3 bg-white/10 hover:bg-white/20 cursor-pointer'
-                          whileTap={{ scale: 1.02 }}
-                          onClick={() => {
-                            setAvatarIdSeleccionado(item.id);
-                          }}
-                        >
-                          <div>
+                      <ul
+                        className='mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 
+                gap-4 max-h-[60vh] overflow-y-auto pr-1'
+                      >
+                        {inventarioAvataresDos().map((item) => (
+                          <motion.li
+                            key={item.id}
+                            whileTap={{ scale: 0.97 }}
+                            className='border rounded-2xl p-3 bg-white/10 hover:bg-white/20 
+                    cursor-pointer flex flex-col items-center gap-2'
+                            onClick={() => {
+                              // SOLO mostramos el detalle, NO cambiamos foto de perfil
+                              setAvatarDetalle(item);
+                            }}
+                          >
                             <img
                               src={item.preview_url}
                               alt={`Imagen del avatar ${item.nombre}`}
-                              className='flex w-40 h-50 object-cover rounded-full p-4'
+                              className='w-24 h-24 rounded-full object-cover'
                             />
-                          </div>
-                          <div className='flex flex-col items-center'>
-                            <span className='font-semibold text-center'>{item.nombre}</span>
-                          </div>
-                        </motion.li>
-                      ))}
-                    </ul>
-                  </div>
+                            <span className='font-semibold text-center text-sm'>
+                              {item.nombre}
+                            </span>
+                            {item.division && (
+                              <span className='text-xs text-indigo-100'>
+                                {item.division}
+                              </span>
+                            )}
+                          </motion.li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
+
+                  {/* SI HAY avatarDetalle → se muestra el DETALLE del avatar */}
+                  {avatarDetalle && (
+                    <div className='mt-2 flex flex-col items-center'>
+                      <h2 className='text-xl font-semibold mb-3'>
+                        {avatarDetalle.nombre}
+                      </h2>
+                      <img
+                        src={avatarDetalle.preview_url}
+                        alt={`Avatar ${avatarDetalle.nombre}`}
+                        className='w-48 h-48 rounded-full object-cover border-4 border-fuchsia-400 shadow-xl mb-4'
+                      />
+
+                      {avatarDetalle.division && (
+                        <p className='mb-2 text-sm text-indigo-100'>
+                          División: <span className='font-semibold'>{avatarDetalle.division}</span>
+                        </p>
+                      )}
+
+                      {/* Podés mostrar más datos si tu objeto los trae */}
+                      {avatarDetalle.descripcion && (
+                        <p className='mb-4 text-sm text-indigo-100 text-center max-w-md'>
+                          {avatarDetalle.descripcion}
+                        </p>
+                      )}
+
+                      <button
+                        type='button'
+                        className='mt-2 px-4 py-2 rounded-md bg-slate-600 hover:bg-slate-500 
+                text-white text-sm cursor-pointer'
+                        onClick={() => setAvatarDetalle(null)} // vuelve al grid
+                      >
+                        Volver a la lista
+                      </button>
+                    </div>
+                  )}
                 </motion.div>
               </div>
             )}
-          </div>
+          </>
         )}
       </div>
 
@@ -2151,7 +2489,6 @@ const Perfil = () => {
                 </div>
               ) : (
                 <ul className=''>
-                  {console.log('visible: ', visible)}
                   {(visible ?? []).map((e, index) => {
                     const globalIndex = startIndex + index;
 
@@ -2400,15 +2737,21 @@ const Perfil = () => {
                         <div className='flex items-center gap-4'>
                           {/* Foto del contrincante */}
                           <div className='w-16 h-16 rounded-full overflow-hidden bg-black/30 flex items-center justify-center'>
-                            {contrincante.usuario?.foto_perfil ? (
-                              <img
-                                src={`${API}${contrincante.usuario.foto_perfil}`}
-                                alt={contrincante.usuario?.name ?? 'Contrincante'}
-                                className='w-16 h-16 object-cover'
-                              />
-                            ) : (
-                              <span className='text-2xl'>👤</span>
-                            )}
+                            {(() => {
+                              const fotoContrincante = contrincante.usuario?.foto_perfil
+                                ? resolveFotoAjena(contrincante.usuario.foto_perfil)
+                                : null;
+
+                              return fotoContrincante ? (
+                                <img
+                                  src={fotoContrincante}
+                                  alt={contrincante.usuario?.name ?? 'Contrincante'}
+                                  className='w-16 h-16 object-cover'
+                                />
+                              ) : (
+                                <span className='text-2xl'>👤</span>
+                              );
+                            })()}
                           </div>
 
                           {/* Nombre y correo */}
@@ -2805,59 +3148,65 @@ const Perfil = () => {
         ) : (
           <>
             <div className='mb-2 p-0.5 space-y-2'>
-              {visibleFriendRequests.map(({ solicitud, usuario }) => (
-                <div
-                  key={solicitud.id}
-                  className='border rounded-xl p-4 bg-white/10 hover:bg-white/20 
-                    mb-2 flex items-center justify-between gap-4'
-                >
-                  <div className='flex items-center gap-3'>
-                    <div className='w-12 h-12 rounded-full overflow-hidden bg-black/30 flex items-center justify-center'>
-                      {usuario?.foto_perfil ? (
-                        <img
-                          src={`${API}${usuario.foto_perfil}`}
-                          alt={usuario?.name ?? 'Jugador'}
-                          className='w-12 h-12 object-cover'
-                        />
-                      ) : (
-                        <span className='text-2xl'>👤</span>
-                      )}
-                    </div>
-                    <div className='flex flex-col'>
-                      <span className='font-semibold'>
-                        {usuario?.name ?? '—'}
-                      </span>
-                      <span className='text-sm text-purple-200'>
-                        {usuario?.email ?? '—'}
-                      </span>
-                      <span className='text-xs text-purple-200'>
-                        Puntaje: {usuario?.puntaje ?? '—'} · País: {usuario?.pais ?? '—'}
-                      </span>
-                    </div>
-                  </div>
+              {visibleFriendRequests.map(({ solicitud, usuario }) => {
+                const fotoOtro = usuario?.foto_perfil
+                  ? resolveFotoAjena(usuario.foto_perfil)
+                  : null;
 
-                  <div className='flex gap-2'>
-                    <button
-                      type='button'
-                      onClick={() => handleAceptarSolicitud(solicitud.id)}
-                      disabled={processingRequestId === solicitud.id}
-                      className='px-3 py-1.5 rounded bg-green-600 hover:bg-green-700 
-                         text-white text-sm cursor-pointer disabled:opacity-60'
-                    >
-                      {processingRequestId === solicitud.id ? 'Aceptando...' : 'Aceptar'}
-                    </button>
-                    <button
-                      type='button'
-                      onClick={() => handleRechazarSolicitud(solicitud.id)}
-                      disabled={processingRequestId === solicitud.id}
-                      className='px-3 py-1.5 rounded bg-gray-600 hover:bg-gray-700 
-                         text-white text-sm cursor-pointer disabled:opacity-60'
-                    >
-                      {processingRequestId === solicitud.id ? 'Cancelando...' : 'Cancelar'}
-                    </button>
+                return (
+                  <div
+                    key={solicitud.id}
+                    className='border rounded-xl p-4 bg-white/10 hover:bg-white/20 
+                    mb-2 flex items-center justify-between gap-4'
+                  >
+                    <div className='flex items-center gap-3'>
+                      <div className='w-12 h-12 rounded-full overflow-hidden bg-black/30 flex items-center justify-center'>
+                        {fotoOtro ? (
+                          <img
+                            src={fotoOtro}
+                            alt={usuario?.name ?? 'Jugador'}
+                            className='w-12 h-12 object-cover'
+                          />
+                        ) : (
+                          <span className='text-2xl'>👤</span>
+                        )}
+                      </div>
+                      <div className='flex flex-col'>
+                        <span className='font-semibold'>
+                          {usuario?.name ?? '—'}
+                        </span>
+                        <span className='text-sm text-purple-200'>
+                          {usuario?.email ?? '—'}
+                        </span>
+                        <span className='text-xs text-purple-200'>
+                          Puntaje: {usuario?.puntaje ?? '—'} · País: {usuario?.pais ?? '—'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className='flex gap-2'>
+                      <button
+                        type='button'
+                        onClick={() => handleAceptarSolicitud(solicitud.id)}
+                        disabled={processingRequestId === solicitud.id}
+                        className='px-3 py-1.5 rounded bg-green-600 hover:bg-green-700 
+                        text-white text-sm cursor-pointer disabled:opacity-60'
+                      >
+                        {processingRequestId === solicitud.id ? 'Aceptando...' : 'Aceptar'}
+                      </button>
+                      <button
+                        type='button'
+                        onClick={() => handleRechazarSolicitud(solicitud.id)}
+                        disabled={processingRequestId === solicitud.id}
+                        className='px-3 py-1.5 rounded bg-gray-600 hover:bg-gray-700 
+                        text-white text-sm cursor-pointer disabled:opacity-60'
+                      >
+                        {processingRequestId === solicitud.id ? 'Cancelando...' : 'Cancelar'}
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {totalRequestsPages > 1 && (
@@ -2899,17 +3248,6 @@ const Perfil = () => {
           {t('friends')}
         </h2>
 
-        {/* Input de búsqueda */}
-        <div className='px-2 mb-2'>
-          <input
-            type='text'
-            value={friendsSearch}
-            onChange={(e) => setFriendsSearch(e.target.value)}
-            placeholder='Buscar amigo por nombre...'
-            className='w-full px-3 py-1.5 rounded-lg bg-black/30 text-white text-sm 
-                 border border-white/20 focus:outline-none focus:ring-1 focus:ring-purple-400'
-          />
-        </div>
 
         <div>
           <AnimatePresence>
@@ -2928,6 +3266,19 @@ const Perfil = () => {
 
           {filteredFriendsDetails.length > 0 ? (
             <>
+
+              {/* Input de búsqueda */}
+              <div className='px-2 mb-2'>
+                <input
+                  type='text'
+                  value={friendsSearch}
+                  onChange={(e) => setFriendsSearch(e.target.value)}
+                  placeholder='Buscar amigo por nombre...'
+                  className='w-full px-3 py-1.5 rounded-lg bg-black/30 text-white text-sm 
+                border border-white/20 focus:outline-none focus:ring-1 focus:ring-purple-400'
+                />
+              </div>
+
               <div className='mb-2 p-0.5 space-y-2'>
                 {visibleFriends.map(({ amigo, usuario }) => (
                   <div
@@ -2938,15 +3289,21 @@ const Perfil = () => {
                     <div className='flex items-center gap-3'>
                       {/* {console.log("usuario: ", usuario)} */}
                       <div className='w-12 h-12 rounded-full overflow-hidden bg-black/30 flex items-center justify-center'>
-                        {usuario?.foto_perfil ? (
-                          <img
-                            src={`${API}${usuario.foto_perfil}`}
-                            alt={usuario?.name ?? 'Amigo'}
-                            className='w-12 h-12 object-cover'
-                          />
-                        ) : (
-                          <span className='text-2xl'>👤</span>
-                        )}
+                        {(() => {
+                          const fotoAmigo = usuario?.foto_perfil
+                            ? resolveFotoAjena(usuario.foto_perfil)
+                            : null;
+
+                          return fotoAmigo ? (
+                            <img
+                              src={fotoAmigo}
+                              alt={usuario?.name ?? 'Amigo'}
+                              className='w-12 h-12 object-cover'
+                            />
+                          ) : (
+                            <span className='text-2xl'>👤</span>
+                          );
+                        })()}
                       </div>
                       <div className='flex flex-col'>
                         <span className='font-semibold text-white'>

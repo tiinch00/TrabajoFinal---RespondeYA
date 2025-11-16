@@ -13,6 +13,7 @@ router.put("/users/:id", userController.update);
 
 // subir/actualizar foto de perfil
 router.post("/users/:id/foto", uploadFotoPerfil, userController.updatePhoto);
+router.put("/users/:id/avatar", userController.setAvatar);
 // borrar foto de perfil
 router.delete("/users/:id/foto", userController.deletePhoto);
 

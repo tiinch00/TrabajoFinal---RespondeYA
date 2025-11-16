@@ -11,6 +11,7 @@ import ficeSeconds from '/sounds/fiveSeconds.mp3';
 import finalDeJuego from '/sounds/finalDeJuego.wav';
 import incorrecta from '/sounds/incorrecta.wav';
 import musicaPreguntas from '/sounds/musicaPreguntasEdit.mp3';
+import { resolveFotoAjena } from '../utils/resolveFotoAjena.js';
 import { useGame } from '../context/ContextJuego.jsx';
 import useSound from 'use-sound';
 import { useTranslation } from 'react-i18next';
@@ -66,6 +67,10 @@ function tiempoPorPregunta(t) {
 
 export default function JugarMultijugador() {
     const API = 'http://localhost:3006';
+    const isDefaultFoto = (fp) => {
+        if (!fp) return true;
+        return fp === '/uploads/default.png' || fp === `${API}/uploads/default.png`;
+    };
     const navigate = useNavigate();
     const location = useLocation();
     const { id: salaId } = useParams(); // salaId

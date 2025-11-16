@@ -201,6 +201,42 @@ const deletePhoto = async (req, res) => {
   }
 };
 
+const setAvatar = async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { avatarUrl } = req.body;
+
+    if (!Number.isInteger(id)) {
+      return res.status(400).json({ error: 'id inválido' });
+    }
+    if (!avatarUrl || typeof avatarUrl !== 'string') {
+      return res.status(400).json({ error: 'avatarUrl es requerido' });
+    }
+
+    const user = await User.findByPk(id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Si la foto actual es una subida del usuario (carpeta fotos_perfil), la borramos del disco
+    const rel = user.foto_perfil; // ej: "/uploads/fotos_perfil/abc.jpg"
+    if (rel && rel.startsWith('/uploads/fotos_perfil/')) {
+      const filename = path.basename(rel);
+      const abs = path.join(uploadsDir, filename);
+      await deleteSafe(abs);
+    }
+
+    await user.update({ foto_perfil: avatarUrl });
+
+    const { password: _pw, ...safe } = user.toJSON();
+    return res.json(safe);
+  } catch (err) {
+    console.error('PUT /users/:id/avatar', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+
 export default {
   index,
   show,
@@ -209,4 +245,5 @@ export default {
   destroy,
   updatePhoto,
   deletePhoto,
+  setAvatar,
 };

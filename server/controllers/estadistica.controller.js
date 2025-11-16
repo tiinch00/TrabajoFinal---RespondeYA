@@ -18,7 +18,7 @@ const index = async (req, res) => {
       // devuelve una lista (vacía o con datos de los avatares)
       return res.json(rows);
     } else {
-      console.log('Estadas todas las estadisicas en findAll()');
+      // console.log('Estadas todas las estadisicas en findAll()');
       const estadisticas = await Estadistica.findAll();
       res.json(estadisticas);
     }
