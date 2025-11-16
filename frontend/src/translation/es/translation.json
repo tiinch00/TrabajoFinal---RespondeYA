@@ -15,7 +15,7 @@
   "singlePlayer": "Individual",
   "multiPlayer": "Multijugador",
   "who": "¿Quiénes somos?",
-  "descriptionWho": "Dєv²Plαy es una empresa creada por <1>Francisco Pandolfi</1> y <3>Martin Paredes</3>, dos desarrolladores web fundadores del popular juego en tiempo real <5>RespondeYa!</5>.",
+  "descriptionWho": "Dєv²Plαy es una empresa creada por <1>Francisco Pandolfi</1> y <3>Martin Paredes</3>, dos desarrolladores web fundadores del popular juego en tiempo real <5>RespondeYa!</5>",
   "formName": "Nombre",
   "formEmail": "Correo Electrónico",
   "formMessage": "Mensaje",
@@ -223,5 +223,13 @@
   "nameAlreadyUser": "Nombre de usuario ya resgistrado.",
   "emailAlreadyUser": "Email ya registrado.",
   "countryReal": "Debes seleccionar un pais real",
-  "confirm": "Confirmar"
+  "confirm": "Confirmar",
+  "nameRequired": "El Nombre es obligatorio",
+  "emailRequired": "El Email es obligatorio",
+  "descriptionRequired": "El mensaje es obligatorio",
+  "invalidEmail": "Ingresar un email válido",
+  "sending": "⏳ Enviando...",
+  "emailSended": "✅ Correo enviado correctamente!",
+  "emailError": "❌ Error al enviar correo.",
+  "noConnection": "❌ No se pudo conectar con el servidor."
 }
