@@ -14,7 +14,7 @@ export const GameProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     try {
       const raw = localStorage.getItem('user');
-      return raw ? JSON.parse(raw) : null;   // ya no es null si existe en localStorage
+      return raw ? JSON.parse(raw) : null; // ya no es null si existe en localStorage
     } catch {
       return null;
     }
@@ -77,8 +77,8 @@ export const GameProvider = ({ children }) => {
 
         const datosPartida = {
           categoria: categoria.toLowerCase(),
-          tiempo,
-          dificultad,
+          tiempo: tiempo.toLowerCase(),
+          dificultad: dificultad.toLowerCase(),
           timestamp: Date.now(),
           user_id: user.id,
           jugador_id: user.jugador_id,

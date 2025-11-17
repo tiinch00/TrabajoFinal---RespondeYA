@@ -37,6 +37,10 @@ const CrearPartida = ({ modo }) => {
       setAlerta(t('alert'));
       return;
     }
+    console.log('Datos de la partida a jugar');
+    console.log(categoria);
+    console.log(tiempo);
+    console.log(dificultad);
     startButton();
     setAlerta(t('goodLuck'));
 
@@ -72,12 +76,6 @@ const CrearPartida = ({ modo }) => {
       const targetAngle = categoryStartAngle + halfCategory;
 
       const finalRotation = spins * 360 + (270 - targetAngle);
-
-      console.log('Index:', randomIndex);
-      console.log('Category:', randomCategory.nombre);
-      console.log('Category start angle:', categoryStartAngle);
-      console.log('Target angle:', targetAngle);
-      console.log('Final rotation:', finalRotation);
 
       wheel.style.transition = `transform ${duration}ms cubic-bezier(0.25, 0.46, 0.45, 0.94)`;
       wheel.style.transform = `rotate(${finalRotation}deg)`;
@@ -230,7 +228,7 @@ const CrearPartida = ({ modo }) => {
               </button>
 
               <p className='text-xs sm:text-sm font-semibold text-cyan-300'>
-                {isSpinning ? '⏳ Girando...' : '🎡 ¡Toca para girar!'}
+                {isSpinning ? t('spining') : t('touch')}
               </p>
             </div>
 

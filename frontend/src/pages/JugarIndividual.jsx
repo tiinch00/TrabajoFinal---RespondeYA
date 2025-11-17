@@ -267,7 +267,7 @@ const JugarIndividual = () => {
       playWrong();
       nuevasRespuestas = [
         ...respuestas,
-        { texto: 'Sin respuesta', es_correcta: false, tiempoRespuesta },
+        { texto: t('noAnswer'), es_correcta: false, tiempoRespuesta },
       ];
     } else {
       nuevasRespuestas = [...respuestas, { ...opcion, tiempoRespuesta }];
@@ -470,9 +470,11 @@ const JugarIndividual = () => {
             jugador_id: id,
             pregunta_id: preguntas[index].id,
             partida_pregunta_id: partidaPreguntaId,
-            opcion_elegida_id: respuesta.texto === 'Sin respuesta' ? null : respuesta.id,
+            opcion_elegida_id:
+              respuesta.texto === 'Sin respuesta' || 'No answer' ? null : respuesta.id,
             estadistica_id: estadisticasResId,
-            es_correcta: respuesta.texto === 'Sin respuesta' ? false : respuesta.es_correcta,
+            es_correcta:
+              respuesta.texto === 'Sin respuesta' || 'No answer' ? false : respuesta.es_correcta,
             tiempo_respuesta_ms: tiempoRespuestaMs,
           })
           .catch((error) => {
@@ -588,7 +590,7 @@ const JugarIndividual = () => {
                   👤
                 </div>
               )}
-              <span className=' px-4 py-2 rounded-full text-sm font-bold text-center text-white'>
+              <span className='bg-blue-800 px-4 py-2 rounded-full text-sm font-bold text-center text-white'>
                 {user?.name || 'Usuario'}
               </span>
             </div>
@@ -644,7 +646,7 @@ const JugarIndividual = () => {
             <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-8 w-full max-w-2xl shadow-2xl'>
               <div className='mb-6'>
                 <span className='text-sm font-bold  text-yellow-300'>
-                  Pregunta {contador + 1}/10
+                  {t('question')} {contador + 1}/10
                 </span>
               </div>
 
