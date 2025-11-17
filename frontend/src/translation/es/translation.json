@@ -231,5 +231,14 @@
   "sending": "⏳ Enviando...",
   "emailSended": "✅ Correo enviado correctamente!",
   "emailError": "❌ Error al enviar correo.",
-  "noConnection": "❌ No se pudo conectar con el servidor."
+  "noConnection": "❌ No se pudo conectar con el servidor.",
+  "practice": "Práctica",
+  "draw": "Empate",
+  "friendADD": "Solicitudes de amistad",
+  "noRequest": "No tenés solicitudes pendientes.",
+  "showing": "Mostrando",
+  "of": "de",
+  "deletingFriend": "Eliminando...",
+  "deleteFriendConfirm": "¿Seguro que querés eliminar a <1>{{name}}</1> de tu lista de amigos?",
+  "repeatPass": "Repetir nueva contraseña"
 }

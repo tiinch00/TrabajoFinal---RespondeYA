@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-
+import i18n from 'i18next';
 import ChartMultilineLabels from '../components/graficosQuickchart.io/ChartMultilineLabels.jsx';
 import ChartVerticalLabels from '../components/graficosQuickchart.io/ChartVerticalLabels.jsx';
 import Cropper from 'react-easy-crop';
@@ -9,14 +9,14 @@ import SimpleBarChart from '../components/simpleBarChart';
 import axios from 'axios';
 import { getCroppedImg } from '../utils/cropImage.js';
 import { useAuth } from '../context/auth-context.jsx';
-import { useTranslation } from 'react-i18next';
+import { useTranslation, Trans } from 'react-i18next';
 
 // normalizador simple (tildes, mayúsculas, espacios) y evita errores con null/undefined/objetos raros.
 function normalize(s) {
-  return (s ?? "")
+  return (s ?? '')
     .toString()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .trim();
 }
@@ -32,8 +32,17 @@ const Perfil = () => {
     amigoId: null,
     nombre: '',
   });
-  const [confirmDeleting, setConfirmDeleting] = useState(false); // loading de borrar un amigo
 
+  useEffect(() => {
+    const handleLangChange = (lng) => setIdioma(lng);
+    i18n.on('languageChanged', handleLangChange);
+    return () => {
+      i18n.off('languageChanged', handleLangChange);
+    };
+  }, []);
+
+  const [confirmDeleting, setConfirmDeleting] = useState(false); // loading de borrar un amigo
+  const [idioma, setIdioma] = useState(i18n.language);
   // NUEVO: solo para el botón "Mis avatares" de abajo
   const [showAvatarsList, setShowAvatarsList] = useState(false);
 
@@ -75,12 +84,11 @@ const Perfil = () => {
   const [applyingAvatar, setApplyingAvatar] = useState(false);
   const [avatarDetalle, setAvatarDetalle] = useState(null); // avatar seleccionado solo para ver detalle
 
-
   const [partidaIdSeleccionada, setPartidaIdSeleccionada] = useState(null);
 
   const [editMode, setEditMode] = useState(false); // boton editar datos de perfil
   const [saving, setSaving] = useState(false); // boton de guardar los datos de formulario de editar perfil
-  const [friendsSearch, setFriendsSearch] = useState("");
+  const [friendsSearch, setFriendsSearch] = useState('');
 
   const [modalEstadisticaAbierto, setModalEstadisticaAbierto] = useState(null);
   const [selectedEstadisticasResultadosDePartidas, setSelectedEstadisticasResultadosDePartidas] =
@@ -155,7 +163,7 @@ const Perfil = () => {
 
   const filteredFriendsDetails = (friendsDetails ?? []).filter(({ usuario }) => {
     if (!normalizedFriendQuery) return true; // sin filtro, devuelve todos
-    const nameNorm = normalize(usuario?.name ?? "");
+    const nameNorm = normalize(usuario?.name ?? '');
     return nameNorm.includes(normalizedFriendQuery);
   });
 
@@ -170,11 +178,11 @@ const Perfil = () => {
     email: '',
     password: '',
     confirmPassword: '',
-  });// hook de inicializacion del formulario
+  }); // hook de inicializacion del formulario
   const [formErrors, setFormErrors] = useState({}); // error del formulario
 
   // buscador de partidas - estado para el input y la lista filtrada
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
   const [listaFiltrada, setListaFiltrada] = useState(listaObjetosPartidaInformacion);
 
   // --- estado de paginado ---
@@ -197,7 +205,7 @@ const Perfil = () => {
   }, [friendRequestsDetails]);
 
   // cálculo de páginas e items visibles
-  const total = (listaFiltrada?.length ?? 0);
+  const total = listaFiltrada?.length ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const startIndex = (currentPage - 1) * PAGE_SIZE;
   const endIndex = Math.min(startIndex + PAGE_SIZE, total);
@@ -205,38 +213,26 @@ const Perfil = () => {
 
   // ====== paginado solicitudes ======
   const totalRequests = friendRequestsDetails.length;
-  const totalRequestsPages = Math.max(
-    1,
-    Math.ceil(totalRequests / REQUESTS_PAGE_SIZE)
-  );
+  const totalRequestsPages = Math.max(1, Math.ceil(totalRequests / REQUESTS_PAGE_SIZE));
   const requestsStartIndex = (requestsPage - 1) * REQUESTS_PAGE_SIZE;
   const requestsEndIndex = requestsStartIndex + REQUESTS_PAGE_SIZE;
-  const visibleFriendRequests = friendRequestsDetails.slice(
-    requestsStartIndex,
-    requestsEndIndex
-  );
+  const visibleFriendRequests = friendRequestsDetails.slice(requestsStartIndex, requestsEndIndex);
 
   // ====== paginado amigos ======
   const totalFriends = filteredFriendsDetails.length;
-  const totalFriendsPages = Math.max(
-    1,
-    Math.ceil(totalFriends / FRIENDS_PAGE_SIZE)
-  );
+  const totalFriendsPages = Math.max(1, Math.ceil(totalFriends / FRIENDS_PAGE_SIZE));
   const friendsStartIndex = (friendsPage - 1) * FRIENDS_PAGE_SIZE;
   const friendsEndIndex = friendsStartIndex + FRIENDS_PAGE_SIZE;
-  const visibleFriends = filteredFriendsDetails.slice(
-    friendsStartIndex,
-    friendsEndIndex
-  );
+  const visibleFriends = filteredFriendsDetails.slice(friendsStartIndex, friendsEndIndex);
 
   // si cambia la lista o el filtro, volvemos a página 1
   useEffect(() => {
     setFriendsPage(1);
-  }, [friendsDetails, friendsSearch])
+  }, [friendsDetails, friendsSearch]);
 
   // handlers
-  const goPrev = () => setCurrentPage(p => Math.max(1, p - 1));
-  const goNext = () => setCurrentPage(p => Math.min(totalPages, p + 1));
+  const goPrev = () => setCurrentPage((p) => Math.max(1, p - 1));
+  const goNext = () => setCurrentPage((p) => Math.min(totalPages, p + 1));
   const goTo = (p) => setCurrentPage(() => Math.min(Math.max(1, p), totalPages));
 
   // Carga el perfil y verifica el usuario
@@ -253,7 +249,7 @@ const Perfil = () => {
         const { data } = await axios.get(`http://localhost:3006/users/${userId}`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
-        //console.log(data);
+
         if (!alive) return;
         setPerfil(data);
         setForm({
@@ -314,12 +310,10 @@ const Perfil = () => {
     return `${API}${fp}`;
   };
 
-
   const fotoUrl =
     avatarConfirm.open && avatarConfirm.avatar
       ? avatarConfirm.avatar.preview_url
       : resolveFotoPerfil();
-
 
   // al elegir archivo
   const onPickFile = (e) => {
@@ -376,8 +370,6 @@ const Perfil = () => {
       fileInputRef.current.value = '';
     }
   };
-
-
 
   const subirFoto = async () => {
     if (!foto || !perfil?.id) return;
@@ -438,8 +430,8 @@ const Perfil = () => {
       URL.revokeObjectURL(preview);
     }
 
-    setPreview(null);      // sacar la previsualización
-    setFoto(null);         // olvidarse del File que habías elegido
+    setPreview(null); // sacar la previsualización
+    setFoto(null); // olvidarse del File que habías elegido
     setTempImageUrl(null); // por las dudas, limpiar la imagen original del crop
     setCropModalOpen(false);
 
@@ -448,7 +440,6 @@ const Perfil = () => {
       fileInputRef.current.value = '';
     }
   };
-
 
   // liberar la URL del preview cuando cambie (higiene)
   useEffect(() => {
@@ -519,7 +510,7 @@ const Perfil = () => {
       setPreview(null);
       setFoto(null);
 
-      setPerfil(prev => ({
+      setPerfil((prev) => ({
         ...prev,
         foto_perfil: null,
       }));
@@ -537,9 +528,6 @@ const Perfil = () => {
       setEliminando(false);
     }
   };
-
-
-
 
   // funcion que hace reemplazar los datos del jugador
   const handleChange = (e) => {
@@ -584,7 +572,6 @@ const Perfil = () => {
     return Object.keys(errs).length === 0;
   };
 
-
   // funcion que guarda y hace llamar
   // la funcion de validar los datos del formulario para guardar los datos del jugador
   const handleSave = async (e) => {
@@ -600,8 +587,6 @@ const Perfil = () => {
         email: form.email.trim(),
       };
       if (form.password.trim()) payload.password = form.password.trim();
-
-      //console.log(payload);
 
       const { data } = await axios.put(`http://localhost:3006/users/${perfil.id}`, payload, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -650,7 +635,6 @@ const Perfil = () => {
     try {
       const { data } = await axios.get(`http://localhost:3006/avatar`);
       setAvatares(data);
-      //console.log("avatares (data):", data);
     } catch (error) {
       console.log('@@@@ Error GET /avatar\n', error);
     }
@@ -665,7 +649,6 @@ const Perfil = () => {
         { params: { jugador_id } } // <-- params
       );
       setJugadorAvatares(data);
-      //console.log("GET: jugadorId_avatares (data):", data);
     } catch (error) {
       console.log('@@@@ Error GET /jugadorId_avatares\n', error);
     }
@@ -691,9 +674,6 @@ const Perfil = () => {
     // 3) filtrá avatares por ese set (normalizando id)
     const out = avatares.filter((avatar) => idsDelJugador.has(Number(avatar.id)));
 
-    // debug útil
-    //console.log("inventarioAvataresDos →", { jid, idsDelJugador: [...idsDelJugador], out });
-
     return out;
   };
 
@@ -704,10 +684,10 @@ const Perfil = () => {
       // 1) Amigos donde YO soy jugador_id
       const [comoJugadorRes, comoAmigoRes] = await Promise.all([
         axios.get('http://localhost:3006/amigos', {
-          params: { jugador_id },   // yo en la columna jugador_id
+          params: { jugador_id }, // yo en la columna jugador_id
         }),
         axios.get('http://localhost:3006/amigos', {
-          params: { amigo_id: jugador_id },  // yo en la columna amigo_id
+          params: { amigo_id: jugador_id }, // yo en la columna amigo_id
         }),
       ]);
 
@@ -738,7 +718,6 @@ const Perfil = () => {
     }
   };
 
-
   const eliminarAmigo = async (id) => {
     try {
       const { data } = await axios.delete(`http://localhost:3006/amigos/eliminar/${id}`);
@@ -756,39 +735,35 @@ const Perfil = () => {
     }
   };
 
-
   const handleAgregarAmigo = async (registroSala) => {
     try {
       setFriendMessage(null);
 
       if (!jugador_id) {
-        setFriendMessage("No se encontró tu jugador_id");
+        setFriendMessage('No se encontró tu jugador_id');
         return;
       }
 
       // el contrincante es un jugador, no un user
       const amigoJugadorId = registroSala?.jugador?.id;
       if (!amigoJugadorId) {
-        setFriendMessage("No se encontró el jugador del contrincante");
+        setFriendMessage('No se encontró el jugador del contrincante');
         return;
       }
 
       setAddingFriendId(amigoJugadorId);
 
       const payload = {
-        jugador_id: Number(jugador_id),       // yo
-        amigo_id: Number(amigoJugadorId),     // el otro jugador
-        aceptado_en: null,                    // pendiente
+        jugador_id: Number(jugador_id), // yo
+        amigo_id: Number(amigoJugadorId), // el otro jugador
+        aceptado_en: null, // pendiente
       };
 
-      const { data } = await axios.post(
-        "http://localhost:3006/amigos/create",
-        payload
-      );
+      const { data } = await axios.post('http://localhost:3006/amigos/create', payload);
 
       // lo guardo en mi lista local de amigos (pendiente)
       setAmigos((prev) => [...prev, data]);
-      setFriendMessage("Solicitud enviada ✅");
+      setFriendMessage('Solicitud enviada ✅');
     } catch (err) {
       const msg = err.response?.data?.error || err.message;
       setFriendMessage(msg);
@@ -796,9 +771,6 @@ const Perfil = () => {
       setAddingFriendId(null);
     }
   };
-
-
-
 
   // obtiene un objeto categoria
   const getCategorias = async (id) => {
@@ -841,8 +813,8 @@ const Perfil = () => {
       const arr = Array.isArray(data)
         ? data
         : Array.isArray(data?.sala_jugadores)
-          ? data.sala_jugadores
-          : [];
+        ? data.sala_jugadores
+        : [];
       setArraySalaJugadores(arr);
     } catch (e) {
       console.error('GET /sala_jugadores', e.response?.data?.error || e.message);
@@ -889,9 +861,7 @@ const Perfil = () => {
       setEstadisticasTodas(todas); // 👈 guardamos el universo completo
 
       // 🔹 De ahí sacamos SOLO las del jugador logueado
-      const soloMias = todas.filter(
-        (e) => Number(e.jugador_id) === Number(jugador_id)
-      );
+      const soloMias = todas.filter((e) => Number(e.jugador_id) === Number(jugador_id));
       setEstadisticas(soloMias); // 👈 esto lo usa tu UI como antes
     } catch (error) {
       console.log('@@@@ Error GET: estadisticas\n', error);
@@ -915,9 +885,9 @@ const Perfil = () => {
       Array.isArray(preguntas) &&
       Array.isArray(partidas)
     ) {
-      const partidasById = new Map(partidas.map(p => [p.id, p]));
-      const categoriasById = new Map(categorias.map(c => [c.id, c]));
-      const preguntasById = new Map(preguntas.map(q => [q.id, q]));
+      const partidasById = new Map(partidas.map((p) => [p.id, p]));
+      const categoriasById = new Map(categorias.map((c) => [c.id, c]));
+      const preguntasById = new Map(preguntas.map((q) => [q.id, q]));
 
       const ppByPartida = partida_preguntas.reduce((m, pp) => {
         if (!m.has(pp.partida_id)) m.set(pp.partida_id, []);
@@ -934,10 +904,9 @@ const Perfil = () => {
         return acc;
       }, {});
 
-      const contar = (arr) =>
-        arr.reduce((acc, k) => ((acc[k] = (acc[k] || 0) + 1), acc), {});
+      const contar = (arr) => arr.reduce((acc, k) => ((acc[k] = (acc[k] || 0) + 1), acc), {});
 
-      const joined = estadisticas.map(e => {
+      const joined = estadisticas.map((e) => {
         const partida = partidasById.get(e.partida_id) || null;
 
         const modo = partida?.modo ?? null;
@@ -952,13 +921,11 @@ const Perfil = () => {
         const pps = ppByPartida.get(e.partida_id) || [];
 
         const dificultadesPorPregunta = pps
-          .map(pp => {
+          .map((pp) => {
             const q = preguntasById.get(pp.pregunta_id);
             return q?.dificultad || null;
           })
           .filter(Boolean);
-
-
 
         const resumenDificultad = contar(dificultadesPorPregunta);
 
@@ -977,12 +944,22 @@ const Perfil = () => {
           dificultad_pregunta,
           dificultad_tiempo,
           preguntasDeLaPartida: pps.map(
-            ({ pregunta_id, orden, question_text_copy, correct_option_id_copy, correct_option_text_copy }) => ({
+            ({
               pregunta_id,
               orden,
               question_text_copy,
+              question_text_copy_en,
               correct_option_id_copy,
               correct_option_text_copy,
+              correct_option_text_copy_en,
+            }) => ({
+              pregunta_id,
+              orden,
+              question_text_copy,
+              question_text_copy_en,
+              correct_option_id_copy,
+              correct_option_text_copy,
+              correct_option_text_copy_en,
             })
           ),
           dificultad: dificultadesPorPregunta[0],
@@ -1011,87 +988,68 @@ const Perfil = () => {
     ) {
       // id de partida seleccionada
       let idPartida = Number(partidaIdSeleccionada); // convierte el string a int
-      //if (typeof idPartida === "string") console.log("Es string");   // true si es string
-      //if (typeof idPartida === "number") console.log("Es numero");    // true si es número (NaN incluido)
-      //console.log("idPartida", idPartida);
 
       if (!Number.isFinite(idPartida)) {
-        //console.log('partidaIdSeleccionada no es numérico:', idPartida);
       } else {
         // 1) obtiene un objeto de partidas con todos sus atributos segun el id de la partida seleccionada en la lista.
         const partidaDelJugador = partidas.filter((e) => Number(e.id) === idPartida);
-        //console.log("array partidaDelJugador:", partidaDelJugador);
 
         // verifica si la partida existe
         if (partidaDelJugador.length !== 0) {
           // 2.1) obtiene el obj de partida_pregunta.
-          const objPartida_Pregunta = partida_preguntas.find((partida_pregunta) => partida_pregunta.partida_id == partidaDelJugador[0].id);
-          //console.log("objPartida_Pregunta: ", objPartida_Pregunta);
+          const objPartida_Pregunta = partida_preguntas.find(
+            (partida_pregunta) => partida_pregunta.partida_id == partidaDelJugador[0].id
+          );
 
           // 2.2) obtiene el id de categoria.
           const categoriaIds = partidaDelJugador[0].categoria_id;
-          //console.log("array categoriaIds:", categoriaIds); // id: 1 (geografia)
 
           // 3) obtiene el string categoria
           const objCategoria = categorias.find((category) => category.id == categoriaIds);
-          //console.log("objCategoria:", objCategoria);
 
           // 4) filtra el array preguntas segun el id de categoria y obtiene un array de 10 objetos de preguntas
           const resultDificultad = preguntas.find(
             (pregunta) => pregunta.id == objPartida_Pregunta.pregunta_id
           );
-          //console.log("array resultDificultad:", resultDificultad);
 
           // 5) obtiene el valor string de la dificultad del objeto pregunta (categoria_id)
           const dificultadPregunta = resultDificultad.dificultad;
-          //console.log("dificultadPregunta:", dificultadPregunta);
 
           // 6) obtiene el objeto partida_jugadores asi se puede ver los id/s de los jugador/es de la partida
           const jugadoresDeUnaPartdia = partida_jugadores.find(
             (e) => Number(e.partida_id) === idPartida
           );
-          //console.log("jugadoresDeUnaPartdia:", jugadoresDeUnaPartdia);
 
           // 🔹 NUEVO: calcular empate usando estadisticas
           const winnersEstaPartida = (estadisticasTodas ?? []).filter(
             (est) => Number(est.partida_id) === idPartida && Number(est.posicion) > 0
           );
           const empate = winnersEstaPartida.length > 1;
-
           // 7) obtiene un array donde se verifica las preguntas que se eligieron al azar el orden de la partida (partida_preguntas)
           const preguntasDeLaPartida = partida_preguntas.filter(
             (e) => Number(e.partida_id) === idPartida
           );
-          //console.log("preguntasDeLaPartida:", preguntasDeLaPartida);
-
           // 8) obtiene un array de las respuestas que el jugador selecciono en la partida (respuestas)
           const respuestasDeLaPartida = respuestas.filter(
             (e) => Number(e.partida_id) === idPartida
           );
-          //console.log("respuestasDeLaPartida:", respuestasDeLaPartida);
-
           // 9) se crea un array indexado donde los elementos son  id de opciones de respuesta del array respuestasDeLaPartida
           const arrayPreguntasIdsDeLaPartida = respuestasDeLaPartida.map((opcion) => ({
             opcionId: opcion.opcion_elegida_id,
             pregunta_id: opcion.pregunta_id,
             es_correcta: opcion.es_correcta,
           })); // es_correcta se puede eliminar
-          //console.log("arrayPreguntasIdsDeLaPartida:", arrayPreguntasIdsDeLaPartida);
 
           // 10) obtiene un array de opciones de respuestas segun la preguntas. como hay 10 preguntas, va haber 40 opciones de respuestas
           // 10.1) Normalizá y armá un Set con los preguntaId de la partida
           const preguntaIdsSet = new Set(
             (arrayPreguntasIdsDeLaPartida ?? []).map((x) => Number(x.pregunta_id))
           );
-          // array con los ids de preguntas
-          //console.log(preguntaIdsSet);
 
           // 10.2) Filtrá opciones por partida y por pertenencia de pregunta_id al Set
           const opcionesDeLaPartida = (opciones ?? []).filter(
             (o) => Number(o.pregunta_id) && preguntaIdsSet.has(Number(o.pregunta_id))
           );
-          //console.log("opcionesDeLaPartida:", opcionesDeLaPartida);          
-
           return {
             idPartida,
             categoriaIds: categoriaIds,
@@ -1106,7 +1064,6 @@ const Perfil = () => {
             empate,
           };
         } else {
-          //console.log("No hay un objeto");
           return null;
         }
       }
@@ -1128,44 +1085,40 @@ const Perfil = () => {
     setListaFiltrada(listaObjetosPartidaInformacion);
   }, [listaObjetosPartidaInformacion]);
 
-
   // construye el “texto buscable” para cada item
   const buildHaystack = (e) => {
     const etiquetaPractica =
-      e?.modo === "individual"
-        ? "practica"
-        : e?.modo === "multijugador"
-          ? "multijugador"
-          : "";
+      e?.modo === 'individual' ? 'practica' : e?.modo === 'multijugador' ? 'multijugador' : '';
 
-    const fecha = formatDateDMYLocal(e?.ended_at) ?? "-";   // ej: 11/11/2025
-    const hora = formatTimeHMLocal(e?.ended_at) ?? "-";    // ej: 23:35
-    const modo = modeTranslations[e?.modo] ?? e?.modo ?? "";
-    const cat = categoryTranslations[e?.categoria] ?? e?.categoria ?? "";
+    const fecha = formatDateDMYLocal(e?.ended_at) ?? '-'; // ej: 11/11/2025
+    const hora = formatTimeHMLocal(e?.ended_at) ?? '-'; // ej: 23:35
+    const modo = modeTranslations[e?.modo] ?? e?.modo ?? '';
+    const cat = categoryTranslations[e?.categoria] ?? e?.categoria ?? '';
 
     // dificultad de PREGUNTA (texto traducido o crudo)
     const diffPregunta =
       difficultyTranslations[e?.dificultad_pregunta ?? e?.dificultad] ??
-      (e?.dificultad_pregunta ?? e?.dificultad ?? "");
+      e?.dificultad_pregunta ??
+      e?.dificultad ??
+      '';
 
     // dificultad de TIEMPO (texto traducido o crudo)
     const diffTiempo =
-      timeDifficultyTranslations?.[e?.dificultad_tiempo] ??
-      (e?.dificultad_tiempo ?? "");
+      timeDifficultyTranslations?.[e?.dificultad_tiempo] ?? e?.dificultad_tiempo ?? '';
 
     // 🔹 NUEVO: etiqueta de resultado para el buscador
-    let etiquetaResultado = "";
-    if (e?.modo === "multijugador") {
+    let etiquetaResultado = '';
+    if (e?.modo === 'multijugador') {
       if (e.empate) {
         // importantes las palabras en castellano para que el user pueda buscar
-        etiquetaResultado = "empate draw";
+        etiquetaResultado = 'empate draw';
       } else if (Number(e.posicion) > 0) {
-        etiquetaResultado = "ganaste victoria win";
+        etiquetaResultado = 'ganaste victoria win';
       } else {
-        etiquetaResultado = "perdiste derrota loss";
+        etiquetaResultado = 'perdiste derrota loss';
       }
-    } else if (e?.modo === "individual") {
-      etiquetaResultado = "practica entrenamiento";
+    } else if (e?.modo === 'individual') {
+      etiquetaResultado = 'practica entrenamiento';
     }
 
     return normalize(
@@ -1180,10 +1133,9 @@ const Perfil = () => {
         diffTiempo,
       ]
         .filter(Boolean)
-        .join(" ")
+        .join(' ')
     );
   };
-
 
   // buscador de partidas
   const handleSearch = () => {
@@ -1195,33 +1147,33 @@ const Perfil = () => {
     const tokens = q.split(/[\s,]+/).filter(Boolean);
     const filtrados = listaObjetosPartidaInformacion.filter((e) => {
       const haystack = buildHaystack(e);
-      return tokens.every(tok => haystack.includes(tok));
+      return tokens.every((tok) => haystack.includes(tok));
     });
     setListaFiltrada(filtrados);
   };
 
   // ENTER dispara búsqueda
   const onKeyDownSearch = (ev) => {
-    if (ev.key === "Enter") handleSearch();
+    if (ev.key === 'Enter') handleSearch();
   };
 
   // si borrás todo, resetea automáticamente
   const onChangeSearch = (ev) => {
     const val = ev.target.value;
     setSearch(val);
-    if (val.trim() === "") {
+    if (val.trim() === '') {
       setListaFiltrada(listaObjetosPartidaInformacion); // volver al estado original
     }
   };
 
   // botón para limpiar
   const handleClear = () => {
-    setSearch("");
+    setSearch('');
     setListaFiltrada(listaObjetosPartidaInformacion);
   };
 
   // helper para saber si hay consulta activa
-  const hasQuery = normalize(search) !== "";
+  const hasQuery = normalize(search) !== '';
 
   const getJugador = async (id) => {
     try {
@@ -1331,7 +1283,7 @@ const Perfil = () => {
     try {
       if (!jugador_id) return; // por las dudas
 
-      const { data } = await axios.get("http://localhost:3006/amigos", {
+      const { data } = await axios.get('http://localhost:3006/amigos', {
         params: { amigo_id: jugador_id }, // 👈 ahora jugador_id
       });
 
@@ -1339,7 +1291,7 @@ const Perfil = () => {
       const pendientes = (data ?? []).filter((a) => !a.aceptado_en);
       setFriendRequests(pendientes);
     } catch (error) {
-      console.log("@@@@ Error GET: friend requests\n", error);
+      console.log('@@@@ Error GET: friend requests\n', error);
     }
   };
 
@@ -1433,7 +1385,6 @@ const Perfil = () => {
           arraySalaJugadores.map((sj) => Number(sj?.jugador_id)).filter((n) => Number.isFinite(n))
         ),
       ];
-      // console.log('1) jugadorIds:', jugadorIds);
 
       // 2) Traer jugadores en paralelo
       const jugadoresArr = await Promise.all(jugadorIds.map((id) => getJugador(id)));
@@ -1442,7 +1393,6 @@ const Perfil = () => {
         const user_id = Number(j.user_id ?? j.usuario_id ?? j.userId);
         return { ...j, id, user_id: Number.isFinite(user_id) ? user_id : null };
       });
-      // console.log('2) jugadores:', jugadores);
 
       // Diccionario por id de jugador
       const jugadoresById = Object.fromEntries(jugadores.map((j) => [String(j.id), j]));
@@ -1451,7 +1401,6 @@ const Perfil = () => {
       const userIds = [
         ...new Set(jugadores.map((j) => Number(j.user_id)).filter((n) => Number.isFinite(n))),
       ];
-      // console.log('3) userIds:', userIds);
 
       // 4) Traer usuarios en paralelo
       const usuariosArr = await Promise.all(userIds.map((id) => getUsuario(id)));
@@ -1460,7 +1409,6 @@ const Perfil = () => {
         const { password, pass, ...safe } = u; // por si llegara a venir
         return { ...safe, id };
       });
-      // console.log('4) usuarios:', usuarios);
 
       // Diccionario por id de usuario
       const usuariosById = Object.fromEntries(usuarios.map((u) => [String(u.id), u]));
@@ -1475,7 +1423,7 @@ const Perfil = () => {
 
       if (!cancel) {
         // Reemplazo directo (lo más simple y evita duplicados)
-        setArrayUsuariosJugadores(compuesto);;
+        setArrayUsuariosJugadores(compuesto);
       }
     })();
 
@@ -1496,7 +1444,7 @@ const Perfil = () => {
     !!selectedPerfil ||
     !!selectedEstadisticas ||
     !!modalEstadisticaAbierto ||
-    !!selectedAvatar ||        // ahora sí: trata null / false como false
+    !!selectedAvatar || // ahora sí: trata null / false como false
     !!showAvatarsList ||
     !!avatarConfirm.open;
   // verifica los estados de los modales asi despues no desaparece el cursor vertical
@@ -1519,9 +1467,6 @@ const Perfil = () => {
     avatarConfirm.open,
   ]);
 
-
-  // console.log(partidaIdSeleccionada);
-
   // Buscar la partida seleccionada por partidaIdSeleccionada
   const partidaSeleccionada =
     listaObjetosPartidaInformacion?.find(
@@ -1534,10 +1479,8 @@ const Perfil = () => {
   // Jugadores que participaron en esa sala
   const jugadoresSalaActual = Array.isArray(arrayUsuariosJugadores)
     ? arrayUsuariosJugadores.filter(
-      (sj) =>
-        salaIdActual != null &&
-        Number(sj.sala_id) === Number(salaIdActual)
-    )
+        (sj) => salaIdActual != null && Number(sj.sala_id) === Number(salaIdActual)
+      )
     : [];
 
   // Contrincantes = todos menos el jugador logueado
@@ -1551,25 +1494,23 @@ const Perfil = () => {
   // Relación (si existe) entre YO y el contrincante
   const relacionConContrincante = contrincante
     ? amigos.find((a) => {
-      const miJid = Number(jugador_id);
-      const otroJid = Number(contrincante?.jugador?.id);
+        const miJid = Number(jugador_id);
+        const otroJid = Number(contrincante?.jugador?.id);
 
-      const jidA = Number(a.jugador_id);
-      const jidB = Number(a.amigo_id);
+        const jidA = Number(a.jugador_id);
+        const jidB = Number(a.amigo_id);
 
-      // ¿La relación es entre yo y el contrincante, en cualquier orden?
-      const esMismaPareja =
-        (jidA === miJid && jidB === otroJid) ||
-        (jidA === otroJid && jidB === miJid);
+        // ¿La relación es entre yo y el contrincante, en cualquier orden?
+        const esMismaPareja =
+          (jidA === miJid && jidB === otroJid) || (jidA === otroJid && jidB === miJid);
 
-      return esMismaPareja;
-    })
+        return esMismaPareja;
+      })
     : null;
 
   const esAmigo = !!relacionConContrincante && !!relacionConContrincante.aceptado_en;
   const pendienteConContrincante =
     !!relacionConContrincante && !relacionConContrincante.aceptado_en;
-
 
   const handleAceptarSolicitud = async (solicitudId) => {
     try {
@@ -1584,9 +1525,7 @@ const Perfil = () => {
       });
 
       // 2) La saco de las solicitudes pendientes (UI de arriba)
-      setFriendRequests((prev) =>
-        prev.filter((r) => Number(r.id) !== idNum)
-      );
+      setFriendRequests((prev) => prev.filter((r) => Number(r.id) !== idNum));
 
       // 3) Actualizo "amigos" localmente para que el effect de friendsDetails la vea
       setAmigos((prev) => {
@@ -1595,15 +1534,11 @@ const Perfil = () => {
 
         if (existe) {
           // lo actualizo agregando aceptado_en
-          return prev.map((a) =>
-            Number(a.id) === idNum ? { ...a, aceptado_en } : a
-          );
+          return prev.map((a) => (Number(a.id) === idNum ? { ...a, aceptado_en } : a));
         }
 
         // si no existe, la busco en friendRequests (estado actual del componente)
-        const original = friendRequests.find(
-          (r) => Number(r.id) === idNum
-        );
+        const original = friendRequests.find((r) => Number(r.id) === idNum);
 
         if (original) {
           // la agrego con aceptado_en seteado
@@ -1620,32 +1555,24 @@ const Perfil = () => {
     }
   };
 
-
-
-
   const handleRechazarSolicitud = async (solicitudId) => {
     try {
       setProcessingRequestId(solicitudId);
-      await axios.delete(
-        `http://localhost:3006/amigos/eliminar/${solicitudId}`
-      );
+      await axios.delete(`http://localhost:3006/amigos/eliminar/${solicitudId}`);
       setFriendRequests((prev) => prev.filter((r) => r.id !== solicitudId));
     } catch (err) {
-      console.error("Error al rechazar solicitud:", err);
+      console.error('Error al rechazar solicitud:', err);
     } finally {
       setProcessingRequestId(null);
     }
   };
-
 
   useEffect(() => {
     let cancel = false;
 
     (async () => {
       try {
-        const aceptados = (amigos ?? [])
-          .filter(Boolean)
-          .filter((a) => !!a.aceptado_en);
+        const aceptados = (amigos ?? []).filter(Boolean).filter((a) => !!a.aceptado_en);
 
         if (!aceptados.length) {
           if (!cancel) setFriendsDetails([]);
@@ -1662,10 +1589,10 @@ const Perfil = () => {
 
             const otroJugadorId =
               miJid === jidA
-                ? jidB        // yo soy jugador_id → amigo es el otro
+                ? jidB // yo soy jugador_id → amigo es el otro
                 : miJid === jidB
-                  ? jidA        // yo soy amigo_id → jugador_id es el otro
-                  : jidB;       // fallback por las dudas
+                ? jidA // yo soy amigo_id → jugador_id es el otro
+                : jidB; // fallback por las dudas
 
             const jugador = await getJugador(otroJugadorId).catch((err) => {
               console.error('Error en getJugador(otroJugadorId):', otroJugadorId, err);
@@ -1698,9 +1625,6 @@ const Perfil = () => {
     };
   }, [amigos, jugador_id]); // 👈 agregá jugador_id en deps
 
-
-
-
   useEffect(() => {
     (async () => {
       if (!friendRequests.length) {
@@ -1723,11 +1647,6 @@ const Perfil = () => {
     })();
   }, [friendRequests]);
 
-  // useEffect(() => {
-  //   console.log('📌 amigos:', amigos);
-  //   console.log('📌 friendsDetails:', friendsDetails);
-  // }, [amigos, friendsDetails]);
-
   // verifica datos para correr perfil o envia mensaje de errores visual en la interfaz
   if (!userId) return <p className='text-red-600'>{t('noUser')}.</p>;
   if (error)
@@ -1738,7 +1657,6 @@ const Perfil = () => {
     );
   if (loadingPerfil) return <p className='text-white'>{t('loadingPerfil')}</p>;
   if (!perfil) return <p className='text-red-600'>{t('noPerfil')}.</p>;
-
 
   return (
     <div className='w-[70%] mb-6 mt-20'>
@@ -1755,7 +1673,7 @@ const Perfil = () => {
             <p>👤</p>
           ) : (
             <img
-              src={fotoUrl}   // 👈 AHORA USA fotoUrl
+              src={fotoUrl} // 👈 AHORA USA fotoUrl
               alt='Foto de perfil'
               className='w-32 h-32 rounded-full object-cover bg-white/20'
             />
@@ -1868,8 +1786,8 @@ const Perfil = () => {
                                         type='button'
                                         className='px-3 py-1.5 rounded bg-violet-600 hover:bg-violet-800 text-white cursor-pointer'
                                         onClick={async () => {
-                                          await aplicarRecorte();          // 1) genera el preview y cierra el crop modal
-                                          setSelectedPefilEditar(false);   // 2) cierra el menú de editar
+                                          await aplicarRecorte(); // 1) genera el preview y cierra el crop modal
+                                          setSelectedPefilEditar(false); // 2) cierra el menú de editar
                                         }}
                                       >
                                         Aplicar recorte
@@ -2013,7 +1931,6 @@ const Perfil = () => {
                 )}
               </AnimatePresence>
 
-
               {/* 🔹 mini-modal de guardar/cancelar debajo de la foto */}
               <AnimatePresence>
                 {preview && !cropModalOpen && (
@@ -2131,7 +2048,6 @@ const Perfil = () => {
                   </motion.div>
                 )}
               </AnimatePresence>
-
             </div>
           </motion.div>
         )}
@@ -2149,7 +2065,7 @@ const Perfil = () => {
           className='bg-fuchsia-500 hover:bg-pink-500/90 text-white rounded-xl w-32 h-8 mb-4 cursor-pointer'
           whileTap={{ scale: 1.2 }}
           onClick={() => {
-            setShowAvatarsList(true);   // ahora usa showAvatarsList
+            setShowAvatarsList(true); // ahora usa showAvatarsList
           }}
           type='button'
         >
@@ -2212,9 +2128,7 @@ const Perfil = () => {
                   {/* SI NO hay avatarDetalle → se muestra la LISTA en grid */}
                   {!avatarDetalle && (
                     <>
-                      <h2 className='w-full text-lg font-semibold mb-2'>
-                        Lista de mis avatares
-                      </h2>
+                      <h2 className='w-full text-lg font-semibold mb-2'>Lista de mis avatares</h2>
                       <hr />
 
                       <ul
@@ -2237,13 +2151,9 @@ const Perfil = () => {
                               alt={`Imagen del avatar ${item.nombre}`}
                               className='w-24 h-24 rounded-full object-cover'
                             />
-                            <span className='font-semibold text-center text-sm'>
-                              {item.nombre}
-                            </span>
+                            <span className='font-semibold text-center text-sm'>{item.nombre}</span>
                             {item.division && (
-                              <span className='text-xs text-indigo-100'>
-                                {item.division}
-                              </span>
+                              <span className='text-xs text-indigo-100'>{item.division}</span>
                             )}
                           </motion.li>
                         ))}
@@ -2254,9 +2164,7 @@ const Perfil = () => {
                   {/* SI HAY avatarDetalle → se muestra el DETALLE del avatar */}
                   {avatarDetalle && (
                     <div className='mt-2 flex flex-col items-center'>
-                      <h2 className='text-xl font-semibold mb-3'>
-                        {avatarDetalle.nombre}
-                      </h2>
+                      <h2 className='text-xl font-semibold mb-3'>{avatarDetalle.nombre}</h2>
                       <img
                         src={avatarDetalle.preview_url}
                         alt={`Avatar ${avatarDetalle.nombre}`}
@@ -2365,14 +2273,14 @@ const Perfil = () => {
             </div>
 
             <div>
-              <label className='block text-sm mb-1'>Confirmar contraseña</label>
+              <label className='block text-sm mb-1'>{t('confimPass')}</label>
               <input
                 type='password'
                 name='confirmPassword'
                 value={form.confirmPassword}
                 onChange={handleChange}
                 className='w-full px-3 py-2 rounded text-black bg-white/90 hover:bg-white'
-                placeholder='Repetí la nueva contraseña'
+                placeholder={t('repeatPass')}
               />
               {formErrors.confirmPassword && (
                 <p className='text-red-500 text-sm'>{formErrors.confirmPassword}</p>
@@ -2497,10 +2405,10 @@ const Perfil = () => {
                     let claseColor;
 
                     if (e?.modo === 'individual') {
-                      etiqueta = 'Práctica';
+                      etiqueta = t('practice');
                       claseColor = 'text-yellow-400';
                     } else if (e.empate) {
-                      etiqueta = 'Empate';
+                      etiqueta = t('draw');
                       claseColor = 'text-blue-400';
                     } else if (e.posicion > 0) {
                       etiqueta = t('youWon');
@@ -2537,8 +2445,7 @@ const Perfil = () => {
                             {t('category')}: {categoryTranslations[e?.categoria] ?? '-'}
                           </p>
                           <p className='text-white'>
-                            {t('dificultyquestion')}:{' '}
-                            {difficultyTranslations[e?.dificultad] ?? '-'}
+                            {t('dificultyquestion')}: {difficultyTranslations[e?.dificultad] ?? '-'}
                           </p>
                           <p className='text-white'>
                             {t('dificultytime')}:{' '}
@@ -2549,15 +2456,13 @@ const Perfil = () => {
                     );
                   })}
                 </ul>
-              )
-              }
+              )}
 
               {/* Paginado: aparece solo si hay más de 5 */}
               {total > PAGE_SIZE && (
                 <div className='mt-3 flex items-center justify-between gap-2'>
                   <span className='text-white/80 text-sm'>
-                    {'Mostrando' ?? t('showing')} {startIndex + 1}–{endIndex}{' '}
-                    {'de' ?? t('of')} {total}
+                    {t('showing')} {startIndex + 1}–{endIndex} {t('of')} {total}
                   </span>
 
                   <div className='flex items-center gap-1'>
@@ -2565,7 +2470,9 @@ const Perfil = () => {
                       type='button'
                       onClick={goPrev}
                       disabled={currentPage === 1}
-                      className='px-3 py-1 rounded-lg bg-white/10 text-white disabled:opacity-50 hover:bg-white/20'
+                      className={`px-3 py-1 rounded-lg bg-white/10 text-white disabled:opacity-50  hover:bg-white/20 ${
+                        currentPage === 1 ? 'cursor-not-allowed' : 'cursor-pointer'
+                      }`}
                     >
                       ‹
                     </button>
@@ -2575,10 +2482,11 @@ const Perfil = () => {
                         key={p}
                         type='button'
                         onClick={() => goTo(p)}
-                        className={`px-3 py-1 rounded-lg ${p === currentPage
-                          ? 'bg-slate-800 text-white'
-                          : 'bg-white/10 text-white hover:bg-white/20'
-                          }`}
+                        className={`px-3 py-1 rounded-lg ${
+                          p === currentPage
+                            ? 'bg-slate-800 cursor-not-allowed text-white'
+                            : 'bg-white/10 text-white cursor-pointer hover:bg-white/20'
+                        }`}
                       >
                         {p}
                       </button>
@@ -2588,7 +2496,9 @@ const Perfil = () => {
                       type='button'
                       onClick={goNext}
                       disabled={currentPage === totalPages}
-                      className='px-3 py-1 rounded-lg bg-white/10 text-white disabled:opacity-50 hover:bg-white/20'
+                      className={`px-3 py-1 rounded-lg bg-white/10 text-white disabled:opacity-50 hover:bg-white/20 ${
+                        currentPage === totalPages ? 'cursor-not-allowed' : 'cursor-pointer'
+                      }`}
                     >
                       ›
                     </button>
@@ -2680,21 +2590,20 @@ const Perfil = () => {
                       className='bg-gradient-to-b from-purple-800 via-purple-700 to-purple-800
                       rounded-xl p-4 mt-1 text-xl flex-1 min-h-0 text-[28px]'
                     >
-                      {/* {console.log('partidaSeleccionada: ', partidaSeleccionada)} */}
                       <p className='p-1'>
                         <strong>{t('position')}:</strong>{' '}
-                        {partidaSeleccionada.modo === 'individual'
-                          ? 'Práctica'
-                          : partidaSeleccionada.empate
-                            ? 'Empate'
+                        {
+                          partidaSeleccionada.modo === 'individual'
+                            ? t('practice')
+                            : partidaSeleccionada.empate
+                            ? t('draw')
                             : partidaSeleccionada.posicion > 0
-                              ? t('won')      // ganaste
-                              : t('youLoss')  // perdiste
+                            ? t('won') // ganaste
+                            : t('youLoss') // perdiste
                         }
                       </p>
                       <p className='p-1'>
-                        <strong>{t('scoreGeneral')}:</strong>{' '}
-                        {partidaSeleccionada.puntaje_total}
+                        <strong>{t('scoreGeneral')}:</strong> {partidaSeleccionada.puntaje_total}
                       </p>
                       <p className='p-1'>
                         <strong>{t('category')}:</strong>{' '}
@@ -2706,12 +2615,10 @@ const Perfil = () => {
                         {formatTimeHMLocal(partidaSeleccionada?.ended_at) ?? '—'}
                       </p>
                       <p className='p-1'>
-                        <strong>{t('rightAnswer')}:</strong>{' '}
-                        {partidaSeleccionada.total_correctas}
+                        <strong>{t('rightAnswer')}:</strong> {partidaSeleccionada.total_correctas}
                       </p>
                       <p className='p-1'>
-                        <strong>{t('wrongAnswer')}:</strong>{' '}
-                        {partidaSeleccionada.total_incorrectas}
+                        <strong>{t('wrongAnswer')}:</strong> {partidaSeleccionada.total_incorrectas}
                       </p>
                       <p className='p-1'>
                         <strong>{t('questionDificulty')}:</strong>{' '}
@@ -2719,9 +2626,7 @@ const Perfil = () => {
                       </p>
                       <p className='p-1'>
                         <strong>{t('dificultytime')}:</strong>{' '}
-                        {timeDifficultyTranslations[
-                          partidaSeleccionada?.dificultad_tiempo
-                        ] ?? '—'}
+                        {timeDifficultyTranslations[partidaSeleccionada?.dificultad_tiempo] ?? '—'}
                       </p>
                       <p className='p-1'>
                         <strong>{t('matchTime')}:</strong>{' '}
@@ -2730,75 +2635,76 @@ const Perfil = () => {
                     </div>
 
                     {/* Sección Contrincante */}
-                    {objetoPartidaCompleto?.partida?.[0]?.modo === 'multijugador' && contrincante && (
-                      <div className='mt-4 pt-3 border-t border-purple-600/60 text-[22px]'>
-                        <h3 className='font-semibold mb-3'>Contrincante</h3>
+                    {objetoPartidaCompleto?.partida?.[0]?.modo === 'multijugador' &&
+                      contrincante && (
+                        <div className='mt-4 pt-3 border-t border-purple-600/60 text-[22px]'>
+                          <h3 className='font-semibold mb-3'>Contrincante</h3>
 
-                        <div className='flex items-center gap-4'>
-                          {/* Foto del contrincante */}
-                          <div className='w-16 h-16 rounded-full overflow-hidden bg-black/30 flex items-center justify-center'>
-                            {(() => {
-                              const fotoContrincante = contrincante.usuario?.foto_perfil
-                                ? resolveFotoAjena(contrincante.usuario.foto_perfil)
-                                : null;
+                          <div className='flex items-center gap-4'>
+                            {/* Foto del contrincante */}
+                            <div className='w-16 h-16 rounded-full overflow-hidden bg-black/30 flex items-center justify-center'>
+                              {(() => {
+                                const fotoContrincante = contrincante.usuario?.foto_perfil
+                                  ? resolveFotoAjena(contrincante.usuario.foto_perfil)
+                                  : null;
 
-                              return fotoContrincante ? (
-                                <img
-                                  src={fotoContrincante}
-                                  alt={contrincante.usuario?.name ?? 'Contrincante'}
-                                  className='w-16 h-16 object-cover'
-                                />
-                              ) : (
-                                <span className='text-2xl'>👤</span>
-                              );
-                            })()}
-                          </div>
+                                return fotoContrincante ? (
+                                  <img
+                                    src={fotoContrincante}
+                                    alt={contrincante.usuario?.name ?? 'Contrincante'}
+                                    className='w-16 h-16 object-cover'
+                                  />
+                                ) : (
+                                  <span className='text-2xl'>👤</span>
+                                );
+                              })()}
+                            </div>
 
-                          {/* Nombre y correo */}
-                          <div className='flex flex-col'>
-                            <span className='font-semibold'>
-                              {contrincante.usuario?.name ?? '—'}
-                            </span>
-                            <span className='text-sm text-purple-200'>
-                              {contrincante.usuario?.email ?? '—'}
-                            </span>
-
-                            {friendMessage && (
-                              <span className='mt-1 text-xs text-purple-200'>
-                                {friendMessage}
+                            {/* Nombre y correo */}
+                            <div className='flex flex-col'>
+                              <span className='font-semibold'>
+                                {contrincante.usuario?.name ?? '—'}
                               </span>
-                            )}
-                          </div>
+                              <span className='text-sm text-purple-200'>
+                                {contrincante.usuario?.email ?? '—'}
+                              </span>
 
-                          {/* Botón Agregar amigo */}
-                          <button
-                            type='button'
-                            disabled={
-                              esAmigo ||
-                              pendienteConContrincante ||
-                              addingFriendId === contrincante.jugador?.id
-                            }
-                            onClick={() => handleAgregarAmigo(contrincante)}
-                            className={`ml-auto px-4 py-2 rounded-xl text-sm cursor-pointer
-                        ${esAmigo
-                                ? 'bg-green-700/70 text-white cursor-default'
+                              {friendMessage && (
+                                <span className='mt-1 text-xs text-purple-200'>
+                                  {friendMessage}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Botón Agregar amigo */}
+                            <button
+                              type='button'
+                              disabled={
+                                esAmigo ||
+                                pendienteConContrincante ||
+                                addingFriendId === contrincante.jugador?.id
+                              }
+                              onClick={() => handleAgregarAmigo(contrincante)}
+                              className={`ml-auto px-4 py-2 rounded-xl text-sm cursor-pointer
+                        ${
+                          esAmigo
+                            ? 'bg-green-700/70 text-white cursor-default'
+                            : pendienteConContrincante
+                            ? 'bg-yellow-600/80 text-white cursor-default'
+                            : 'bg-pink-600 hover:bg-pink-700 text-white disabled:opacity-60'
+                        }`}
+                            >
+                              {esAmigo
+                                ? 'Amigos'
                                 : pendienteConContrincante
-                                  ? 'bg-yellow-600/80 text-white cursor-default'
-                                  : 'bg-pink-600 hover:bg-pink-700 text-white disabled:opacity-60'
-                              }`}
-                          >
-                            {esAmigo
-                              ? 'Amigos'
-                              : pendienteConContrincante
                                 ? 'Pendiente'
                                 : addingFriendId === contrincante.jugador?.id
-                                  ? 'Agregando...'
-                                  : 'Agregar amigo'}
-                          </button>
-
+                                ? 'Agregando...'
+                                : 'Agregar amigo'}
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
                   </>
                 )}
 
@@ -2872,15 +2778,13 @@ const Perfil = () => {
                       bg-gradient-to-b from-purple-800 via-purple-700 to-purple-800
                       rounded-xl'
                       >
-                        {/* {console.log('objetoPartidaCompleto: ', objetoPartidaCompleto)} */}
-
                         <div className='flex flex-row gap-2 mb-2 sticky top-0 p-2 bg-purple-800'>
                           <button
                             onClick={() =>
                               setOpenPreguntaIds(
                                 new Set(
-                                  (objetoPartidaCompleto?.preguntasDeLaPartida ?? []).map(
-                                    (e) => Number(e.pregunta_id ?? e.id)
+                                  (objetoPartidaCompleto?.preguntasDeLaPartida ?? []).map((e) =>
+                                    Number(e.pregunta_id ?? e.id)
                                   )
                                 )
                               )
@@ -2900,106 +2804,86 @@ const Perfil = () => {
 
                         {objetoPartidaCompleto?.preguntasDeLaPartida?.length ? (
                           <ul className='p-2'>
-                            {(objetoPartidaCompleto?.preguntasDeLaPartida ?? []).map(
-                              (e, index) => (
-                                <motion.li
-                                  key={Number(e.pregunta_id ?? e.id)}
-                                  className='border rounded-xl p-3 odd:bg-black/5 even:bg-black/30 flex flex-col mb-2'
-                                  whileTap={{ scale: 1.01 }}
+                            {(objetoPartidaCompleto?.preguntasDeLaPartida ?? []).map((e, index) => (
+                              <motion.li
+                                key={Number(e.pregunta_id ?? e.id)}
+                                className='border rounded-xl p-3 odd:bg-black/5 even:bg-black/30 flex flex-col mb-2'
+                                whileTap={{ scale: 1.01 }}
+                              >
+                                <button
+                                  type='button'
+                                  className='text-left w-full cursor-pointer hover:bg-black/30 rounded p-0.5 text-[20px]'
+                                  onClick={() => togglePregunta(Number(e.pregunta_id ?? e.id))}
                                 >
-                                  <button
-                                    type='button'
-                                    className='text-left w-full cursor-pointer hover:bg-black/30 rounded p-0.5 text-[20px]'
-                                    onClick={() =>
-                                      togglePregunta(Number(e.pregunta_id ?? e.id))
-                                    }
-                                  >
-                                    <span className='shrink-0 inline-flex items-center justify-center w-7 h-7 font-semibold'>
-                                      {`${index + 1})`}
-                                    </span>
+                                  <span className='shrink-0 inline-flex items-center justify-center w-7 h-7 font-semibold'>
+                                    {`${index + 1})`}
+                                  </span>
 
-                                    <span className='leading-snug'>
-                                      {e.question_text_copy}
-                                    </span>
-                                  </button>
+                                  <span className='leading-snug'>
+                                    {idioma === 'en'
+                                      ? e.question_text_copy_en
+                                      : e.question_text_copy}
+                                  </span>
+                                </button>
 
-                                  {openPreguntaIds.has(Number(e.pregunta_id ?? e.id)) && (
-                                    <div className='mt-2'>
-                                      {(objetoPartidaCompleto?.opcionesDeRespuestas ?? [])
-                                        .filter(
-                                          (o) =>
-                                            Number(o.pregunta_id) ===
-                                            Number(e.pregunta_id ?? e.id)
-                                        )
-                                        .map((o) => (
-                                          <span
-                                            key={o.id}
-                                            className={[
-                                              'block mb-1 indent-2 rounded text-[22px] border',
-                                              (() => {
-                                                const qId = Number(
-                                                  e.pregunta_id ?? e.id
-                                                );
-                                                const chosenId =
-                                                  elegidaPorPregunta.get(qId);
-                                                const userCorrect =
-                                                  !!correctaPorPregunta.get(qId);
-                                                const isChosen =
-                                                  chosenId === Number(o.id);
-                                                const isOptionCorrect =
-                                                  !!o.es_correcta;
+                                {openPreguntaIds.has(Number(e.pregunta_id ?? e.id)) && (
+                                  <div className='mt-2'>
+                                    {(objetoPartidaCompleto?.opcionesDeRespuestas ?? [])
+                                      .filter(
+                                        (o) =>
+                                          Number(o.pregunta_id) === Number(e.pregunta_id ?? e.id)
+                                      )
+                                      .map((o) => (
+                                        <span
+                                          key={o.id}
+                                          className={[
+                                            'block mb-1 indent-2 rounded text-[22px] border',
+                                            (() => {
+                                              const qId = Number(e.pregunta_id ?? e.id);
+                                              const chosenId = elegidaPorPregunta.get(qId);
+                                              const userCorrect = !!correctaPorPregunta.get(qId);
+                                              const isChosen = chosenId === Number(o.id);
+                                              const isOptionCorrect = !!o.es_correcta;
 
-                                                if (isChosen) {
-                                                  return userCorrect
-                                                    ? 'bg-green-600/30 border-green-500'
-                                                    : 'bg-red-600/30 border-red-500';
-                                                }
-                                                if (isOptionCorrect) {
-                                                  return 'bg-yellow-600/35 border-yellow-500';
-                                                }
-                                                return 'bg-gray-800/30 hover:bg-gray-800/50 border-transparent';
-                                              })(),
-                                            ].join(' ')}
-                                          >
-                                            {(() => {
-                                              const qId = Number(
-                                                e.pregunta_id ?? e.id
-                                              );
-                                              const chosenId =
-                                                elegidaPorPregunta.get(qId);
-                                              const userCorrect =
-                                                !!correctaPorPregunta.get(qId);
-                                              const isChosen =
-                                                chosenId === Number(o.id);
-                                              const isOptionCorrect =
-                                                !!o.es_correcta;
+                                              if (isChosen) {
+                                                return userCorrect
+                                                  ? 'bg-green-600/30 border-green-500'
+                                                  : 'bg-red-600/30 border-red-500';
+                                              }
+                                              if (isOptionCorrect) {
+                                                return 'bg-yellow-600/35 border-yellow-500';
+                                              }
+                                              return 'bg-gray-800/30 hover:bg-gray-800/50 border-transparent';
+                                            })(),
+                                          ].join(' ')}
+                                        >
+                                          {(() => {
+                                            const qId = Number(e.pregunta_id ?? e.id);
+                                            const chosenId = elegidaPorPregunta.get(qId);
+                                            const userCorrect = !!correctaPorPregunta.get(qId);
+                                            const isChosen = chosenId === Number(o.id);
+                                            const isOptionCorrect = !!o.es_correcta;
 
-                                              if (isChosen)
-                                                return userCorrect ? '✅ ' : '❌ ';
-                                              if (isOptionCorrect) return '🥲 ';
-                                              return '';
-                                            })()}
-                                            {o.texto ?? o.option_text ?? '—'}
-                                          </span>
-                                        ))}
-                                    </div>
-                                  )}
-                                  {/* tiempo de respuesta (al abrir) */}
-                                  {openPreguntaIds.has(Number(e.pregunta_id ?? e.id)) && (
-                                    <div className='mt-1 text-sm opacity-80'>
-                                      {t('answerTime')}:{' '}
-                                      <b>
-                                        {fmtMs(
-                                          tiempoPorPregunta.get(
-                                            Number(e.pregunta_id ?? e.id)
-                                          )
-                                        )}
-                                      </b>
-                                    </div>
-                                  )}
-                                </motion.li>
-                              )
-                            )}
+                                            if (isChosen) return userCorrect ? '✅ ' : '❌ ';
+                                            if (isOptionCorrect) return '🥲 ';
+                                            return '';
+                                          })()}
+                                          {idioma === 'en' ? o.texto_en : o.texto}
+                                        </span>
+                                      ))}
+                                  </div>
+                                )}
+                                {/* tiempo de respuesta (al abrir) */}
+                                {openPreguntaIds.has(Number(e.pregunta_id ?? e.id)) && (
+                                  <div className='mt-1 text-sm opacity-80'>
+                                    {t('answerTime')}:{' '}
+                                    <b>
+                                      {fmtMs(tiempoPorPregunta.get(Number(e.pregunta_id ?? e.id)))}
+                                    </b>
+                                  </div>
+                                )}
+                              </motion.li>
+                            ))}
                           </ul>
                         ) : (
                           <span>{t('answerList')}</span>
@@ -3133,18 +3017,13 @@ const Perfil = () => {
         </div>
       )}
 
-
       {/* ============================= Solicitudes de amistad ================================================= */}
 
       <div className='mb-6 mt-8 bg-white/10 rounded-xl p-1'>
-        <h2 className='text-xl text-white font-semibold mb-3 mt-2 indent-2'>
-          Solicitudes de amistad
-        </h2>
+        <h2 className='text-xl text-white font-semibold mb-3 mt-2 indent-2'>{t('friendADD')}</h2>
 
         {friendRequestsDetails.length === 0 ? (
-          <p className='indent-2 text-white mb-4'>
-            No tenés solicitudes pendientes.
-          </p>
+          <p className='indent-2 text-white mb-4'>{t('noRequest')}</p>
         ) : (
           <>
             <div className='mb-2 p-0.5 space-y-2'>
@@ -3172,12 +3051,8 @@ const Perfil = () => {
                         )}
                       </div>
                       <div className='flex flex-col'>
-                        <span className='font-semibold'>
-                          {usuario?.name ?? '—'}
-                        </span>
-                        <span className='text-sm text-purple-200'>
-                          {usuario?.email ?? '—'}
-                        </span>
+                        <span className='font-semibold'>{usuario?.name ?? '—'}</span>
+                        <span className='text-sm text-purple-200'>{usuario?.email ?? '—'}</span>
                         <span className='text-xs text-purple-200'>
                           Puntaje: {usuario?.puntaje ?? '—'} · País: {usuario?.pais ?? '—'}
                         </span>
@@ -3213,9 +3088,7 @@ const Perfil = () => {
               <div className='flex items-center justify-end gap-2 px-2 pb-2 text-sm text-white'>
                 <button
                   type='button'
-                  onClick={() =>
-                    setRequestsPage((p) => Math.max(1, p - 1))
-                  }
+                  onClick={() => setRequestsPage((p) => Math.max(1, p - 1))}
                   disabled={requestsPage === 1}
                   className='px-2 py-1 rounded bg-white/10 disabled:opacity-40'
                 >
@@ -3226,9 +3099,7 @@ const Perfil = () => {
                 </span>
                 <button
                   type='button'
-                  onClick={() =>
-                    setRequestsPage((p) => Math.min(totalRequestsPages, p + 1))
-                  }
+                  onClick={() => setRequestsPage((p) => Math.min(totalRequestsPages, p + 1))}
                   disabled={requestsPage === totalRequestsPages}
                   className='px-2 py-1 rounded bg-white/10 disabled:opacity-40'
                 >
@@ -3240,14 +3111,10 @@ const Perfil = () => {
         )}
       </div>
 
-
       {/* ============================= Mis Amigos ================================================= */}
 
       <div className='mb-6 mt-4 bg-white/10 rounded-xl p-1'>
-        <h2 className='text-xl text-white font-semibold mb-1 mt-2 indent-2'>
-          {t('friends')}
-        </h2>
-
+        <h2 className='text-xl text-white font-semibold mb-1 mt-2 indent-2'>{t('friends')}</h2>
 
         <div>
           <AnimatePresence>
@@ -3266,7 +3133,6 @@ const Perfil = () => {
 
           {filteredFriendsDetails.length > 0 ? (
             <>
-
               {/* Input de búsqueda */}
               <div className='px-2 mb-2'>
                 <input
@@ -3287,7 +3153,6 @@ const Perfil = () => {
                       mb-2 flex items-center justify-between gap-4'
                   >
                     <div className='flex items-center gap-3'>
-                      {/* {console.log("usuario: ", usuario)} */}
                       <div className='w-12 h-12 rounded-full overflow-hidden bg-black/30 flex items-center justify-center'>
                         {(() => {
                           const fotoAmigo = usuario?.foto_perfil
@@ -3306,12 +3171,8 @@ const Perfil = () => {
                         })()}
                       </div>
                       <div className='flex flex-col'>
-                        <span className='font-semibold text-white'>
-                          {usuario?.name ?? '—'}
-                        </span>
-                        <span className='text-sm text-purple-200'>
-                          {usuario?.email ?? '—'}
-                        </span>
+                        <span className='font-semibold text-white'>{usuario?.name ?? '—'}</span>
+                        <span className='text-sm text-purple-200'>{usuario?.email ?? '—'}</span>
                         <span className='text-xs text-purple-200'>
                           {/* Puntaje: {usuario?.puntaje ?? '—'} ·*/} País: {usuario?.pais ?? '—'}
                         </span>
@@ -3341,9 +3202,7 @@ const Perfil = () => {
                 <div className='flex items-center justify-end gap-2 px-2 pb-2 text-sm text-white'>
                   <button
                     type='button'
-                    onClick={() =>
-                      setFriendsPage((p) => Math.max(1, p - 1))
-                    }
+                    onClick={() => setFriendsPage((p) => Math.max(1, p - 1))}
                     disabled={friendsPage === 1}
                     className='px-2 py-1 rounded bg-white/10 disabled:opacity-40'
                   >
@@ -3354,9 +3213,7 @@ const Perfil = () => {
                   </span>
                   <button
                     type='button'
-                    onClick={() =>
-                      setFriendsPage((p) => Math.min(totalFriendsPages, p + 1))
-                    }
+                    onClick={() => setFriendsPage((p) => Math.min(totalFriendsPages, p + 1))}
                     disabled={friendsPage === totalFriendsPages}
                     className='px-2 py-1 rounded bg-white/10 disabled:opacity-40'
                   >
@@ -3390,15 +3247,13 @@ const Perfil = () => {
                 exit={{ scale: 0.9, opacity: 0, y: 10 }}
                 className='bg-slate-900/95 border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl'
               >
-                <h3 className='text-xl font-semibold text-white mb-2'>
-                  {t('deleteFriend')}
-                </h3>
+                <h3 className='text-xl font-semibold text-white mb-2'>{t('deleteFriend')}</h3>
                 <p className='text-sm text-slate-100 mb-4'>
-                  ¿Seguro que querés eliminar a{' '}
-                  <span className='font-semibold text-red-300'>
-                    {confirmDelete.nombre}
-                  </span>{' '}
-                  de tu lista de amigos?
+                  <Trans
+                    i18nKey='deleteFriendConfirm'
+                    values={{ name: confirmDelete.nombre }}
+                    components={{ 1: <span className='font-semibold text-red-300' /> }}
+                  />
                 </p>
 
                 <div className='flex justify-end gap-3'>
@@ -3442,10 +3297,6 @@ const Perfil = () => {
           )}
         </AnimatePresence>
       </div>
-
-
-
-
     </div>
   );
 };

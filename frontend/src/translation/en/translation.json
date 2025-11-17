@@ -231,5 +231,14 @@
   "sending": "⏳ Sending...",
   "emailSended": "✅ Email sent successfully!",
   "emailError": "❌ Error sending email.",
-  "noConnection": "❌ Could not connect to the server."
+  "noConnection": "❌ Could not connect to the server.",
+  "practice": "Practice",
+  "draw": "Draw",
+  "friendADD": "Friend requests",
+  "noRequest": "There are not request peding...",
+  "showing": "Showing",
+  "of": "of",
+  "deletingFriend": "Deleting...",
+  "deleteFriendConfirm": "Are you sure you want to remove <1>{{name}}</1> from your friends list?",
+  "repeatPass": "Repit new password"
 }

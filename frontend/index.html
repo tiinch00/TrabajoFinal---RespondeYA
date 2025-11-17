@@ -1,16 +1,43 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RespondeYA!</title>
 
-<head>
-  <meta charset="UTF-8" />
-  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>RespondeYA!</title>
-</head>
+    <!-- <style>
+      @keyframes fadeSlide {
+        0% {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    </style> -->
 
-<body>
-  <div id="root"></div>
-  <script type="module" src="/src/main.jsx"></script>
-</body>
+    <style>
+      @keyframes glow {
+        0% {
+          text-shadow: 0 0 0px rgba(255, 255, 100, 0);
+          opacity: 0;
+        }
+        50% {
+          text-shadow: 0 0 12px rgba(255, 255, 150, 0.7);
+          opacity: 1;
+        }
+        100% {
+          text-shadow: 0 0 0px rgba(255, 255, 100, 0);
+        }
+      }
+    </style>
+  </head>
 
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
 </html>

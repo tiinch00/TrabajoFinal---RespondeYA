@@ -9,7 +9,6 @@ import musicaPreguntas from '/sounds/musicaPreguntasEdit.mp3';
 import { useTranslation } from 'react-i18next';
 import i18n from 'i18next';
 import confetti from 'canvas-confetti';
-
 import axios from 'axios';
 
 const JugarIndividual = () => {
@@ -41,6 +40,16 @@ const JugarIndividual = () => {
     geografía: t('geography'),
     informatica: t('informatic'),
   };
+
+  // NUEVO: Mapeo de iconos por categoría
+  const categoryIcons = {
+    cine: '🎬',
+    historia: '📜',
+    'conocimiento general': '🧠',
+    geografía: '🌍',
+    informatica: '💻',
+  };
+
   const [idioma, setIdioma] = useState(i18n.language);
   const { categoria, tiempo, dificultad } = useParams();
   const [preguntas, setPreguntas] = useState([]);
@@ -81,8 +90,7 @@ const JugarIndividual = () => {
       },
     });
   };
-  // console.log(tiempo + 1);
-  // console.log(dificultad + 2);
+
   const user = getStoredUser();
   const timerRef = useRef(null);
   const tiempoRestanteRef = useRef(pasarTiempo(tiempo));
@@ -99,7 +107,7 @@ const JugarIndividual = () => {
       i18n.off('languageChanged', handleLangChange);
     };
   }, []);
-  // detener musica cuando el juego termina
+
   useEffect(() => {
     if (juegoTerminado) {
       stop();
@@ -134,13 +142,6 @@ const JugarIndividual = () => {
         if (dificultadTraducida === 'hard' || dificultadTraducida === 'difícil')
           dificultadTraducida = 'dificil';
 
-        // let categoriaTraducida = categoria;
-        // if (categoriaTraducida === 'Geography') dificultadTraducida = 'Geografía';
-        // if (categoriaTraducida === 'Histoy') dificultadTraducida = 'Historia';
-        // if (categoriaTraducida === 'Informatic') categoriaTraducida = 'Informatica';
-        // if (categoriaTraducida === 'Cinema') categoriaTraducida = 'Cine';
-        // if (categoriaTraducida === 'General Knowledge') categoriaTraducida = 'General Knowledge';
-
         const { data } = await axios.get(
           `http://localhost:3006/preguntas/categoria/${categoria.toLowerCase()}/${dificultadTraducida.toLowerCase()}`
         );
@@ -170,7 +171,6 @@ const JugarIndividual = () => {
     categoriaDB();
   }, [categoria, dificultad]);
 
-  //contador inicial
   useEffect(() => {
     if (mostrarContador && contadorInicial > 0) {
       if (contadorInicial > 4) {
@@ -198,7 +198,6 @@ const JugarIndividual = () => {
     tiempo,
   ]);
 
-  //manejar el cronometro
   useEffect(() => {
     if (!preguntaActual || !juegoIniciado || juegoTerminado || cronometroPausado) {
       if (timerRef.current) {
@@ -236,7 +235,7 @@ const JugarIndividual = () => {
 
     let puntos = 0;
     respuestasCor.forEach((respuesta) => {
-      const tiempo = respuesta.tiempo; // en segundos
+      const tiempo = respuesta.tiempo;
       if (tiempo <= 3) puntos += 10;
       else if (tiempo <= 5) puntos += 7;
       else if (tiempo <= 8) puntos += 5;
@@ -300,13 +299,11 @@ const JugarIndividual = () => {
           setCronometroPausado(false);
           setMostrarEspera(false);
 
-          //reiniciar tiempo
           const nuevoTiempo = pasarTiempo(tiempo);
           tiempoRestanteRef.current = nuevoTiempo;
           setTiempoRestante(nuevoTiempo);
         }, 2000);
       } else {
-        // Fin del juego
         setAlerta(t('gameOver'));
         guardarPartidaEnBD(nuevasRespuestas, tiempoTotalAcumulado);
         setJuegoTerminado(true);
@@ -315,7 +312,7 @@ const JugarIndividual = () => {
         playTimeout();
 
         for (let i = 0; i < 10; i++) {
-          setTimeout(confetiFinal, 500 + i * 500); // 500ms inicial + 150ms entre cada confeti
+          setTimeout(confetiFinal, 500 + i * 500);
         }
       }
     }, 1000);
@@ -370,7 +367,6 @@ const JugarIndividual = () => {
       await guardarRespuesta(respuestasFinales, partidaId, estadisticasResID, partidaPreguntaID);
     } catch (error) {
       console.error('Error al guardar partida:', error);
-      //setAlerta('Error al guardar la partida');
     }
   };
 
@@ -385,7 +381,6 @@ const JugarIndividual = () => {
       return res.data;
     } catch (error) {
       console.error('Error al crear partidaJugador:', error);
-      //setAlerta('Error al crear partidaJugador');
       throw error;
     }
   };
@@ -398,8 +393,11 @@ const JugarIndividual = () => {
           pregunta_id: pregunta.id,
           orden: index + 1,
           question_text_copy: pregunta.enunciado,
+          question_text_copy_en: pregunta.enunciado_en,
           correct_option_id_copy: pregunta.Opciones.find((o) => o.es_correcta)?.id || null,
           correct_option_text_copy: pregunta.Opciones.find((o) => o.es_correcta)?.texto || null,
+          correct_option_text_copy_en:
+            pregunta.Opciones.find((o) => o.es_correcta)?.texto_en || null,
         });
       });
 
@@ -409,7 +407,6 @@ const JugarIndividual = () => {
       return resultados[0]?.data;
     } catch (error) {
       console.error('Error al enviar preguntas:', error);
-      //setAlerta('Error al guardar las preguntas');
     }
   };
 
@@ -452,7 +449,6 @@ const JugarIndividual = () => {
       return responseEstadisticas.data;
     } catch (error) {
       console.error('Error al guardar estadísticas:', error);
-      //setAlerta('Error al guardar las estadísticas');
     }
   };
 
@@ -573,22 +569,26 @@ const JugarIndividual = () => {
         }}
       />
       <div className='grid grid-cols-5 gap-6 h-screen pt-15'>
-        {/* Panel izquierdo - Usuario */}
+        {/* Panel izquierdo - Usuario - MEJORADO con efecto de brillo y animación sutil */}
         <div className='col-span-1 flex flex-col items-center justify-start'>
-          <div className='bg-gradient-to-b from-blue-600/40 to-blue-700/70 rounded-2xl p-6 shadow-xl w-full'>
+          <div className='bg-gradient-to-b from-black/40 to-blue-800/10 rounded-2xl p-6 shadow-xl w-60 h-48 border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20'>
             <div className='flex flex-col items-center'>
               {user?.foto_perfil ? (
-                <img
-                  src={`http://localhost:3006${user.foto_perfil}`}
-                  alt='Foto de perfil'
-                  className='w-24 h-24 rounded-full object-cover border-4 border-yellow-300 shadow-lg mb-4'
-                />
+                <div className='relative group'>
+                  {/* NUEVO: Anillo brillante animado alrededor de la foto */}
+                  <div className='absolute inset-0 rounded-full bg-gradient-to-b from-white via-amber-200 to-violet-300 animate-spin-slow opacity-60 blur-sm scale-110'></div>
+                  <img
+                    src={`http://localhost:3006${user.foto_perfil}`}
+                    alt='Foto de perfil'
+                    className='relative w-24 h-24 rounded-full object-cover border-4 border-blue-800/10 shadow-lg mb-4 group-hover:scale-105 transition-transform duration-300'
+                  />
+                </div>
               ) : (
                 <div className='w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-5xl mb-4 shadow-lg'>
                   👤
                 </div>
               )}
-              <span className='bg-blue-800 px-4 py-2 rounded-full text-sm font-bold text-center text-yellow-300'>
+              <span className=' px-4 py-2 rounded-full text-sm font-bold text-center text-white'>
                 {user?.name || 'Usuario'}
               </span>
             </div>
@@ -596,8 +596,25 @@ const JugarIndividual = () => {
         </div>
 
         <div className='col-span-3 flex flex-col items-center justify-start'>
-          <div className='bg-gradient-to-r from-orange-500 to-pink-500 rounded-full px-8 py-3 mb-8 text-2xl font-black shadow-lg'>
-            {categoryTranslations[categoria]?.toUpperCase()}
+          {/* NUEVA CATEGORÍA MEJORADA: con icono, gradiente animado y efectos de brillo */}
+          <div className='relative group mb-8'>
+            {/* Efecto de resplandor de fondo */}
+            <div className='absolute inset-0 bg-gradient-to-r from-orange-400 via-pink-400 to-orange-400 rounded-full blur-xl opacity-50 group-hover:opacity-70 transition-opacity duration-300 animate-pulse'></div>
+            <div className='relative bg-gradient-to-r from-orange-500 via-pink-500 to-orange-500 rounded-full px-10 py-4 text-2xl font-black shadow-2xl border-2 border-yellow-300/50 hover:scale-105 transition-transform duration-300'>
+              <span className='text-3xl mr-3'>
+                {categoryIcons[categoria.toLowerCase()] || '🎯'}
+              </span>
+              {categoryTranslations[categoria]?.toUpperCase()}
+              <span className='absolute -top-1 -right-1 text-yellow-300 text-xl animate-pulse'>
+                ✨
+              </span>
+              <span
+                className='absolute -bottom-1 -left-1 text-cyan-300 text-xl animate-pulse'
+                style={{ animationDelay: '0.5s' }}
+              >
+                ⭐
+              </span>
+            </div>
           </div>
 
           {alerta ? (
@@ -631,7 +648,12 @@ const JugarIndividual = () => {
                 </span>
               </div>
 
-              <p className='text-3xl font-bold text-white mb-8 text-center leading-relaxed'>
+              <p
+                className='
+  text-3xl font-bold text-white mb-8 text-center leading-relaxed
+  animate-[glow_1.2s_ease-out]
+'
+              >
                 {idioma === 'en' ? preguntaActual.enunciado_en : preguntaActual.enunciado}
               </p>
 
@@ -692,21 +714,22 @@ const JugarIndividual = () => {
 
         <div className='col-span-1 flex flex-col items-center justify-start'>
           <div
-            className={`rounded-3xl px-6 py-4 text-center shadow-2xl border-4 w-full ${
+            className={`rounded-3xl px-6 py-4 text-center flex flex-col items-center justify-center shadow-2xl  w-60 h-48  border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20 ${
               tiempoRestante <= 5 && tiempoRestante > 0
-                ? 'bg-gradient-to-b from-red-500 to-orange-600 border-red-300/30 animate-pulse'
-                : 'bg-gradient-to-b from-yellow-300/80 to-yellow-400/80 border-yellow-400'
+                ? ' border-red-500/80 animate-pulse'
+                : ' border-blue-400/30'
             }`}
           >
-            <p className='text-sm font-bold text-gray-800 mb-2'>⏱️ {t('timer')}</p>
+            <p className='text-4xl font-bold text-gray-800 mb-2'>⏱️</p>
+
             <p
-              className={`text-5xl font-black ${
-                tiempoRestante <= 5 && tiempoRestante > 0 ? 'text-white' : 'text-red-600'
+              className={`text-6xl font-black ${
+                tiempoRestante > 5 ? 'text-white' : 'text-red-600'
               }`}
             >
               {tiempoRestante}
             </p>
-            <p className='text-xs font-bold text-gray-800 mt-2'>{t('seconds')}</p>
+            <p className={`text-3xl font-bold mt-2 text-white`}>{t('seconds')}</p>
           </div>
         </div>
       </div>

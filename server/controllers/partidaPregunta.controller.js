@@ -30,8 +30,10 @@ const store = async (req, res) => {
     pregunta_id,
     orden,
     question_text_copy,
+    question_text_copy_en,
     correct_option_id_copy,
     correct_option_text_copy,
+    correct_option_text_copy_en,
   } = req.body;
   if (!partida_id || !pregunta_id || !orden) {
     return res.status(400).json({ error: 'partida_id, pregunta_id, and orden are required' });
@@ -61,8 +63,10 @@ const store = async (req, res) => {
       pregunta_id,
       orden,
       question_text_copy,
+      question_text_copy_en,
       correct_option_id_copy,
       correct_option_text_copy,
+      correct_option_text_copy_en,
     });
     res.status(201).json(partidaPregunta);
   } catch (error) {

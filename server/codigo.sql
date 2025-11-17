@@ -162,8 +162,10 @@ CREATE TABLE partida_preguntas (
     pregunta_id INT UNSIGNED NOT NULL,
     orden TINYINT UNSIGNED NOT NULL,
     question_text_copy TEXT NULL,
+     question_text_copy_en TEXT NULL,
     correct_option_id_copy INT UNSIGNED NULL,
     correct_option_text_copy VARCHAR(255) NULL,
+    correct_option_text_copy_en VARCHAR(255) NULL,
     CONSTRAINT fk_pp_partida FOREIGN KEY (partida_id) REFERENCES partidas(id)
         ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT fk_pp_pregunta FOREIGN KEY (pregunta_id) REFERENCES preguntas(id)

@@ -71,12 +71,11 @@ const Ranking = () => {
   }, []);
 
   const handleBuscador = (e) => setBuscador(e.target.value);
-  // Filtrar jugadores según búsqueda
+  // Filtrar jugadores
   const jugadoresFiltrados = !buscador.trim()
     ? ranking
     : ranking.filter((dato) => dato.name.toLowerCase().includes(buscador.toLowerCase()));
 
-  // Calcular total de páginas
   const totalPaginasFiltradas = Math.ceil(jugadoresFiltrados.length / itemsPorPagina);
 
   // Paginar los datos filtrados
@@ -126,7 +125,7 @@ const Ranking = () => {
           onClick={() => {
             setMostrarInput((prev) => !prev), setBuscador('');
           }}
-          className='bg-gradient-to-br from-yellow-400 to-orange-500 text-white p-3 rounded-full hover:shadow-lg transition-all duration-300 border-2 border-yellow-300'
+          className='bg-gradient-to-br from-yellow-400 cursor-pointer to-orange-500 text-white p-3 rounded-full hover:shadow-lg transition-all duration-300 border-2 border-yellow-300'
         >
           {mostrarInput ? <X size={24} /> : <Search size={24} />}
         </motion.button>
@@ -143,7 +142,7 @@ const Ranking = () => {
               value={buscador}
               onChange={handleBuscador}
               placeholder={t('findPlayer')}
-              className='px-4 py-3 rounded-full bg-white/90 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-yellow-400/50 shadow-lg font-medium'
+              className='px-4 py-3 rounded-full bg-white/90 text-gray-900  placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-yellow-400/50 shadow-lg font-medium'
             />
           )}
         </AnimatePresence>
@@ -213,10 +212,10 @@ const Ranking = () => {
             whileHover={paginaActual > 0 ? { scale: 1.05 } : {}}
             whileTap={paginaActual > 0 ? { scale: 0.95 } : {}}
             disabled={paginaActual === 0}
-            className={`px-4 sm:px-6 py-2 sm:py-3 rounded-full font-semibold transition-all duration-300 text-xs sm:text-base ${
+            className={`px-4 sm:px-6 py-2 sm:py-3 rounded-full font-semibold transition-all  duration-300 text-xs sm:text-base ${
               paginaActual === 0
                 ? 'bg-gray-500 text-gray-300 cursor-not-allowed opacity-50'
-                : 'bg-gradient-to-r from-orange-400 to-orange-600 text-white hover:shadow-lg border-2 border-orange-300'
+                : 'bg-gradient-to-r from-orange-400 to-orange-600 text-white cursor-pointer hover:shadow-lg border-2 border-orange-300'
             }`}
             onClick={handlePreview}
           >
@@ -232,10 +231,10 @@ const Ranking = () => {
             whileHover={paginaActual < totalPaginasFiltradas - 1 ? { scale: 1.05 } : {}}
             whileTap={paginaActual < totalPaginasFiltradas - 1 ? { scale: 0.95 } : {}}
             disabled={paginaActual >= totalPaginasFiltradas - 1}
-            className={`px-4 sm:px-6 py-2 sm:py-3 rounded-full font-semibold transition-all duration-300 text-xs sm:text-base ${
+            className={`px-4 sm:px-6 py-2 sm:py-3 rounded-full font-semibold transition-all  duration-300 text-xs sm:text-base ${
               paginaActual >= totalPaginasFiltradas - 1
                 ? 'bg-gray-500 text-gray-300 cursor-not-allowed opacity-50'
-                : 'bg-gradient-to-r from-orange-400 to-orange-600 text-white hover:shadow-lg border-2 border-orange-300'
+                : 'bg-gradient-to-r from-orange-400 to-orange-600 text-white cursor-pointer hover:shadow-lg border-2 border-orange-300'
             }`}
             onClick={handleNext}
           >
