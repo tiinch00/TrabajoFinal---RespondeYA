@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import axios from "axios";
+import { resolveFotoAjena } from '../utils/resolveFotoAjena.js';
 import { useGame } from '../context/ContextJuego.jsx';
 
 // ===== Helpers para identificar usuarios de forma tolerante =====
@@ -341,7 +342,7 @@ export default function SalaEspera() {
                             <>
                                 {jugador1?.foto_perfil !== `/uploads/default.png` ? (
                                     <img
-                                        src={`${API}${jugador1.foto_perfil}`}
+                                        src={resolveFotoAjena(jugador1.foto_perfil)}
                                         alt='jugador1'
                                         className='w-28 h-28 rounded-full object-cover border-4 border-green-400'
                                     />
@@ -390,7 +391,7 @@ export default function SalaEspera() {
                             <>
                                 {jugador2?.foto_perfil !== `/uploads/default.png` ? (
                                     <img
-                                        src={`${API}${jugador2.foto_perfil}`}
+                                        src={resolveFotoAjena(jugador2.foto_perfil)}
                                         alt='jugador2'
                                         className='w-28 h-28 rounded-full object-cover border-4 border-green-400'
                                     />

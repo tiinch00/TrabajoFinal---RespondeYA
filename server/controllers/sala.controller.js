@@ -1,20 +1,54 @@
-import { Categoria, Sala, User } from '../models/associations.js';
+import { Categoria, Jugador, Partida, Sala, SalaJugador, User } from '../models/associations.js';
 
 const index = async (req, res) => {
   try {
     const estado = req.params.estado ?? req.query.estado;
-    if (typeof estado === 'string') {
-      const salas = await Sala.findAll({
-        where: { estado: estado }
-      });
-      res.json(salas);
-    } else {
-      const salas = await Sala.findAll();
-      res.json(salas);
-    }
+    const where = typeof estado === 'string' ? { estado } : undefined;
+
+    const salas = await Sala.findAll({
+      where,
+      include: [
+        {
+          model: Partida, // Sala.hasOne(Partida)
+          attributes: ['id', 'total_preguntas', 'dificultad_tiempo', 'dificultad_pregunta'],
+        },
+        {
+          model: Categoria, // Sala.belongsTo(Categoria)
+          as: 'Categoria',
+          attributes: ['id', 'nombre'],
+        },
+        {
+          model: Jugador, // Sala.belongsToMany(Jugador)
+          include: [
+            {
+              model: User,        // Jugador.belongsTo(User)
+              attributes: ['id', 'name', 'pais', 'foto_perfil'],
+            },
+          ],
+        },
+      ],
+    });
+
+    // Sequelize devuelve propiedades con nombre de modelo:
+    // s.Partida, s.Categoria, s.Jugadors
+    const plain = salas.map((s) => s.toJSON());
+
+    const result = plain.map((s) => ({
+      id: s.id,
+      codigo: s.codigo,
+      estado: s.estado,
+      created_at: s.created_at,
+
+      // cubrimos ambas variantes por las dudas
+      categoria: s.Categoria || s.categoria || null,
+      partida: s.Partida || s.partida || null,
+      jugadores: s.Jugadors || s.jugadors || [],   // array de jugadores con su User adentro
+    }));
+
+    return res.json(result);
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 };
 
@@ -74,10 +108,10 @@ const store = async (req, res) => {
 const update = async (req, res) => {
   const id = Number(req.params.id); // es params por la url  
   const { estado } = req.body;   // es body porque esta despues de la url con una coma (,)
-  
+
   console.log({ id: typeof id });
   console.log({ estado: typeof estado });
-  console.log("id: ", id );
+  console.log("id: ", id);
   console.log("estado: ", estado);
 
   if (typeof estado !== 'string') {
@@ -94,10 +128,10 @@ const update = async (req, res) => {
     res.json(sala);
 
   } catch (error) {
-    
+
     if (error.name === 'SequelizeUniqueConstraintError') {
       return res.status(409).json({ error: "Código de sala ya existe" });
-    }   
+    }
     return res.status(500).json({ error: "Internal server error" });
   }
 };

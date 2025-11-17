@@ -106,6 +106,7 @@ Avatar.belongsToMany(Jugador, {
 Sala.belongsTo(Categoria, {
   // 1:1
   foreignKey: 'categoria_id',
+  as: 'Categoria',
   onUpdate: 'CASCADE',
   onDelete: 'SET NULL',
 });
@@ -135,11 +136,14 @@ Estadistica.belongsTo(Partida, {
 Opcion.belongsTo(Pregunta, { foreignKey: 'pregunta_id' });
 
 //PARTIDA
-Partida.belongsTo(Sala, {
+Partida.belongsTo(Sala, { //Partida.belongsTo(Sala, { foreignKey: 'sala_id' }); // hijo → padre
   foreignKey: 'sala_id',
   onUpdate: 'CASCADE',
   onDelete: 'RESTRICT',
 });
+
+Sala.hasOne(Partida, { foreignKey: 'sala_id' });    // padre → hijo
+
 
 Partida.belongsTo(Categoria, {
   foreignKey: 'categoria_id',

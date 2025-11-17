@@ -1050,7 +1050,7 @@ export default function JugarMultijugador() {
                                                                 <>
                                                                     {ganador?.foto_perfil && ganador?.foto_perfil !== `${API}/uploads/default.png` && ganador?.foto_perfil !== `/uploads/default.png` ? (
                                                                         <img
-                                                                            src={abs(ganador?.foto_perfil)}
+                                                                            src={resolveFotoAjena(ganador?.foto_perfil)}
                                                                             alt='ganador'
                                                                             className='w-24 h-24 rounded-full object-cover border-4 border-yellow-300 shadow-lg mb-4'
                                                                         />
@@ -1089,7 +1089,7 @@ export default function JugarMultijugador() {
                                                                 <>
                                                                     {perdedor.foto_perfil && perdedor.foto_perfil !== `/uploads/default.png` && perdedor?.foto_perfil !== `/uploads/default.png` ? (
                                                                         <img
-                                                                            src={`${API}${perdedor.foto_perfil}`}
+                                                                            src={resolveFotoAjena(perdedor.foto_perfil)}
                                                                             alt='perdedor'
                                                                             className='w-20 h-20 rounded-full object-cover border-4 border-green-300 shadow-lg mb-4'
                                                                         />
@@ -1138,7 +1138,7 @@ export default function JugarMultijugador() {
                                                                 <>
                                                                     {jugadores[0]?.foto_perfil && jugadores[0]?.foto_perfil !== `${API}/uploads/default.png` && jugadores[0]?.foto_perfil !== `/uploads/default.png` ? (
                                                                         <img
-                                                                            src={abs(jugadores[0]?.foto_perfil)}
+                                                                            src={resolveFotoAjena(jugadores[0]?.foto_perfil)}
                                                                             alt='jugador creador'
                                                                             className='w-24 h-24 rounded-full object-cover border-4 border-yellow-300 shadow-lg mb-4'
                                                                         />
@@ -1171,7 +1171,7 @@ export default function JugarMultijugador() {
                                                                 <>
                                                                     {jugadores[1].foto_perfil && jugadores[1].foto_perfil !== `/uploads/default.png` && jugadores[1]?.foto_perfil !== `/uploads/default.png` ? (
                                                                         <img
-                                                                            src={`${API}${jugadores[1].foto_perfil}`}
+                                                                            src={resolveFotoAjena(jugadores[1].foto_perfil)}
                                                                             alt='jugador invitado'
                                                                             className='w-24 h-24 rounded-full object-cover border-4 border-green-300 shadow-lg mb-4'
                                                                         />
@@ -1269,7 +1269,7 @@ export default function JugarMultijugador() {
                                                 <>
                                                     {creador?.foto_perfil && creador?.foto_perfil !== `${API}/uploads/default.png` ? (
                                                         <img
-                                                            src={abs(creador?.foto_perfil)}
+                                                            src={resolveFotoAjena(creador?.foto_perfil)}
                                                             alt='Creador'
                                                             className='w-24 h-24 rounded-full object-cover border-4 border-yellow-300 shadow-lg mb-4'
                                                         />
@@ -1355,7 +1355,7 @@ export default function JugarMultijugador() {
                                                 <>
                                                     {invitado.foto_perfil && invitado.foto_perfil !== `/uploads/default.png` ? (
                                                         <img
-                                                            src={`${API}${invitado.foto_perfil}`}
+                                                            src={resolveFotoAjena(invitado.foto_perfil)}
                                                             alt='Invitado'
                                                             className='w-24 h-24 rounded-full object-cover border-4 border-green-300 shadow-lg mb-4'
                                                         />
