@@ -143,9 +143,9 @@ const updatePuntajeEstadisticas = async (req, res) => {
     const puntosObtenidos = toNullableNumber(req.body.puntaje);
     const partida_id = toNullableNumber(req.body.partida_id);
     
-    console.log("jugador_id: ", jugador_id);
-    console.log("puntosObtenidos: ", puntosObtenidos);
-    console.log("partida_id: ", partida_id);
+    // console.log("jugador_id: ", jugador_id);
+    // console.log("puntosObtenidos: ", puntosObtenidos);
+    // console.log("partida_id: ", partida_id);
 
     if (!Number.isFinite(jugador_id)) {
       return res.status(400).json({ error: 'jugador_id inválido' });
@@ -165,17 +165,17 @@ const updatePuntajeEstadisticas = async (req, res) => {
 
     // actualizar puntaje_total en Estadistica
     await estadistica.update({ puntaje_total: puntosObtenidos });
-    console.log("jugador.controller.js estdistica:", estadistica);
+    // console.log("jugador.controller.js estdistica:", estadistica);
 
     // actualizar puntaje en Jugador
     const jugador = await Jugador.findByPk(jugador_id);
     if (!jugador) {
       return res.status(404).send('Jugador not found');
     }
-    console.log("jugador.controller.js jugador:", jugador);
+    // console.log("jugador.controller.js jugador:", jugador);
     const nuevoPuntaje = Number(jugador.puntaje || 0) + puntosObtenidos;
     await jugador.update({ puntaje: nuevoPuntaje });
-    console.log("jugador.controller.js jugadorActualizado:", jugador);
+    // console.log("jugador.controller.js jugadorActualizado:", jugador);
     return res.json({ jugador, estadistica, success: 'ok' });
   } catch (e) {
     console.warn('No se pudo actualizar en updatePuntajeEstadisticas:', e?.message);

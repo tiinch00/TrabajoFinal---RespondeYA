@@ -326,10 +326,12 @@ export default function registrarEventosSala(io, socket) {
                     pregunta_id: Number(pp?.pregunta_id) || null,
                     orden: Number(pp?.orden) || null,
                     question_text_copy: String(pp?.question_text_copy ?? ''),
+                    question_text_copy_en: String(pp?.question_text_copy_en ?? ''),
                     correct_option_id_copy: (pp?.correct_option_id_copy != null)
                         ? Number(pp.correct_option_id_copy)
                         : null,
                     correct_option_text_copy: String(pp?.correct_option_text_copy ?? ''),
+                    correct_option_text_copy_en: String(pp?.correct_option_text_copy_en ?? ''),
                 })).filter(r => Number.isFinite(r.pregunta_id) && Number.isFinite(r.orden));
 
                 if (filasPP.length === 0) {

@@ -119,6 +119,22 @@ export default function JugarMultijugador() {
     const canvasRef = useRef(null);
     const confettiInstanceRef = useRef(null);
 
+    const categoryTranslations = {
+        cine: t('cinema'),
+        historia: t('history'),
+        'conocimiento general': t('generalKnowLedge'),
+        geografía: t('geography'),
+        informatica: t('informatic'),
+    };
+
+    // Mapeo de iconos por categoría
+    const categoryIcons = {
+        cine: '🎬',
+        historia: '📜',
+        'conocimiento general': '🧠',
+        geografía: '🌍',
+        informatica: '💻',
+    };
 
 
     const [ganador, setGanador] = useState(null);
@@ -421,8 +437,10 @@ export default function JugarMultijugador() {
                 pregunta_id: Number(p?.id) || null,
                 orden: idx + 1, // arranca en 1 ✅
                 question_text_copy: String(p?.enunciado ?? ''),
+                question_text_copy_en: String(p?.enunciado_en ?? ''),
                 correct_option_id_copy: correcta ? Number(correcta.id) || null : null,
                 correct_option_text_copy: correcta ? String(correcta.texto ?? '') : '',
+                correct_option_text_copy_en: correcta ? String(correcta.texto_en ?? '') : '',
             };
         });
 
@@ -1044,15 +1062,15 @@ export default function JugarMultijugador() {
 
                                             <div className='w-52'>
                                                 <div className='flex flex-col items-center justify-start'>
-                                                    <div className='bg-gradient-to-b from-blue-600/40 to-blue-700/70 p-6 shadow-xl w-full rounded-l-lg rounded-tr-lg'>
+                                                    <div className='bg-gradient-to-b from-black/40 to-blue-800/10 p-6 shadow-xl w-full rounded-l-lg rounded-tr-lg border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20'>
                                                         <div className='flex flex-col items-center'>
                                                             {ganador ? (
                                                                 <>
                                                                     {ganador?.foto_perfil && ganador?.foto_perfil !== `${API}/uploads/default.png` && ganador?.foto_perfil !== `/uploads/default.png` ? (
                                                                         <img
                                                                             src={resolveFotoAjena(ganador?.foto_perfil)}
-                                                                            alt='ganador'
-                                                                            className='w-24 h-24 rounded-full object-cover border-4 border-yellow-300 shadow-lg mb-4'
+                                                                            alt='ganador'                                                                                                                                                  
+                                                                            className='w-24 h-24 rounded-full object-cover border-4 border-blue-800/10 bg-gradient-to-br group-hover:scale-105 transition-transform duration-300 shadow-lg mb-4'
                                                                         />
                                                                     ) : (
                                                                         <div className='w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-5xl mb-4 shadow-lg'>
@@ -1083,18 +1101,19 @@ export default function JugarMultijugador() {
 
                                             <div className='w-44'>
                                                 <div className='flex flex-col items-center gap-4'>
-                                                    <div className='bg-gradient-to-b from-green-600/40 to-green-700/70 p-4 shadow-xl w-full rounded-r-lg'>
+                                                    <div className='bg-gradient-to-b from-black/40 to-blue-800/10 p-4 shadow-xl w-full rounded-r-lg border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20'>
                                                         <div className='flex flex-col items-center '>
                                                             {perdedor ? (
                                                                 <>
                                                                     {perdedor.foto_perfil && perdedor.foto_perfil !== `/uploads/default.png` && perdedor?.foto_perfil !== `/uploads/default.png` ? (
                                                                         <img
                                                                             src={resolveFotoAjena(perdedor.foto_perfil)}
-                                                                            alt='perdedor'
-                                                                            className='w-20 h-20 rounded-full object-cover border-4 border-green-300 shadow-lg mb-4'
+                                                                            alt='perdedor'                                                                                                                                                     
+                                                                            className='w-20 h-20 rounded-full object-cover border-4  border-blue-800/10 bg-gradient-to-br  group-hover:scale-105 transition-transform duration-300 shadow-lg mb-4'
                                                                         />
                                                                     ) : (
-                                                                        <div className='w-20 h-20 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-4xl mb-4 shadow-lg'>
+                                                                        <div                                                                         
+                                                                        className='w-20 h-20 rounded-full bg-gradient-to-br  from-blue-400 to-blue-600 flex items-center justify-center text-4xl mb-4 shadow-lg'>
                                                                             👤
                                                                         </div>
                                                                     )}
@@ -1132,15 +1151,15 @@ export default function JugarMultijugador() {
                                         <div className='flex flex-col items-center'>
                                             <div className='w-52'>
                                                 <div className='flex flex-col items-center justify-start'>
-                                                    <div className='bg-gradient-to-b from-blue-600/40 to-blue-700/70 p-6 shadow-xl w-full rounded-l-lg rounded-tr-lg'>
+                                                    <div className='bg-gradient-to-b from-black/40 to-blue-800/10 p-6 shadow-xl w-full rounded-l-lg rounded-tr-lg border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20'>
                                                         <div className='flex flex-col items-center'>
                                                             {jugadores[0] ? (
                                                                 <>
                                                                     {jugadores[0]?.foto_perfil && jugadores[0]?.foto_perfil !== `${API}/uploads/default.png` && jugadores[0]?.foto_perfil !== `/uploads/default.png` ? (
                                                                         <img
                                                                             src={resolveFotoAjena(jugadores[0]?.foto_perfil)}
-                                                                            alt='jugador creador'
-                                                                            className='w-24 h-24 rounded-full object-cover border-4 border-yellow-300 shadow-lg mb-4'
+                                                                            alt='jugador creador'                                                                                                                                                       
+                                                                            className='w-24 h-24 rounded-full object-cover border-4 border-blue-800/10 bg-gradient-to-br group-hover:scale-105 transition-transform duration-300 shadow-lg mb-4'
                                                                         />
                                                                     ) : (
                                                                         <div className='w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-5xl mb-4 shadow-lg'>
@@ -1165,18 +1184,19 @@ export default function JugarMultijugador() {
                                         <div className='flex flex-col items-center mt-10'>
                                             <div className='w-52'>
                                                 <div className='flex flex-col items-center gap-4'>
-                                                    <div className='bg-gradient-to-b from-green-600/40 to-green-700/70 p-6 shadow-xl w-full rounded-r-lg'>
+                                                    <div className='bg-gradient-to-b from-black/40 to-blue-800/10 p-6 shadow-xl border-2 w-full rounded-r-lg border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20'>
                                                         <div className='flex flex-col items-center '>
                                                             {jugadores[1] ? (
                                                                 <>
                                                                     {jugadores[1].foto_perfil && jugadores[1].foto_perfil !== `/uploads/default.png` && jugadores[1]?.foto_perfil !== `/uploads/default.png` ? (
                                                                         <img
                                                                             src={resolveFotoAjena(jugadores[1].foto_perfil)}
-                                                                            alt='jugador invitado'
-                                                                            className='w-24 h-24 rounded-full object-cover border-4 border-green-300 shadow-lg mb-4'
+                                                                            alt='jugador invitado'                                                                                                                                                        
+                                                                            className='w-24 h-24 rounded-full object-cover border-4  border-blue-800/10 bg-gradient-to-br from-blue-400 to-blue-600 shadow-lg mb-4 group-hover:scale-105 transition-transform duration-300'
                                                                         />
                                                                     ) : (
-                                                                        <div className='w-24 h-24 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-4xl mb-4 shadow-lg'>
+                                                                        <div                                                                         
+                                                                        className='w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-4xl mb-4 shadow-lg'>
                                                                             👤
                                                                         </div>
                                                                     )}
@@ -1254,8 +1274,30 @@ export default function JugarMultijugador() {
                             </div>
 
                             {/* titulo de la categoria */}
-                            <div className='bg-gradient-to-r from-orange-500 to-pink-500 rounded-full px-8 py-3 mt-8 text-2xl font-black shadow-lg'>
+                            {/* <div className='bg-gradient-to-r from-orange-500 to-pink-500 rounded-full px-8 py-3 mt-8 text-2xl font-black shadow-lg'>
                                 {String(config?.categoria || '').toUpperCase()}
+                            </div> */}
+
+                            {/* NUEVA CATEGORÍA MEJORADA: con icono, gradiente animado y efectos de brillo */}
+                            <div className='relative group mt-8 '>
+                                {/* Efecto de resplandor de fondo */}
+                                <div className='absolute inset-0 bg-gradient-to-r from-orange-400 via-pink-400 to-orange-400 rounded-full blur-xl opacity-50 group-hover:opacity-70 transition-opacity duration-300 animate-pulse'></div>
+                                <div className='relative bg-gradient-to-r from-orange-500 via-pink-500 to-orange-500 rounded-full px-10 py-4 text-2xl font-black shadow-2xl border-2 border-yellow-300/50 hover:scale-105 transition-transform duration-300'>
+                                    <span className='text-3xl mr-3'>
+                                        {/* {categoryIcons[categoria.toLowerCase()] || '🎯'} */}
+                                        {categoryIcons[String(config?.categoria || '').toUpperCase()] || '🎯'}
+                                    </span>
+                                    {categoryTranslations[config?.categoria ]?.toUpperCase()}
+                                    <span className='absolute -top-1 -right-1 text-yellow-300 text-xl animate-pulse'>
+                                        ✨
+                                    </span>
+                                    <span
+                                        className='absolute -bottom-1 -left-1 text-cyan-300 text-xl animate-pulse'
+                                        style={{ animationDelay: '0.5s' }}
+                                    >
+                                        ⭐
+                                    </span>
+                                </div>
                             </div>
 
                             {/* === NUEVO CSS: layout en 5 columnas (jugador izq, centro, jugador der) === */}
@@ -1263,15 +1305,16 @@ export default function JugarMultijugador() {
 
                                 {/* izquierda - Jugador 1 - creador */}
                                 <div className='col-span-1 flex flex-col items-center justify-start'>
-                                    <div className='bg-gradient-to-b from-blue-600/40 to-blue-700/70 rounded-2xl p-6 shadow-xl w-52'>
+                                    {/* bg-gradient-to-b from-black/40 to-blue-800/10 rounded-2xl p-6 shadow-xl border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20 */}
+                                    <div className='bg-gradient-to-b from-black/40 to-blue-800/10 rounded-2xl p-6 shadow-xl border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20 w-52'>
                                         <div className='flex flex-col items-center'>
                                             {creador ? (
                                                 <>
-                                                    {creador?.foto_perfil && creador?.foto_perfil !== `${API}/uploads/default.png` ? (
+                                                    {creador?.foto_perfil && creador?.foto_perfil !== `${API}/uploads/default.png` && creador?.foto_perfil !== `/uploads/default.png` ? (
                                                         <img
                                                             src={resolveFotoAjena(creador?.foto_perfil)}
-                                                            alt='Creador'
-                                                            className='w-24 h-24 rounded-full object-cover border-4 border-yellow-300 shadow-lg mb-4'
+                                                            alt='Creador'                                                                                                                         
+                                                            className='w-24 h-24 rounded-full object-cover border-4 border-blue-800/10 bg-gradient-to-br group-hover:scale-105 transition-transform duration-300 shadow-lg mb-4'
                                                         />
                                                     ) : (
                                                         <div className='w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-5xl mb-4 shadow-lg'>
@@ -1349,22 +1392,24 @@ export default function JugarMultijugador() {
 
                                 {/* derecha - Jugador 2 - invitado */}
                                 <div className='col-span-1 flex flex-col items-center justify-start gap-4'>
-                                    <div className='bg-gradient-to-b from-green-600/40 to-green-700/70 rounded-2xl p-6 shadow-xl w-52'>
+                                    <div className='bg-gradient-to-b from-black/40 to-blue-800/10 rounded-2xl p-6 shadow-xl border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20 w-52'>
                                         <div className='flex flex-col items-center'>
                                             {invitado ? (
                                                 <>
-                                                    {invitado.foto_perfil && invitado.foto_perfil !== `/uploads/default.png` ? (
+                                                    {invitado.foto_perfil && invitado.foto_perfil !== `/uploads/default.png` && invitado?.foto_perfil !== `/uploads/default.png` ? (
                                                         <img
                                                             src={resolveFotoAjena(invitado.foto_perfil)}
-                                                            alt='Invitado'
-                                                            className='w-24 h-24 rounded-full object-cover border-4 border-green-300 shadow-lg mb-4'
+                                                            alt='Invitado'                                                            
+                                                            className='w-24 h-24 rounded-full object-cover border-4 border-blue-800/10 shadow-lg mb-4 group-hover:scale-105 transition-transform duration-300'
                                                         />
                                                     ) : (
-                                                        <div className='w-24 h-24 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-5xl mb-4 shadow-lg'>
+                                                        <div                                                            
+                                                            className='w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-5xl mb-4 shadow-lg'
+                                                        >
                                                             👤
                                                         </div>
                                                     )}
-                                                    <span className='bg-green-800 px-4 py-2 rounded-full text-sm font-bold text-center text-yellow-300'>
+                                                    <span className='bg-blue-600 px-4 py-2 rounded-full text-sm font-bold text-center text-yellow-300'>
                                                         {invitado?.nombre || 'Invitado'}
                                                     </span>
                                                     <span className='text-xs mt-2 opacity-70'>Invitado</span>

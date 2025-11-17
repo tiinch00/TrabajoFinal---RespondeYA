@@ -50,7 +50,7 @@ const show = async (req, res) => {
 
 const preguntasByCategoria = async (req, res) => {
   const { nombre, dificultad } = req.params;
-  console.log('Parámetros recibidos:', { nombre, dificultad });
+  // console.log('Parámetros recibidos:', { nombre, dificultad });
   try {
     const preguntas = await Pregunta.findAll({
       include: [
@@ -72,7 +72,7 @@ const preguntasByCategoria = async (req, res) => {
       where: dificultad ? { dificultad: dificultad.toLowerCase() } : {},
     });
 
-    console.log('Preguntas encontradas:', preguntas);
+    // console.log('Preguntas encontradas:', preguntas);
     if (!preguntas.length) {
       return res.status(404).json({ error: 'No hay preguntas para esa categoría o dificultad' });
     }
