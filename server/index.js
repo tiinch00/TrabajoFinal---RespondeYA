@@ -34,11 +34,42 @@ import userRoutes from './routes/userRoutes.js';
 const app = express();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  // cuando tengas el dominio / Vercel, los agregás acá:
+  // 'https://respondeya-frontend.vercel.app',
+  // 'https://api.tudominio.com',
+];
+
 // Middlewares base
 app.use(express.json());
+
+// antes de usar amazon
+// app.use(
+//   cors({
+//     origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+//     credentials: true,
+//   })
+// );
+
 app.use(
   cors({
-    origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+    origin: (origin, callback) => {
+      // requests sin origin (ej: curl, Postman) -> se permiten
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      // si querés modo “super abierto” mientras probás:
+      // return callback(null, true);
+
+      console.log('🚫 CORS bloqueó origen:', origin);
+      callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
   })
 );
