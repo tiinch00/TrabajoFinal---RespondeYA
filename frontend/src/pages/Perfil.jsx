@@ -6,11 +6,16 @@ import ChartMultilineLabels from '../components/graficosQuickchart.io/ChartMulti
 import ChartVerticalLabels from '../components/graficosQuickchart.io/ChartVerticalLabels.jsx';
 import Cropper from 'react-easy-crop';
 import QCChartStable from '../components/graficosQuickchart.io/QCChartStable.jsx';
-import SimpleBarChart from '../components/simpleBarChart';
 import axios from 'axios';
 import { getCroppedImg } from '../utils/cropImage.js';
 import i18n from 'i18next';
 import { useAuth } from '../context/auth-context.jsx';
+
+//import SimpleBarChart from '../components/simpleBarChart';
+
+
+
+
 
 // normalizador simple (tildes, mayúsculas, espacios) y evita errores con null/undefined/objetos raros.
 function normalize(s) {
