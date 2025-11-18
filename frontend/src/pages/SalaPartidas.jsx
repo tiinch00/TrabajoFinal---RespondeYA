@@ -1,12 +1,14 @@
 // src/pages/SalaPartidas.jsx
-import axios from 'axios';
+
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+
+import axios from 'axios';
 import { resolveFotoAjena } from '../utils/resolveFotoAjena.js';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
-const API = 'http://localhost:3006';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006';
 
 const SalaPartidas = () => {
   const { t } = useTranslation();
@@ -45,7 +47,7 @@ const SalaPartidas = () => {
   const getSalas = async () => {
     try {
       const estado = 'esperando';
-      const { data } = await axios.get(`${API}/salas`, {
+      const { data } = await axios.get(`${API_URL}/salas`, {
         params: { estado },
       });
       setSalas(data || []);
@@ -56,7 +58,7 @@ const SalaPartidas = () => {
 
   const updateEstadoSala = async (id) => {
     try {
-      const { data } = await axios.put(`${API}/salas/${id}`, {
+      const { data } = await axios.put(`${API_URL}/salas/${id}`, {
         estado: 'en_curso',
       });
       if (!data) return null;

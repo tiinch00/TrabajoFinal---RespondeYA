@@ -1,14 +1,17 @@
 import '../assets/css/Ruleta.css';
-import confetti from 'canvas-confetti';
+
 import { useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+
+import { Link } from 'react-router-dom';
 import axios from 'axios';
+import confetti from 'canvas-confetti';
 import { motion } from 'framer-motion';
 import premioRueda from '/sounds/premioRueda.mp3';
 import useSound from 'use-sound';
-import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 export default function Ruleta() {
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006';
   const { t } = useTranslation();
   const barraRef = useRef(null);
   const cooldownTimerRef = useRef(null);
@@ -63,7 +66,7 @@ export default function Ruleta() {
 
   const getJugador = async () => {
     try {
-      const { data } = await axios.get(`http://localhost:3006/jugadores/${jugador_id}`);
+      const { data } = await axios.get(`${API_URL}/jugadores/${jugador_id}`);
       setJugador(data);
     } catch (err) {
       console.log('GET /jugadores/:id error:', err.response?.data?.error || err.message);
@@ -149,7 +152,7 @@ export default function Ruleta() {
 
   const guardarPuntaje = async (jugador_id, puntosGanados) => {
     try {
-      await axios.put(`http://localhost:3006/jugadores/update/${jugador_id}`, {
+      await axios.put(`${API_URL}/jugadores/update/${jugador_id}`, {
         puntaje: puntosGanados,
         ruleta_started_at: jugador.ruleta_started_at, // body de la request
       });

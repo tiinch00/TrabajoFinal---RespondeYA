@@ -1,11 +1,12 @@
 import { AnimatePresence, motion } from 'motion/react';
-import { useTranslation } from 'react-i18next';
 import { useEffect, useRef, useState } from 'react';
 
 import axios from 'axios';
 import { useAuth } from '../context/auth-context.jsx';
+import { useTranslation } from 'react-i18next';
 
 const Tienda = () => {
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006';
   const [selected, setSelected] = useState(null); // indice o null
   const [jugadores, setJugadores] = useState([]);
   const [jugador, setJugador] = useState([]);
@@ -46,7 +47,7 @@ const Tienda = () => {
 
   const handleAgregarAvatar = async () => {
     try {
-      const data = await axios.post(`http://localhost:3006/avatar/create`, form);
+      const data = await axios.post(`${API_URL}/avatar/create`, form);
       if (data) {
         setForm({
           admin_id: 1,
@@ -67,7 +68,7 @@ const Tienda = () => {
 
   const handleEliminarAvatar = async (avatar_id) => {
     try {
-      const data = await axios.delete(`http://localhost:3006/avatar/${avatar_id}/delete`);
+      const data = await axios.delete(`${API_URL}/avatar/${avatar_id}/delete`);
       if (data) {
         setModalConfirmarEliminar(false);
         setSelected(null);
@@ -94,7 +95,7 @@ const Tienda = () => {
   // // obtiene el objeto jugador
   const infoallJugadores = async () => {
     try {
-      const { data } = await axios.get(`http://localhost:3006/jugadores`);
+      const { data } = await axios.get(`${API_URL}/jugadores`);
       setJugadores(data);
     } catch (error) {
       console.log('@@@@ Error GET /jugadores/:id\n', error);
@@ -104,7 +105,7 @@ const Tienda = () => {
   // // obtiene el objeto jugador
   const infoJugador = async () => {
     try {
-      const { data } = await axios.get(`http://localhost:3006/jugadores/${jugador_id}`);
+      const { data } = await axios.get(`${API_URL}/jugadores/${jugador_id}`);
       setJugador(data);
     } catch (error) {
       console.log('@@@@ Error GET /jugadores/:id\n', error);
@@ -114,7 +115,7 @@ const Tienda = () => {
   // obtiene todos los objetos avatares
   const infoAvatares = async () => {
     try {
-      const { data } = await axios.get(`http://localhost:3006/avatar`);
+      const { data } = await axios.get(`${API_URL}/avatar`);
       setAvatares(data);
     } catch (error) {
       console.log('@@@@ Error GET /avatar\n', error);
@@ -125,7 +126,7 @@ const Tienda = () => {
   const infoJugadorIdAvatares = async () => {
     try {
       const { data } = await axios.get(
-        `http://localhost:3006/userAvatar`,
+        `${API_URL}/userAvatar`,
         { params: { jugador_id } } // <-- params
       );
       setJugadorAvatares(data);
@@ -180,12 +181,12 @@ const Tienda = () => {
     };
     try {
       // compra un avatar y se guarda en user_avatares
-      const { data: ua } = await axios.post('http://localhost:3006/userAvatar', values);
+      const { data: ua } = await axios.post(`${API_URL}/userAvatar`, values);
 
       // actualiza el puntaje
       try {
         const { data: jUpdated } = await axios.put(
-          `http://localhost:3006/jugadores/update/${jugador_id}`,
+          `${API_URL}/jugadores/update/${jugador_id}`,
           { puntajeRestado: nuevoSaldo }
         );
 
@@ -232,7 +233,7 @@ const Tienda = () => {
         imagen: imagenUrl,
       };
 
-      const res = await axios.post('http://localhost:3006/api/crearOrden', values);
+      const res = await axios.post(`${API_URL}/api/crearOrden`, values);
       if (res.data.id && res.data.init_point) {
         window.open(res.data.init_point, '_blank');
         setSelected(null);

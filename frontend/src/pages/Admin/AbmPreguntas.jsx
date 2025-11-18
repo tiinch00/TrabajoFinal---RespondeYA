@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import axios from 'axios';
+import { useEffect, useState } from 'react';
+
 import PreguntasCrear from './PreguntasCrear.jsx';
 import PreguntasListar from './PreguntasListar.jsx';
+import axios from 'axios';
 
 let itemsPorPagina = 5;
 const AbmPreguntas = () => {
@@ -10,12 +11,13 @@ const AbmPreguntas = () => {
   const [alerta, setAlerta] = useState('');
   const [preguntasPaginada, setPreguntasPaginada] = useState([]);
   const [paginaActual, setPaginaActual] = useState(0);
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006';
 
   const { nombre, id } = useParams();
   const preguntasDB = async () => {
     try {
       const res = await axios.get(
-        `http://localhost:3006/admin/categoria/${nombre}/${id}/preguntas`
+        `${API_URL}/admin/categoria/${nombre}/${id}/preguntas`
       );
       setPreguntas(res.data);
     } catch (error) {

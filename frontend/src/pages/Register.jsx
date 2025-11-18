@@ -1,9 +1,10 @@
+import { AlertCircle, CheckCircle, Gamepad2, Globe, Lock, Mail, User } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
+import { useEffect, useState } from 'react';
+
 import axios from 'axios';
-import { useState, useEffect } from 'react';
-import { User, Mail, Lock, Globe, CheckCircle, AlertCircle, Gamepad2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 
 const InputField = ({
   icon: Icon,
@@ -50,6 +51,7 @@ const InputField = ({
 );
 
 const Register = () => {
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006';
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [paises, setPaises] = useState([]);
@@ -68,7 +70,7 @@ const Register = () => {
   useEffect(() => {
     const fetchPaises = async () => {
       try {
-        const res = await fetch('http://localhost:3006/api/paises');
+        const res = await fetch(`${API_URL}/api/paises`);
         if (!res.ok) throw new Error('Error al obtener países');
         const data = await res.json();
         setPaises(data);
@@ -128,7 +130,7 @@ const Register = () => {
     }
 
     try {
-      const response = await axios.post('http://localhost:3006/auth/register', {
+      const response = await axios.post(`${API_URL}/auth/register`, {
         ...cleanedValues,
         pais: paisSeleccionado,
       });

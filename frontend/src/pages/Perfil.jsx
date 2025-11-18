@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'motion/react';
+import { Trans, useTranslation } from 'react-i18next';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import i18n from 'i18next';
+
 import ChartMultilineLabels from '../components/graficosQuickchart.io/ChartMultilineLabels.jsx';
 import ChartVerticalLabels from '../components/graficosQuickchart.io/ChartVerticalLabels.jsx';
 import Cropper from 'react-easy-crop';
@@ -8,8 +9,8 @@ import QCChartStable from '../components/graficosQuickchart.io/QCChartStable.jsx
 import SimpleBarChart from '../components/simpleBarChart';
 import axios from 'axios';
 import { getCroppedImg } from '../utils/cropImage.js';
+import i18n from 'i18next';
 import { useAuth } from '../context/auth-context.jsx';
-import { useTranslation, Trans } from 'react-i18next';
 
 // normalizador simple (tildes, mayúsculas, espacios) y evita errores con null/undefined/objetos raros.
 function normalize(s) {
@@ -131,7 +132,7 @@ const Perfil = () => {
   const [estadisticasTodas, setEstadisticasTodas] = useState([]);
 
   // hooks de foto de perfil
-  const API = 'http://localhost:3006'; // URL base de tu API
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006'; // URL base de tu API
   const [foto, setFoto] = useState(null);
   const [preview, setPreview] = useState(null); // URL local de previsualización
   const [subiendo, setSubiendo] = useState(false);
@@ -246,7 +247,7 @@ const Perfil = () => {
     (async () => {
       try {
         const token = localStorage.getItem('token');
-        const { data } = await axios.get(`http://localhost:3006/users/${userId}`, {
+        const { data } = await axios.get(`${API_URL}/users/${userId}`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
 
@@ -290,7 +291,7 @@ const Perfil = () => {
     }
 
     // 4) caso normal: ruta relativa que sirve el backend (/uploads/...)
-    return `${API}${fp}`;
+    return `${API_URL}${fp}`;
   };
 
   const resolveFotoAjena = (fp) => {
@@ -307,7 +308,7 @@ const Perfil = () => {
     }
 
     // 3) caso normal: ruta relativa que sirve tu backend
-    return `${API}${fp}`;
+    return `${API_URL}${fp}`;
   };
 
   const fotoUrl =
@@ -379,7 +380,7 @@ const Perfil = () => {
       fd.append('foto', foto); // <-- la recortada (File)
 
       const token = localStorage.getItem('token');
-      const { data } = await axios.post(`http://localhost:3006/users/${user.id}/foto`, fd, {
+      const { data } = await axios.post(`${API_URL}/users/${user.id}/foto`, fd, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
 
@@ -456,7 +457,7 @@ const Perfil = () => {
       const token = localStorage.getItem('token');
 
       const { data } = await axios.put(
-        `http://localhost:3006/users/${user.id}/avatar`,
+        `${API_URL}/users/${user.id}/avatar`,
         { avatarUrl: avatarConfirm.avatar.preview_url },
         { headers: token ? { Authorization: `Bearer ${token}` } : {} }
       );
@@ -502,7 +503,7 @@ const Perfil = () => {
       setEliminando(true);
       const token = localStorage.getItem('token');
 
-      await axios.delete(`http://localhost:3006/users/${user.id}/foto`, {
+      await axios.delete(`${API_URL}/users/${user.id}/foto`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
 
@@ -588,7 +589,7 @@ const Perfil = () => {
       };
       if (form.password.trim()) payload.password = form.password.trim();
 
-      const { data } = await axios.put(`http://localhost:3006/users/${perfil.id}`, payload, {
+      const { data } = await axios.put(`${API_URL}/users/${perfil.id}`, payload, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
 
@@ -633,7 +634,7 @@ const Perfil = () => {
   // obtiene todos los objetos avatares
   const infoAvatares = async () => {
     try {
-      const { data } = await axios.get(`http://localhost:3006/avatar`);
+      const { data } = await axios.get(`${API_URL}/avatar`);
       setAvatares(data);
     } catch (error) {
       console.log('@@@@ Error GET /avatar\n', error);
@@ -645,7 +646,7 @@ const Perfil = () => {
   const infoJugadorIdAvatares = async () => {
     try {
       const { data } = await axios.get(
-        'http://localhost:3006/userAvatar',
+        `${API_URL}/userAvatar`,
         { params: { jugador_id } } // <-- params
       );
       setJugadorAvatares(data);
@@ -683,10 +684,10 @@ const Perfil = () => {
 
       // 1) Amigos donde YO soy jugador_id
       const [comoJugadorRes, comoAmigoRes] = await Promise.all([
-        axios.get('http://localhost:3006/amigos', {
+        axios.get(`${API_URL}/amigos`, {
           params: { jugador_id }, // yo en la columna jugador_id
         }),
-        axios.get('http://localhost:3006/amigos', {
+        axios.get(`${API_URL}/amigos`, {
           params: { amigo_id: jugador_id }, // yo en la columna amigo_id
         }),
       ]);
@@ -720,7 +721,7 @@ const Perfil = () => {
 
   const eliminarAmigo = async (id) => {
     try {
-      const { data } = await axios.delete(`http://localhost:3006/amigos/eliminar/${id}`);
+      const { data } = await axios.delete(`${API_URL}/amigos/eliminar/${id}`);
 
       setAmigos((prev) => prev.filter((a) => a.id !== id));
       setEliminado(true);
@@ -759,7 +760,7 @@ const Perfil = () => {
         aceptado_en: null, // pendiente
       };
 
-      const { data } = await axios.post('http://localhost:3006/amigos/create', payload);
+      const { data } = await axios.post(`${API_URL}/amigos/create`, payload);
 
       // lo guardo en mi lista local de amigos (pendiente)
       setAmigos((prev) => [...prev, data]);
@@ -775,7 +776,7 @@ const Perfil = () => {
   // obtiene un objeto categoria
   const getCategorias = async (id) => {
     try {
-      const { data } = await axios.get(`http://localhost:3006/categorias`);
+      const { data } = await axios.get(`${API_URL}/categorias`);
       setCategorias(data);
     } catch (error) {
       console.log('@@@@ Error GET: categorias\n', error);
@@ -786,7 +787,7 @@ const Perfil = () => {
   const getPreguntas = async (id) => {
     try {
       // /${id}
-      const { data } = await axios.get(`http://localhost:3006/preguntas`);
+      const { data } = await axios.get(`${API_URL}/preguntas`);
       setPreguntas(data);
     } catch (error) {
       console.log('@@@@ Error GET: preguntas\n', error);
@@ -796,7 +797,7 @@ const Perfil = () => {
   // obtiene un objeto opcion
   const getOpciones = async (id) => {
     try {
-      const { data } = await axios.get(`http://localhost:3006/opciones`);
+      const { data } = await axios.get(`${API_URL}/opciones`);
       setOpciones(data);
     } catch (error) {
       console.log('@@@@ Error GET: opciones\n', error);
@@ -806,7 +807,7 @@ const Perfil = () => {
   // obtiene un array de sala_jugadores
   const getArraySalaJugadores = async (id) => {
     try {
-      const { data } = await axios.get('http://localhost:3006/sala_jugadores', {
+      const { data } = await axios.get(`${API_URL}/sala_jugadores`, {
         params: { sala_id: id },
       });
       // asegura el array verificandolo
@@ -825,7 +826,7 @@ const Perfil = () => {
   // obtiene un objeto partida
   const getPartdias = async (id) => {
     try {
-      const { data } = await axios.get(`http://localhost:3006/partidas`);
+      const { data } = await axios.get(`${API_URL}/partidas`);
       setPartidas(data);
     } catch (error) {
       console.log('@@@@ Error GET: partidas\n', error);
@@ -835,7 +836,7 @@ const Perfil = () => {
   // obtiene un objeto partida_pregunta
   const getPartidaPreguntas = async () => {
     try {
-      const { data } = await axios.get(`http://localhost:3006/partida_preguntas`);
+      const { data } = await axios.get(`${API_URL}/partida_preguntas`);
       setPartida_preguntas(data);
     } catch (error) {
       console.log('@@@@ Error GET: partida_preguntas\n', error);
@@ -845,7 +846,7 @@ const Perfil = () => {
   // obtiene un objeto respuesta
   const getRespuestas = async (id) => {
     try {
-      const { data } = await axios.get(`http://localhost:3006/respuestas`);
+      const { data } = await axios.get(`${API_URL}/respuestas`);
       setRespuestas(data);
     } catch (error) {
       console.log('@@@@ Error GET: respuestas\n', error);
@@ -855,7 +856,7 @@ const Perfil = () => {
   const getEstadisticas = async () => {
     try {
       // 🔹 SIN params → traemos TODAS las estadísticas
-      const { data } = await axios.get('http://localhost:3006/estadisticas/');
+      const { data } = await axios.get(`${API_URL}/estadisticas/`);
 
       const todas = Array.isArray(data) ? data : [];
       setEstadisticasTodas(todas); // 👈 guardamos el universo completo
@@ -871,7 +872,7 @@ const Perfil = () => {
   // obtiene un array de PartidaJugadores (saber que jugadores jugaron en una partida)
   const getPartidaJugadores = async () => {
     try {
-      const { data } = await axios.get('http://localhost:3006/partida_jugadores');
+      const { data } = await axios.get(`${API_URL}/partida_jugadores`);
       setPartida_jugadores(data);
     } catch (error) {
       console.log('@@@@ Error GET: partida_jugadores\n', error);
@@ -1177,7 +1178,7 @@ const Perfil = () => {
 
   const getJugador = async (id) => {
     try {
-      const { data } = await axios.get(`http://localhost:3006/jugadores/${id}`);
+      const { data } = await axios.get(`${API_URL}/jugadores/${id}`);
       return data ?? null;
     } catch (e) {
       console.error('GET /jugadores/:id', e.response?.data?.error || e.message);
@@ -1187,7 +1188,7 @@ const Perfil = () => {
 
   const getUsuario = async (id) => {
     try {
-      const { data } = await axios.get(`http://localhost:3006/users/${id}`);
+      const { data } = await axios.get(`${API_URL}/users/${id}`);
       if (!data) return null;
       const { password, ...safe } = data;
       return safe;
@@ -1283,7 +1284,7 @@ const Perfil = () => {
     try {
       if (!jugador_id) return; // por las dudas
 
-      const { data } = await axios.get('http://localhost:3006/amigos', {
+      const { data } = await axios.get(`${API_URL}/amigos`, {
         params: { amigo_id: jugador_id }, // 👈 ahora jugador_id
       });
 
@@ -1520,7 +1521,7 @@ const Perfil = () => {
       const idNum = Number(solicitudId);
 
       // 1) Aviso al backend que esta solicitud quedó aceptada
-      await axios.put(`http://localhost:3006/amigos/${solicitudId}`, {
+      await axios.put(`${API_URL}/amigos/${solicitudId}`, {
         aceptado_en,
       });
 
@@ -1558,7 +1559,7 @@ const Perfil = () => {
   const handleRechazarSolicitud = async (solicitudId) => {
     try {
       setProcessingRequestId(solicitudId);
-      await axios.delete(`http://localhost:3006/amigos/eliminar/${solicitudId}`);
+      await axios.delete(`${API_URL}/amigos/eliminar/${solicitudId}`);
       setFriendRequests((prev) => prev.filter((r) => r.id !== solicitudId));
     } catch (err) {
       console.error('Error al rechazar solicitud:', err);

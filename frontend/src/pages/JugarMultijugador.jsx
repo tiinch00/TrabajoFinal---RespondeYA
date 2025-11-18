@@ -2,13 +2,14 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import i18n from 'i18next';
+
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import confetti from 'canvas-confetti';
 import correcta from '/sounds/correcta.wav';
 import ficeSeconds from '/sounds/fiveSeconds.mp3';
 import finalDeJuego from '/sounds/finalDeJuego.wav';
+import i18n from 'i18next';
 import incorrecta from '/sounds/incorrecta.wav';
 import musicaPreguntas from '/sounds/musicaPreguntasEdit.mp3';
 import { resolveFotoAjena } from '../utils/resolveFotoAjena.js';
@@ -66,10 +67,10 @@ function tiempoPorPregunta(t) {
 }
 
 export default function JugarMultijugador() {
-  const API = 'http://localhost:3006';
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006';
   const isDefaultFoto = (fp) => {
     if (!fp) return true;
-    return fp === '/uploads/default.png' || fp === `${API}/uploads/default.png`;
+    return fp === '/uploads/default.png' || fp === `${API_URL}/uploads/default.png`;
   };
   const navigate = useNavigate();
   const location = useLocation();
@@ -94,7 +95,7 @@ export default function JugarMultijugador() {
 
   const [jugadores, setJugadores] = useState([]); // [{userId, nombre, foto_perfil, esCreador}]
   const abs = (p) =>
-    typeof p === 'string' && p.startsWith('http') ? p : `${API}${p || '/uploads/default.png'}`;
+    typeof p === 'string' && p.startsWith('http') ? p : `${API_URL}${p || '/uploads/default.png'}`;
 
   // sonidos
   const [playCorrect] = useSound(correcta, { volume: 0.6 });
@@ -213,7 +214,7 @@ export default function JugarMultijugador() {
     try {
       const jugador_id = jugador.jugador_id;
 
-      await axios.put(`${API}/jugadores/updatePuntajeEstadistica/${jugador_id}`, {
+      await axios.put(`${API_URL}/jugadores/updatePuntajeEstadistica/${jugador_id}`, {
         puntaje: jugador.puntaje_total,
         partida_id: configuracion.partida_id,
       });
@@ -374,7 +375,7 @@ export default function JugarMultijugador() {
         setLoading(true);
         const dif = traducirDificultad(config.dificultad);
         const { data } = await axios.get(
-          `${API}/preguntas/categoria/${String(config.categoria).toLowerCase()}/${dif}`
+          `${API_URL}/preguntas/categoria/${String(config.categoria).toLowerCase()}/${dif}`
         );
         if (!Array.isArray(data) || data.length === 0) {
           setAlerta('No se encontraron preguntas para esta categoría o dificultad.');
@@ -1057,7 +1058,7 @@ export default function JugarMultijugador() {
                               {ganador ? (
                                 <>
                                   {ganador?.foto_perfil &&
-                                  ganador?.foto_perfil !== `${API}/uploads/default.png` &&
+                                  ganador?.foto_perfil !== `${API_URL}/uploads/default.png` &&
                                   ganador?.foto_perfil !== `/uploads/default.png` ? (
                                     <img
                                       src={resolveFotoAjena(ganador?.foto_perfil)}
@@ -1150,7 +1151,7 @@ export default function JugarMultijugador() {
                               {jugadores[0] ? (
                                 <>
                                   {jugadores[0]?.foto_perfil &&
-                                  jugadores[0]?.foto_perfil !== `${API}/uploads/default.png` &&
+                                  jugadores[0]?.foto_perfil !== `${API_URL}/uploads/default.png` &&
                                   jugadores[0]?.foto_perfil !== `/uploads/default.png` ? (
                                     <img
                                       src={resolveFotoAjena(jugadores[0]?.foto_perfil)}
@@ -1310,7 +1311,7 @@ export default function JugarMultijugador() {
                       {creador ? (
                         <>
                           {creador?.foto_perfil &&
-                          creador?.foto_perfil !== `${API}/uploads/default.png` &&
+                          creador?.foto_perfil !== `${API_URL}/uploads/default.png` &&
                           creador?.foto_perfil !== `/uploads/default.png` ? (
                             <img
                               src={resolveFotoAjena(creador?.foto_perfil)}

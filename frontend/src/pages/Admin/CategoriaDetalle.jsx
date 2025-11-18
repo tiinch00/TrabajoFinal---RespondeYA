@@ -1,12 +1,14 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const CategoriaDetalle = ({ categoria, onEdit, onEliminar }) => {
   const [mostrarEditar, setMostrarEditar] = useState(false);
   const [form, setForm] = useState({ nombre: '', descripcion: '' });
   const [alerta, setAlerta] = useState({});
   const [modalEliminarCategoria, setModalEliminarCategoria] = useState(false);
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006';
   //const [mostrarCategoria, setMostrarCategoria] = useState(categoria);
 
   const navigate = useNavigate();
@@ -45,7 +47,7 @@ const CategoriaDetalle = ({ categoria, onEdit, onEliminar }) => {
 
     try {
       const { data } = await axios.put(
-        `http://localhost:3006/admin/categoria/${categoria.id}/edit`,
+        `${API_URL}/admin/categoria/${categoria.id}/edit`,
         cleanedValues
       );
       if (data) {
@@ -60,7 +62,7 @@ const CategoriaDetalle = ({ categoria, onEdit, onEliminar }) => {
   const handleEliminarCategoria = async () => {
     try {
       const { data } = await axios.delete(
-        `http://localhost:3006/admin/categoria/${categoria.id}/delete`
+        `${API_URL}/admin/categoria/${categoria.id}/delete`
       );
       if (data) {
         setModalEliminarCategoria(false);

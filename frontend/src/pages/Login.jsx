@@ -1,10 +1,11 @@
+import { AlertCircle, Gamepad2, Lock, Mail } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import { useAuth } from '../context/auth-context';
+
 import axios from 'axios';
-import { useState } from 'react';
-import { Mail, Lock, Gamepad2, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useAuth } from '../context/auth-context';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const Login = () => {
   const { t } = useTranslation();
@@ -12,6 +13,7 @@ const Login = () => {
   const { login, setLoading } = useAuth();
   const [errores, setErrores] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006';
 
   const [values, setValues] = useState({
     email: '',
@@ -52,12 +54,12 @@ const Login = () => {
     }
 
     try {
-      const { data } = await axios.post('http://localhost:3006/auth/login', cleanedValues);
+      const { data } = await axios.post(`${API_URL}/auth/login`, cleanedValues);
       const token = data.token;
       let user = data.user;
 
       if (!user && token) {
-        const meRes = await axios.get('http://localhost:3006/auth/me', {
+        const meRes = await axios.get(`${API_URL}/auth/me`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         user = meRes.data;
@@ -155,7 +157,8 @@ const Login = () => {
           <motion.div variants={itemVariants} className='relative'>
             <label
               htmlFor='password'
-              className='block text-white font-semibold text-sm md:text-base mb-2 flex items-center gap-2'
+              // block
+              className='text-white font-semibold text-sm md:text-base mb-2 flex items-center gap-2'
             >
               <Lock className='w-4 h-4 md:w-5 md:h-5 text-pink-400' />
               {t('insertPass')}

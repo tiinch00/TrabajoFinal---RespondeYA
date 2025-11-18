@@ -1,7 +1,9 @@
-import { useState } from 'react';
 import axios from 'axios';
+import { useState } from 'react';
+
 const BotonPago = () => {
   const [id, setId] = useState(null);
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006';
   const [datos, setDatos] = [
     {
       nombre: 'Avatar Premium',
@@ -13,7 +15,7 @@ const BotonPago = () => {
 
   const crearPago = async () => {
     try {
-      const res = await axios.post('http://localhost:3006/api/crearOrden', datos);
+      const res = await axios.post(`${API_URL}/api/crearOrden`, datos);
       if (res) {
         setId(res.data.id);
       }

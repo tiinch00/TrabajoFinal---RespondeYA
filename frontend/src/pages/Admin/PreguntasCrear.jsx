@@ -1,5 +1,5 @@
-import { useState } from 'react';
 import axios from 'axios';
+import { useState } from 'react';
 
 const PreguntasCrear = ({ categoriaID, onCreate }) => {
   const [values, setValues] = useState({
@@ -13,6 +13,7 @@ const PreguntasCrear = ({ categoriaID, onCreate }) => {
   const [alerta, setAlerta] = useState({});
 
   const [pregunta, setPregunta] = useState({});
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006';
 
   const handleChange = (e) => {
     setValues({ ...values, [e.target.name]: e.target.value });
@@ -30,7 +31,7 @@ const PreguntasCrear = ({ categoriaID, onCreate }) => {
     if (Object.keys(newErrors).length > 0) return;
     try {
       const { data } = await axios.post(
-        `http://localhost:3006/admin/categoria/${categoriaID}/preguntas/create`,
+        `${API_URL}/admin/categoria/${categoriaID}/preguntas/create`,
         values
       );
 

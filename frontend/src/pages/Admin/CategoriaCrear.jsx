@@ -1,15 +1,16 @@
-import { useState } from 'react';
 import axios from 'axios';
+import { useState } from 'react';
 
 const CategoriaCrear = ({ onCreate }) => {
   const [nombre, setNombre] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [mostrarAgregar, setMostrarAgregar] = useState(false);
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const { data } = await axios.post('http://localhost:3006/admin/categoria/create', {
+      const { data } = await axios.post(`${API_URL}/admin/categoria/create`, {
         nombre,
         descripcion,
         admin_id: 1,

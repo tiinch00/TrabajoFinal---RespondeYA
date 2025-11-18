@@ -1,18 +1,20 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import CategoriasListar from './CategoriasListar.jsx';
+
 import CategoriaCrear from './CategoriaCrear.jsx';
 import CategoriaDetalle from './CategoriaDetalle.jsx';
+import CategoriasListar from './CategoriasListar.jsx';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const AbmCategorias = () => {
   const navigate = useNavigate();
   const [categorias, setCategorias] = useState([]);
   const [selectCategoria, setSelectCategoria] = useState(null);
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006';
 
   const getCategorias = async () => {
     try {
-      const { data } = await axios.get(`http://localhost:3006/admin/categorias`);
+      const { data } = await axios.get(`${API_URL}/admin/categorias`);
       setCategorias(data);
     } catch (error) {
       console.log(error);

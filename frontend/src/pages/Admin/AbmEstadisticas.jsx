@@ -1,8 +1,9 @@
-import React from 'react';
+import { useEffect, useState } from 'react';
+
 import QCChartStable from '../../components/graficosQuickchart.io/QCChartStable';
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const AbmEstadisticas = () => {
   const [chartData, setChartData] = useState(null);
@@ -10,12 +11,13 @@ const AbmEstadisticas = () => {
   const [error, setError] = useState(null);
   const [promedio, setPromedio] = useState(0);
   const [preguntasCalculadas, setPreguntasCalculadas] = useState(0);
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006';
 
   const navigate = useNavigate();
 
   const getCategorias = async () => {
     try {
-      const { data } = await axios.get(`http://localhost:3006/admin/categorias`);
+      const { data } = await axios.get(`${API_URL}/admin/categorias`);
       return data;
     } catch (error) {
       console.error('Error fetching categorias:', error);
@@ -25,7 +27,7 @@ const AbmEstadisticas = () => {
 
   const getPartidas = async () => {
     try {
-      const { data } = await axios.get(`http://localhost:3006/admin/partidas`);
+      const { data } = await axios.get(`${API_URL}/admin/partidas`);
       console.log(data);
       return data;
     } catch (error) {
@@ -35,7 +37,7 @@ const AbmEstadisticas = () => {
   };
   const getEstadisticas = async () => {
     try {
-      const { data } = await axios.get(`http://localhost:3006/admin/estadisticas`);
+      const { data } = await axios.get(`${API_URL}/admin/estadisticas`);
       console.log(data);
       return data;
     } catch (error) {

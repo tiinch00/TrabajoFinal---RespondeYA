@@ -1,17 +1,19 @@
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useEffect, useState, useRef } from 'react';
-import useSound from 'use-sound';
-import incorrecta from '/sounds/incorrecta.wav';
+
+import axios from 'axios';
+import confetti from 'canvas-confetti';
 import correcta from '/sounds/correcta.wav';
 import finalDeJuego from '/sounds/finalDeJuego.wav';
 import fiveSeconds from '/sounds/fiveSeconds.mp3';
-import musicaPreguntas from '/sounds/musicaPreguntasEdit.mp3';
-import { useTranslation } from 'react-i18next';
 import i18n from 'i18next';
-import confetti from 'canvas-confetti';
-import axios from 'axios';
+import incorrecta from '/sounds/incorrecta.wav';
+import musicaPreguntas from '/sounds/musicaPreguntasEdit.mp3';
+import useSound from 'use-sound';
+import { useTranslation } from 'react-i18next';
 
 const JugarIndividual = () => {
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006';
   const navigate = useNavigate();
   const musicStartedRef = useRef(false);
   const { t } = useTranslation();
@@ -143,7 +145,7 @@ const JugarIndividual = () => {
           dificultadTraducida = 'dificil';
 
         const { data } = await axios.get(
-          `http://localhost:3006/preguntas/categoria/${categoria.toLowerCase()}/${dificultadTraducida.toLowerCase()}`
+          `${API_URL}/preguntas/categoria/${categoria.toLowerCase()}/${dificultadTraducida.toLowerCase()}`
         );
 
         if (data && data.length > 0) {
@@ -349,7 +351,7 @@ const JugarIndividual = () => {
         ended_at: new Date(),
       };
 
-      const response = await axios.post('http://localhost:3006/partidas/create', datosPartida);
+      const response = await axios.post(`${API_URL}/partidas/create`, datosPartida);
       const partidaId = response.data.id;
       console.log('Partida guardada:', response.data);
       await crearPartidaJugador(partidaId);
@@ -377,7 +379,7 @@ const JugarIndividual = () => {
       jugador_id: id,
     };
     try {
-      const res = await axios.post('http://localhost:3006/partida_jugadores/create', datosPartida);
+      const res = await axios.post(`${API_URL}/partida_jugadores/create`, datosPartida);
       return res.data;
     } catch (error) {
       console.error('Error al crear partidaJugador:', error);
@@ -388,7 +390,7 @@ const JugarIndividual = () => {
   const enviarPartidaPreguntas = async (partidaId) => {
     try {
       const promesas = preguntas.map((pregunta, index) => {
-        return axios.post('http://localhost:3006/partida_preguntas/create', {
+        return axios.post(`${API_URL}/partida_preguntas/create`, {
           partida_id: partidaId,
           pregunta_id: pregunta.id,
           orden: index + 1,
@@ -442,7 +444,7 @@ const JugarIndividual = () => {
       };
 
       const responseEstadisticas = await axios.post(
-        'http://localhost:3006/estadisticas/create',
+        `${API_URL}/estadisticas/create`,
         datosEstadisticas
       );
       console.log('Estadísticas guardadas:', responseEstadisticas.data);
@@ -465,7 +467,7 @@ const JugarIndividual = () => {
         const tiempoRespuestaMs = tiempoUsado * 1000;
 
         return axios
-          .post('http://localhost:3006/respuestas/create', {
+          .post(`${API_URL}/respuestas/create`, {
             partida_id: partidaId,
             jugador_id: id,
             pregunta_id: preguntas[index].id,
@@ -580,7 +582,7 @@ const JugarIndividual = () => {
                   {/* NUEVO: Anillo brillante animado alrededor de la foto */}
                   <div className='absolute inset-0 rounded-full bg-gradient-to-b from-white via-amber-200 to-violet-300 animate-spin-slow opacity-60 blur-sm scale-110'></div>
                   <img
-                    src={`http://localhost:3006${user.foto_perfil}`}
+                    src={`${API_URL}/${user.foto_perfil}`}
                     alt='Foto de perfil'
                     className='relative w-24 h-24 rounded-full object-cover border-4 border-blue-800/10 shadow-lg mb-4 group-hover:scale-105 transition-transform duration-300'
                   />

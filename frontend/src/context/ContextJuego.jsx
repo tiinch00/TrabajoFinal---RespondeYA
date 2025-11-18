@@ -11,6 +11,7 @@ export const GameProvider = ({ children }) => {
   const [categorias, setCategorias] = useState([]);
   const [loading, setLoading] = useState(() => !localStorage.getItem('user'));
   const [socket, setSocket] = useState(null);
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006';
   const [user, setUser] = useState(() => {
     try {
       const raw = localStorage.getItem('user');
@@ -23,7 +24,7 @@ export const GameProvider = ({ children }) => {
   // fetch de categorias
   const fetchCategorias = async () => {
     try {
-      const res = await axios.get('http://localhost:3006/categorias');
+      const res = await axios.get(`${API_URL}/categorias`);
       setCategorias(res.data);
     } catch (error) {
       console.error('Error al cargar categorías:', error);
@@ -60,7 +61,7 @@ export const GameProvider = ({ children }) => {
   // Inicializar socket
   const inicializarSocket = useCallback(() => {
     if (!socket) {
-      const newSocket = io('http://localhost:3006', { path: '/socket.io' });
+      const newSocket = io(`${API_URL}`, { path: '/socket.io' });
       setSocket(newSocket);
       return newSocket;
     }

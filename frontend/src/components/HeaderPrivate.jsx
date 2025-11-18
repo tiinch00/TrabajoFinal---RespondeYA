@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/auth-context.jsx';
 import { useTranslation } from 'react-i18next';
 
-const API = 'http://localhost:3006';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006';
 const resolveUserPhoto = (fp) => {
     if (!fp) return null;
 
@@ -16,10 +16,10 @@ const resolveUserPhoto = (fp) => {
     if (/^https?:\/\//.test(fp)) return fp;
 
     // ruta típica del backend
-    if (fp.startsWith('/uploads/')) return `${API}${fp}`;
+    if (fp.startsWith('/uploads/')) return `${API_URL}${fp}`;
 
     // fallback por si guardaste otra cosa relativa
-    return `${API}${fp}`;
+    return `${API_URL}${fp}`;
   };
 
 export default function HeaderPrivate() {
@@ -33,7 +33,7 @@ export default function HeaderPrivate() {
   const { user, logout, loading } = useAuth();  
   const isAdmin = user?.role === 'administrador';
   const name = user.name || user?.email?.split('@')[0] || 'Jugador';
-  const fotoUrl = user?.foto_perfil ? `${API}${user.foto_perfil}` : null;
+  const fotoUrl = user?.foto_perfil ? `${API_URL}${user.foto_perfil}` : null;
   const { t, i18n } = useTranslation();  
 
   const rawPhoto = user?.foto_perfil ?? null;

@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+
 import axios from 'axios';
 
 const PreguntasListar = ({
@@ -22,6 +23,7 @@ const PreguntasListar = ({
   const [mostrarEditarOpciones, setMostrarEditarOpciones] = useState(false);
   const [eliminarPregunta, setEliminarPregunta] = useState(false);
   const [preguntaActivaEliminar, setPreguntaActivaEliminar] = useState(null);
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006';
   //formEditar Preguntas
   const [formEditar, setFormEditar] = useState({
     admin_id: 1,
@@ -65,7 +67,7 @@ const PreguntasListar = ({
     try {
       setLoadingOpciones(true);
       const res = await axios.get(
-        `http://localhost:3006/admin/categoria/${categoria}/${pregunta.categoria_id}/pregunta/${pregunta.id}/opciones`
+        `${API_URL}/admin/categoria/${categoria}/${pregunta.categoria_id}/pregunta/${pregunta.id}/opciones`
       );
       setOpciones(res.data);
       return res.data;
@@ -135,7 +137,7 @@ const PreguntasListar = ({
 
     try {
       const res = await axios.post(
-        `http://localhost:3006/admin/pregunta/${preguntaActiva.id}/opciones/crear`,
+        `${API_URL}/admin/pregunta/${preguntaActiva.id}/opciones/crear`,
         form
       );
       if (res.data.ok) {
@@ -175,7 +177,7 @@ const PreguntasListar = ({
 
     try {
       const res = await axios.put(
-        `http://localhost:3006/admin/categoria/${categoria}/${preguntaActiva.categoria_id}/pregunta/${preguntaActiva.id}/opciones/edit`,
+        `${API_URL}/admin/categoria/${categoria}/${preguntaActiva.categoria_id}/pregunta/${preguntaActiva.id}/opciones/edit`,
         form
       );
       if (res.data.ok) {
@@ -213,7 +215,7 @@ const PreguntasListar = ({
 
     try {
       const { data } = await axios.put(
-        `http://localhost:3006/admin/categoria/${categoria}/${preguntaEditar.categoria_id}/pregunta/${preguntaEditar.id}/edit`,
+        `${API_URL}/admin/categoria/${categoria}/${preguntaEditar.categoria_id}/pregunta/${preguntaEditar.id}/edit`,
         formEditar
       );
       if (data) {
@@ -266,7 +268,7 @@ const PreguntasListar = ({
   const handleEliminarPregunta = async () => {
     try {
       const { data } = await axios.delete(
-        `http://localhost:3006/admin/categoria/${categoria}/${preguntaActivaEliminar.categoria_id}/pregunta/${preguntaActivaEliminar.id}/delete`
+        `${API_URL}/admin/categoria/${categoria}/${preguntaActivaEliminar.categoria_id}/pregunta/${preguntaActivaEliminar.id}/delete`
       );
 
       if (data.ok) {

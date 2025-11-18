@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
+
 import axios from 'axios';
 import { resolveFotoAjena } from '../utils/resolveFotoAjena.js';
 import { useGame } from '../context/ContextJuego.jsx';
+import { useTranslation } from 'react-i18next';
 
 // ===== Helpers para identificar usuarios de forma tolerante =====
 function normalizeName(s) {
@@ -45,7 +46,7 @@ export default function SalaEspera() {
   // Bloqueo estable del invitado (userId del jugador 2)
   const invitadoLockRef = useRef(null);
 
-  const API = 'http://localhost:3006';
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006';
   const { id } = useParams(); // param visible (puede ser código o id numérico)
   const { user, inicializarSocket } = useGame();
 
@@ -58,7 +59,7 @@ export default function SalaEspera() {
 
   // Normaliza rutas absolutas de imágenes
   const abs = (p) =>
-    typeof p === 'string' && p.startsWith('http') ? p : `${API}${p || '/uploads/default.png'}`;
+    typeof p === 'string' && p.startsWith('http') ? p : `${API_URL}${p || '/uploads/default.png'}`;
 
   // ====== REFS ESTABLES (sin useMemo) ======
 
@@ -342,8 +343,8 @@ export default function SalaEspera() {
 
   // if (jugadores.length > 0) {
   //     console.log(jugador1.foto_perfil);
-  //     console.log(`${API}${jugador1.foto_perfil}`);
-  //     console.log(`${API}${user.foto_perfil}`);
+  //     console.log(`${API_URL}${jugador1.foto_perfil}`);
+  //     console.log(`${API_URL}${user.foto_perfil}`);
   // }
 
   return (

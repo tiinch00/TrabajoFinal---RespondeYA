@@ -1,11 +1,13 @@
+import { AnimatePresence, motion } from 'framer-motion';
+import { Award, Home, Medal, Search, Trophy, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { Search, Trophy, Medal, Award, Home, X } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 
 const Ranking = () => {
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006';
   const { t } = useTranslation();
   const [ranking, setRanking] = useState([]);
   const [buscador, setBuscador] = useState('');
@@ -34,8 +36,8 @@ const Ranking = () => {
   const getData = async () => {
     try {
       const [resUsuarios, resJugadores] = await Promise.all([
-        axios.get('http://localhost:3006/users'),
-        axios.get('http://localhost:3006/jugadores'),
+        axios.get(`${API_URL}/users`),
+        axios.get(`${API_URL}/jugadores`),
       ]);
 
       const usuarios = resUsuarios.data.filter((u) => u.role !== 'administrador');

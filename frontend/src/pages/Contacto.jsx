@@ -1,9 +1,11 @@
+import { Trans, useTranslation } from 'react-i18next';
+import { useEffect, useState } from 'react';
+
 import axios from 'axios';
-import { useState, useEffect } from 'react';
-import { useTranslation, Trans } from 'react-i18next';
 
 const Contacto = () => {
   const { t } = useTranslation();
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006';
 
   const getStoredUser = () => {
     const raw = localStorage.getItem('user');
@@ -63,7 +65,7 @@ const Contacto = () => {
     setStatus(t('sending'));
 
     try {
-      const res = await axios.post('http://localhost:3006/api/contactar', cleanedValues);
+      const res = await axios.post(`${API_URL}/api/contactar`, cleanedValues);
       if (res.data.ok) {
         setStatus(t('emailSended'));
         setForm({ nombreUsuario: '', email: '', descripcion: '' }); // limpiar form
