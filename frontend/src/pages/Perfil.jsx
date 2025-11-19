@@ -113,6 +113,21 @@ const Perfil = () => {
 
   const [eliminado, setEliminado] = useState(false); // boton de eliminar amigo
   const eliminadoTimerRef = useRef(null); // tiempo del msg de eliminar amigo
+  // tab de sección amigos
+  const [activeFriendsTab, setActiveFriendsTab] = useState('friends');
+  // 'friends' | 'search'
+
+  // búsqueda en “buscar nuevo amigo”
+  const [newFriendSearch, setNewFriendSearch] = useState('');
+  // lista de TODOS los users del sistema (para buscar nuevos amigos)
+  const [allUsers, setAllUsers] = useState([]);
+  const [jugadoresPorId, setJugadoresPorId] = useState({});
+  // paginado para “buscar nuevo amigo”
+  const NEW_FRIENDS_PAGE_SIZE = 5;
+  const [newFriendsPage, setNewFriendsPage] = useState(1);
+  // modal con datos de persona (amigo o no amigo)
+  const [selectedPerson, setSelectedPerson] = useState(null);
+  // { name, email, pais, puntaje }
 
   // array hook
   const [avatares, setAvatares] = useState([]); // array avatares
@@ -164,14 +179,27 @@ const Perfil = () => {
   // detalles de amigos aceptados
   const [friendsDetails, setFriendsDetails] = useState([]);
 
-  // --- filtro de amigos por nombre ---
+  // --- filtro de amigos SOLO por nombre ---
   const normalizedFriendQuery = normalize(friendsSearch);
 
-  const filteredFriendsDetails = (friendsDetails ?? []).filter(({ usuario }) => {
-    if (!normalizedFriendQuery) return true; // sin filtro, devuelve todos
+  const filteredFriendsDetails = (friendsDetails ?? []).filter(({ usuario, jugador }) => {
+    // excluir administradores
+    const role = (usuario?.role ?? '').toString().toLowerCase();
+    if (role === 'admin' || role === 'administrador' || role === 'superadmin') return false;
+
+    // excluirme a mí misma (por jugador o user)
+    if (Number(jugador?.id) === Number(jugador_id)) return false;
+    if (Number(usuario?.id) === Number(userId)) return false;
+
+    // si no hay texto, muestro todos
+    if (!normalizedFriendQuery) return true;
+
     const nameNorm = normalize(usuario?.name ?? '');
+
+    // SOLO por nombre
     return nameNorm.includes(normalizedFriendQuery);
   });
+
 
   // para botones de aceptar/cancelar
   const [processingRequestId, setProcessingRequestId] = useState(null);
@@ -182,10 +210,14 @@ const Perfil = () => {
   const [form, setForm] = useState({
     name: '',
     email: '',
+    pais: '',
     password: '',
     confirmPassword: '',
   }); // hook de inicializacion del formulario
   const [formErrors, setFormErrors] = useState({}); // error del formulario
+  const [paises, setPaises] = useState([]);
+  const [loadingPaises, setLoadingPaises] = useState(false);
+  const [errorPaises, setErrorPaises] = useState(null);
 
   // buscador de partidas - estado para el input y la lista filtrada
   const [search, setSearch] = useState('');
@@ -236,6 +268,47 @@ const Perfil = () => {
     setFriendsPage(1);
   }, [friendsDetails, friendsSearch]);
 
+  const candidateUsersBase = (allUsers ?? []).filter((u) => {
+    const jid = Number(u.jugador_id);
+
+    // descartamos ids no válidos o 0
+    if (!Number.isFinite(jid) || jid <= 0) return false;
+
+    // excluirme a mí misma
+    if (jid === Number(jugador_id)) return false;
+    if (Number(u.id) === Number(userId)) return false;
+
+    // excluir admins
+    const role = (u.role ?? '').toString().toLowerCase();
+    if (role === 'admin' || role === 'administrador' || role === 'superadmin') return false;
+
+    return true;
+  });
+
+
+  const normalizedNewFriendQuery = normalize(newFriendSearch);
+
+  // filtro SOLO por nombre
+  const filteredNewFriends = !normalizedNewFriendQuery
+    ? [] // input vacío: no mostramos nada
+    : candidateUsersBase.filter((u) => {
+      const nameNorm = normalize(u.name ?? '');
+      return nameNorm.includes(normalizedNewFriendQuery);
+    });
+
+  // paginado “buscar nuevo amigo”
+  const totalNewFriends = filteredNewFriends.length;
+  const totalNewFriendsPages = Math.max(1, Math.ceil(totalNewFriends / NEW_FRIENDS_PAGE_SIZE));
+  const newFriendsStartIndex = (newFriendsPage - 1) * NEW_FRIENDS_PAGE_SIZE;
+  const newFriendsEndIndex = newFriendsStartIndex + NEW_FRIENDS_PAGE_SIZE;
+  const visibleNewFriends = filteredNewFriends.slice(newFriendsStartIndex, newFriendsEndIndex);
+
+  // si cambia la búsqueda o la lista, volvemos a la página 1
+  useEffect(() => {
+    setNewFriendsPage(1);
+  }, [newFriendSearch, amigos, friendRequests, allUsers]);
+
+
   // handlers
   const goPrev = () => setCurrentPage((p) => Math.max(1, p - 1));
   const goNext = () => setCurrentPage((p) => Math.min(totalPages, p + 1));
@@ -261,6 +334,7 @@ const Perfil = () => {
         setForm({
           name: data.name || '',
           email: data.email || '',
+          pais: data.pais || '',
           password: '',
           confirmPassword: '',
         });
@@ -535,6 +609,30 @@ const Perfil = () => {
     }
   };
 
+  useEffect(() => {
+    let alive = true;
+
+    (async () => {
+      try {
+        setLoadingPaises(true);
+        const { data } = await axios.get(`${API_URL}/api/paises`);
+        if (!alive) return;
+        // data = [{ codigo, nombre }, ...]
+        setPaises(Array.isArray(data) ? data : []);
+      } catch (err) {
+        if (!alive) return;
+        setErrorPaises(err.response?.data?.error || err.message);
+        setPaises([]);
+      } finally {
+        if (alive) setLoadingPaises(false);
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   // funcion que hace reemplazar los datos del jugador
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -558,6 +656,11 @@ const Perfil = () => {
       if (!re.test(form.email.trim())) {
         errs.email = 'Email inválido';
       }
+    }
+
+    // País obligatorio
+    if (!form.pais.trim()) {
+      errs.pais = 'El país es obligatorio';
     }
 
     // Password opcional, pero si lo completan:
@@ -591,6 +694,7 @@ const Perfil = () => {
       const payload = {
         name: form.name.trim(),
         email: form.email.trim(),
+        pais: form.pais.trim(),
       };
       if (form.password.trim()) payload.password = form.password.trim();
 
@@ -715,14 +819,84 @@ const Perfil = () => {
         }
       });
 
-      // 3) Sólo amigos aceptados (para el listado de "Mis Amigos")
-      const soloAceptados = [...mapa.values()].filter((a) => !!a.aceptado_en);
+      // 3) Todos (aceptados + pendientes) sin duplicados
+      const todos = [...mapa.values()];
 
-      setAmigos(soloAceptados);
+      setAmigos(todos);
     } catch (error) {
       console.log('@@@@ Error GET: amigos\n', error);
     }
   };
+
+  const getAllUsers = async () => {
+    try {
+      const { data } = await axios.get(`${API_URL}/users`);
+
+      const normalizados = (Array.isArray(data) ? data : []).map((u) => {
+        const jugador = u.jugador || null;
+
+        const jid = Number(jugador?.jugador_id);
+
+        return {
+          ...u,
+          jugador_id: Number.isFinite(jid) && jid > 0 ? jid : null,
+          puntaje: jugador?.puntaje ?? null,
+        };
+      });
+
+      setAllUsers(normalizados);
+    } catch (error) {
+      console.log('@@@@ Error GET: users\n', error);
+      setAllUsers([]);
+    }
+  };
+
+
+
+  useEffect(() => {
+    let cancel = false;
+
+    (async () => {
+      const ids = [
+        ...new Set(
+          (allUsers ?? [])
+            .map((u) => Number(u.jugador_id))
+            .filter((n) => Number.isFinite(n) && n > 0)   // solo ids válidos
+        ),
+      ];
+
+      if (!ids.length) {
+        if (!cancel) setJugadoresPorId({});
+        return;
+      }
+
+      const arr = await Promise.all(
+        ids.map(async (id) => {
+          const j = await getJugador(id);
+          if (!j) return null;
+
+          const jid = Number(j.jugador_id ?? j.id);
+          if (!Number.isFinite(jid) || jid <= 0) return null;
+
+          return { id: jid, jugador: j };
+        })
+      );
+
+      const mapa = {};
+      arr
+        .filter(Boolean)
+        .forEach(({ id, jugador }) => {
+          mapa[id] = jugador;
+        });
+
+      if (!cancel) setJugadoresPorId(mapa);
+    })();
+
+    return () => {
+      cancel = true;
+    };
+  }, [allUsers]);
+
 
   const eliminarAmigo = async (id) => {
     try {
@@ -740,6 +914,41 @@ const Perfil = () => {
       console.error('Error al eliminar un amigo:', err);
     }
   };
+
+  const getRelacionConUsuario = (usuario) => {
+    const otroJid = Number(usuario?.jugador_id);
+    const miJid = Number(jugador_id);
+
+    if (!Number.isFinite(otroJid) || !Number.isFinite(miJid)) return 'ninguna';
+
+    // 1) Relaciones en "amigos" (aceptadas o pendientes que yo envié)
+    const relacion = (amigos ?? []).find((a) => {
+      const jidA = Number(a.jugador_id);
+      const jidB = Number(a.amigo_id);
+
+      return (
+        (jidA === miJid && jidB === otroJid) ||
+        (jidA === otroJid && jidB === miJid)
+      );
+    });
+
+    if (relacion) {
+      if (relacion.aceptado_en) return 'amigo';     // ya somos amigos
+      return 'pendiente';                            // solicitud enviada (pendiente)
+    }
+
+    // 2) Solicitudes PENDIENTES que ellos me enviaron (friendRequests)
+    const recibida = (friendRequests ?? []).find((r) => {
+      const jReq = Number(r.jugador_id);  // el que envía
+      const aReq = Number(r.amigo_id);    // el que recibe (yo)
+      return jReq === otroJid && aReq === miJid && !r.aceptado_en;
+    });
+
+    if (recibida) return 'pendiente';
+
+    return 'ninguna';
+  };
+
 
   const handleAgregarAmigo = async (registroSala) => {
     try {
@@ -777,6 +986,51 @@ const Perfil = () => {
       setAddingFriendId(null);
     }
   };
+
+  const handleAgregarAmigoDesdeUsuario = async (usuario) => {
+    try {
+      setFriendMessage(null);
+
+      if (!jugador_id) {
+        setFriendMessage('No se encontró tu jugador_id');
+        return;
+      }
+
+      const amigoJugadorId = Number(usuario?.jugador_id);
+
+      // 👇 acá el cambio importante
+      if (!Number.isFinite(amigoJugadorId) || amigoJugadorId <= 0) {
+        setFriendMessage('Este usuario no tiene jugador asociado');
+        return;
+      }
+
+      setAddingFriendId(amigoJugadorId);
+
+      const payload = {
+        jugador_id: Number(jugador_id),   // yo
+        amigo_id: amigoJugadorId,         // el otro jugador
+        aceptado_en: null,                // pendiente
+      };
+
+      const { data } = await axios.post(`${API_URL}/amigos/create`, payload);
+
+      const nuevo = {
+        ...data,
+        jugador_id: Number(data?.jugador_id ?? payload.jugador_id),
+        amigo_id: Number(data?.amigo_id ?? payload.amigo_id),
+        aceptado_en: data?.aceptado_en ?? null,
+      };
+
+      setAmigos((prev) => [...prev, nuevo]);
+      setFriendMessage('Solicitud enviada ✅');
+    } catch (err) {
+      const msg = err.response?.data?.error || err.message;
+      setFriendMessage(msg);
+    } finally {
+      setAddingFriendId(null);
+    }
+  };
+
 
   // obtiene un objeto categoria
   const getCategorias = async (id) => {
@@ -819,8 +1073,8 @@ const Perfil = () => {
       const arr = Array.isArray(data)
         ? data
         : Array.isArray(data?.sala_jugadores)
-        ? data.sala_jugadores
-        : [];
+          ? data.sala_jugadores
+          : [];
       setArraySalaJugadores(arr);
     } catch (e) {
       console.error('GET /sala_jugadores', e.response?.data?.error || e.message);
@@ -1182,14 +1436,23 @@ const Perfil = () => {
   const hasQuery = normalize(search) !== '';
 
   const getJugador = async (id) => {
+    const num = Number(id);
+
+    // 👇 filtro: nada de 0, negativos o NaN
+    if (!Number.isFinite(num) || num <= 0) {
+      console.warn('getJugador: id inválido', id);
+      return null;
+    }
+
     try {
-      const { data } = await axios.get(`${API_URL}/jugadores/${id}`);
+      const { data } = await axios.get(`${API_URL}/jugadores/${num}`);
       return data ?? null;
     } catch (e) {
       console.error('GET /jugadores/:id', e.response?.data?.error || e.message);
       return null;
     }
   };
+
 
   const getUsuario = async (id) => {
     try {
@@ -1318,6 +1581,7 @@ const Perfil = () => {
           getEstadisticas(),
           getRespuestas(),
           getFriendRequests(),
+          getAllUsers(), ,
         ]);
       } finally {
         if (!alive) return;
@@ -1485,8 +1749,8 @@ const Perfil = () => {
   // Jugadores que participaron en esa sala
   const jugadoresSalaActual = Array.isArray(arrayUsuariosJugadores)
     ? arrayUsuariosJugadores.filter(
-        (sj) => salaIdActual != null && Number(sj.sala_id) === Number(salaIdActual)
-      )
+      (sj) => salaIdActual != null && Number(sj.sala_id) === Number(salaIdActual)
+    )
     : [];
 
   // Contrincantes = todos menos el jugador logueado
@@ -1500,18 +1764,18 @@ const Perfil = () => {
   // Relación (si existe) entre YO y el contrincante
   const relacionConContrincante = contrincante
     ? amigos.find((a) => {
-        const miJid = Number(jugador_id);
-        const otroJid = Number(contrincante?.jugador?.id);
+      const miJid = Number(jugador_id);
+      const otroJid = Number(contrincante?.jugador?.id);
 
-        const jidA = Number(a.jugador_id);
-        const jidB = Number(a.amigo_id);
+      const jidA = Number(a.jugador_id);
+      const jidB = Number(a.amigo_id);
 
-        // ¿La relación es entre yo y el contrincante, en cualquier orden?
-        const esMismaPareja =
-          (jidA === miJid && jidB === otroJid) || (jidA === otroJid && jidB === miJid);
+      // ¿La relación es entre yo y el contrincante, en cualquier orden?
+      const esMismaPareja =
+        (jidA === miJid && jidB === otroJid) || (jidA === otroJid && jidB === miJid);
 
-        return esMismaPareja;
-      })
+      return esMismaPareja;
+    })
     : null;
 
   const esAmigo = !!relacionConContrincante && !!relacionConContrincante.aceptado_en;
@@ -1597,8 +1861,8 @@ const Perfil = () => {
               miJid === jidA
                 ? jidB // yo soy jugador_id → amigo es el otro
                 : miJid === jidB
-                ? jidA // yo soy amigo_id → jugador_id es el otro
-                : jidB; // fallback por las dudas
+                  ? jidA // yo soy amigo_id → jugador_id es el otro
+                  : jidB; // fallback por las dudas
 
             const jugador = await getJugador(otroJugadorId).catch((err) => {
               console.error('Error en getJugador(otroJugadorId):', otroJugadorId, err);
@@ -1679,7 +1943,7 @@ const Perfil = () => {
             <p>👤</p>
           ) : (
             <img
-              src={fotoUrl} // 👈 AHORA USA fotoUrl
+              src={resolveFotoAjena(fotoUrl)} // 👈 AHORA USA fotoUrl
               alt='Foto de perfil'
               className='w-32 h-32 rounded-full object-cover bg-white/20'
             />
@@ -2221,6 +2485,9 @@ const Perfil = () => {
               <b>{t('email')}:</b> {perfil.email}
             </p>
             <p>
+              <b>{t('country') || 'País'}:</b> {perfil.pais}
+            </p>
+            <p>
               <b>{t('pass')}:</b> ••••••
             </p>
             <button
@@ -2230,6 +2497,7 @@ const Perfil = () => {
                 setForm({
                   name: perfil.name || '',
                   email: perfil.email || '',
+                  pais: perfil.pais || '',
                   password: '',
                   confirmPassword: '',
                 });
@@ -2264,6 +2532,42 @@ const Perfil = () => {
               />
               {formErrors.email && <p className='text-red-500 text-sm'>{formErrors.email}</p>}
             </div>
+
+            <div>
+              <label className='block text-sm mb-1'>{t('country') || 'País'}</label>
+
+              <select
+                name='pais'
+                value={form.pais}
+                onChange={handleChange}
+                className='w-full px-3 py-2 rounded text-black bg-white/90 hover:bg-white'
+              >
+                <option value=''>
+                  { 'Seleccioná un país' || t('selectCountry')}
+                </option>
+                {paises.map((p) => (
+                  <option key={p.codigo} value={p.nombre}>
+                    {p.nombre}
+                  </option>
+                ))}
+              </select>
+
+              {loadingPaises && (
+                <p className='text-xs text-gray-300 mt-1'>
+                  {t('loadingCountries') || 'Cargando países...'}
+                </p>
+              )}
+              {errorPaises && (
+                <p className='text-xs text-red-400 mt-1'>
+                  {t('errorCountries') || 'No se pudieron cargar los países'}
+                </p>
+              )}
+
+              {formErrors.pais && (
+                <p className='text-red-500 text-sm'>{formErrors.pais}</p>
+              )}
+            </div>
+
 
             <div>
               <label className='block text-sm mb-1'>{t('pass')}</label>
@@ -2476,9 +2780,8 @@ const Perfil = () => {
                       type='button'
                       onClick={goPrev}
                       disabled={currentPage === 1}
-                      className={`px-3 py-1 rounded-lg bg-white/10 text-white disabled:opacity-50  hover:bg-white/20 ${
-                        currentPage === 1 ? 'cursor-not-allowed' : 'cursor-pointer'
-                      }`}
+                      className={`px-3 py-1 rounded-lg bg-white/10 text-white disabled:opacity-50  hover:bg-white/20 ${currentPage === 1 ? 'cursor-not-allowed' : 'cursor-pointer'
+                        }`}
                     >
                       ‹
                     </button>
@@ -2488,11 +2791,10 @@ const Perfil = () => {
                         key={p}
                         type='button'
                         onClick={() => goTo(p)}
-                        className={`px-3 py-1 rounded-lg ${
-                          p === currentPage
-                            ? 'bg-slate-800 cursor-not-allowed text-white'
-                            : 'bg-white/10 text-white cursor-pointer hover:bg-white/20'
-                        }`}
+                        className={`px-3 py-1 rounded-lg ${p === currentPage
+                          ? 'bg-slate-800 cursor-not-allowed text-white'
+                          : 'bg-white/10 text-white cursor-pointer hover:bg-white/20'
+                          }`}
                       >
                         {p}
                       </button>
@@ -2502,9 +2804,8 @@ const Perfil = () => {
                       type='button'
                       onClick={goNext}
                       disabled={currentPage === totalPages}
-                      className={`px-3 py-1 rounded-lg bg-white/10 text-white disabled:opacity-50 hover:bg-white/20 ${
-                        currentPage === totalPages ? 'cursor-not-allowed' : 'cursor-pointer'
-                      }`}
+                      className={`px-3 py-1 rounded-lg bg-white/10 text-white disabled:opacity-50 hover:bg-white/20 ${currentPage === totalPages ? 'cursor-not-allowed' : 'cursor-pointer'
+                        }`}
                     >
                       ›
                     </button>
@@ -2602,10 +2903,10 @@ const Perfil = () => {
                           partidaSeleccionada.modo === 'individual'
                             ? t('practice')
                             : partidaSeleccionada.empate
-                            ? t('draw')
-                            : partidaSeleccionada.posicion > 0
-                            ? t('won') // ganaste
-                            : t('youLoss') // perdiste
+                              ? t('draw')
+                              : partidaSeleccionada.posicion > 0
+                                ? t('won') // ganaste
+                                : t('youLoss') // perdiste
                         }
                       </p>
                       <p className='p-1'>
@@ -2656,7 +2957,7 @@ const Perfil = () => {
 
                                 return fotoContrincante ? (
                                   <img
-                                    src={fotoContrincante}
+                                    src={resolveFotoAjena(fotoContrincante)}
                                     alt={contrincante.usuario?.name ?? 'Contrincante'}
                                     className='w-16 h-16 object-cover'
                                   />
@@ -2692,21 +2993,20 @@ const Perfil = () => {
                               }
                               onClick={() => handleAgregarAmigo(contrincante)}
                               className={`ml-auto px-4 py-2 rounded-xl text-sm cursor-pointer
-                        ${
-                          esAmigo
-                            ? 'bg-green-700/70 text-white cursor-default'
-                            : pendienteConContrincante
-                            ? 'bg-yellow-600/80 text-white cursor-default'
-                            : 'bg-pink-600 hover:bg-pink-700 text-white disabled:opacity-60'
-                        }`}
+                        ${esAmigo
+                                  ? 'bg-green-700/70 text-white cursor-default'
+                                  : pendienteConContrincante
+                                    ? 'bg-yellow-600/80 text-white cursor-default'
+                                    : 'bg-pink-600 hover:bg-pink-700 text-white disabled:opacity-60'
+                                }`}
                             >
                               {esAmigo
                                 ? 'Amigos'
                                 : pendienteConContrincante
-                                ? 'Pendiente'
-                                : addingFriendId === contrincante.jugador?.id
-                                ? 'Agregando...'
-                                : 'Agregar amigo'}
+                                  ? 'Pendiente'
+                                  : addingFriendId === contrincante.jugador?.id
+                                    ? 'Agregando...'
+                                    : 'Agregar amigo'}
                             </button>
                           </div>
                         </div>
@@ -3048,7 +3348,7 @@ const Perfil = () => {
                       <div className='w-12 h-12 rounded-full overflow-hidden bg-black/30 flex items-center justify-center'>
                         {fotoOtro ? (
                           <img
-                            src={fotoOtro}
+                            src={resolveFotoAjena(fotoOtro)}
                             alt={usuario?.name ?? 'Jugador'}
                             className='w-12 h-12 object-cover'
                           />
@@ -3120,7 +3420,30 @@ const Perfil = () => {
       {/* ============================= Mis Amigos ================================================= */}
 
       <div className='mb-6 mt-4 bg-white/10 rounded-xl p-1'>
-        <h2 className='text-xl text-white font-semibold mb-1 mt-2 indent-2'>{t('friends')}</h2>
+        {/* Tabs encabezado */}
+        <div className='flex items-center gap-4 px-2 pt-2 border-b border-white/10'>
+          <button
+            type='button'
+            onClick={() => setActiveFriendsTab('friends')}
+            className={`text-lg font-semibold pb-2 border-b-2 transition-colors cursor-pointer ${activeFriendsTab === 'friends'
+              ? 'text-white border-purple-400'
+              : 'text-white/60 border-transparent hover:text-white'
+              }`}
+          >
+            {t('friends')}
+          </button>
+
+          <button
+            type='button'
+            onClick={() => setActiveFriendsTab('search')}
+            className={`text-lg font-semibold pb-2 border-b-2 transition-colors cursor-pointer ${activeFriendsTab === 'search'
+              ? 'text-white border-purple-400'
+              : 'text-white/60 border-transparent hover:text-white'
+              }`}
+          >
+            {'Buscar nuevo amigo' ?? t('searchNewFriend')}
+          </button>
+        </div>
 
         <div>
           <AnimatePresence>
@@ -3136,106 +3459,330 @@ const Perfil = () => {
               </motion.p>
             )}
           </AnimatePresence>
-
-          {filteredFriendsDetails.length > 0 ? (
+          {/* === TAB 1: MIS AMIGOS === */}
+          {activeFriendsTab === 'friends' && (
             <>
-              {/* Input de búsqueda */}
+              {filteredFriendsDetails.length > 0 ? (
+                <>
+                  {/* Input de búsqueda de amigos */}
+                  <div className='px-2 mb-2'>
+                    <input
+                      type='text'
+                      value={friendsSearch}
+                      onChange={(e) => setFriendsSearch(e.target.value)}
+                      placeholder='Buscar amigo por nombre...'
+                      className='w-full px-3 py-1.5 rounded-lg bg-black/30 text-white text-sm 
+                  border border-white/20 focus:outline-none focus:ring-1 focus:ring-purple-400'
+                    />
+                  </div>
+
+                  <div className='mb-2 p-0.5 space-y-2'>
+                    {/* {console.log("visibleFriends: ", visibleFriends)} */}
+                    {visibleFriends.map(({ amigo, jugador, usuario }) => (
+                      <div
+                        key={amigo.id}
+                        className='border rounded-xl p-4 bg-white/10 hover:bg-white/20 
+                    mb-2 flex items-center justify-between gap-4 cursor-pointer'
+                        onClick={() =>
+                          setSelectedPerson({
+                            name: usuario?.name ?? '—',
+                            email: usuario?.email ?? '—',
+                            pais: usuario?.pais ?? '—',
+                            puntaje: jugador?.puntaje ?? usuario?.puntaje ?? '—',
+                            foto: usuario?.foto_perfil ? resolveFotoAjena(usuario.foto_perfil) : null,
+                          })
+                        }
+                      >
+                        <div className='flex items-center gap-3'>
+                          <div className='w-12 h-12 rounded-full overflow-hidden bg-black/30 flex items-center justify-center flex-shrink-0'>
+                            {(() => {
+                              const fotoAmigo = usuario?.foto_perfil
+                                ? resolveFotoAjena(usuario.foto_perfil)
+                                : null;
+
+                              return fotoAmigo ? (
+                                <img
+                                  src={resolveFotoAjena(fotoAmigo)}
+                                  alt={usuario?.name ?? 'Amigo'}
+                                  className='w-12 h-12 object-cover'
+                                />
+                              ) : (
+                                <span className='text-2xl'>👤</span>
+                              );
+                            })()}
+                          </div>
+                          <div className='flex flex-col'>
+                            <span className='font-semibold text-white'>{usuario?.name ?? '—'}</span>
+                            <span className='text-sm text-purple-200'>{usuario?.email ?? '—'}</span>
+                            <span className='text-xs text-purple-200'>
+                              País: {usuario?.pais ?? '—'}
+                            </span>
+                            <span className='text-xs text-yellow-300'>
+                              Puntaje: {jugador?.puntaje ?? '—'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <motion.button
+                          type='button'
+                          className='bg-red-500 hover:bg-red-600 rounded w-32 cursor-pointer 
+                      justify-self-end text-white py-1.5'
+                          whileTap={{ scale: 1.1 }}
+                          onClick={(e) => {
+                            e.stopPropagation(); // 👈 no abre el modal
+                            setConfirmDelete({
+                              open: true,
+                              amigoId: amigo.id,
+                              nombre: usuario?.name ?? 'este amigo',
+                            });
+                          }}
+                        >
+                          {t('deleteFriend')}
+                        </motion.button>
+                      </div>
+                    ))}
+                  </div>
+
+                  {totalFriendsPages > 1 && (
+                    <div className='flex items-center justify-end gap-2 px-2 pb-2 text-sm text-white'>
+                      <button
+                        type='button'
+                        onClick={() => setFriendsPage((p) => Math.max(1, p - 1))}
+                        disabled={friendsPage === 1}
+                        className='px-2 py-1 rounded bg-white/10 disabled:opacity-40'
+                      >
+                        « Anterior
+                      </button>
+                      <span>
+                        Página {friendsPage} de {totalFriendsPages}
+                      </span>
+                      <button
+                        type='button'
+                        onClick={() => setFriendsPage((p) => Math.min(totalFriendsPages, p + 1))}
+                        disabled={friendsPage === totalFriendsPages}
+                        className='px-2 py-1 rounded bg-white/10 disabled:opacity-40'
+                      >
+                        Siguiente »
+                      </button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className='indent-2 text-white mb-4'>
+                  {friendsDetails.length === 0
+                    ? t('noHaveFriend')
+                    : 'No se encontraron amigos con ese nombre.'}
+                </p>
+              )}
+            </>
+          )}
+
+          {/* === TAB 2: BUSCAR NUEVO AMIGO === */}
+          {activeFriendsTab === 'search' && (
+            <>
+              {/* Input de búsqueda de nuevos amigos */}
               <div className='px-2 mb-2'>
                 <input
                   type='text'
-                  value={friendsSearch}
-                  onChange={(e) => setFriendsSearch(e.target.value)}
-                  placeholder='Buscar amigo por nombre...'
+                  value={newFriendSearch}
+                  onChange={(e) => setNewFriendSearch(e.target.value)}
+                  placeholder='Buscar usuario por nombre...'
                   className='w-full px-3 py-1.5 rounded-lg bg-black/30 text-white text-sm 
-                border border-white/20 focus:outline-none focus:ring-1 focus:ring-purple-400'
+              border border-white/20 focus:outline-none focus:ring-1 focus:ring-purple-400'
                 />
               </div>
 
               <div className='mb-2 p-0.5 space-y-2'>
-                {visibleFriends.map(({ amigo, usuario }) => (
-                  <div
-                    key={amigo.id}
-                    className='border rounded-xl p-4 bg-white/10 hover:bg-white/20 
-                      mb-2 flex items-center justify-between gap-4'
-                  >
-                    <div className='flex items-center gap-3'>
-                      <div className='w-12 h-12 rounded-full overflow-hidden bg-black/30 flex items-center justify-center'>
-                        {(() => {
-                          const fotoAmigo = usuario?.foto_perfil
-                            ? resolveFotoAjena(usuario.foto_perfil)
-                            : null;
+                {visibleNewFriends.length === 0 ? (
+                  <p className='indent-2 text-white mb-4'>
+                    {newFriendSearch.trim()
+                      ? 'No se encontraron usuarios que coincidan con la búsqueda.'
+                      : 'Escribí un nombre para buscar nuevos amigos.'}
+                  </p>
+                ) : (
+                  visibleNewFriends.map((usuario) => {
+                    const relacion = getRelacionConUsuario(usuario); // 'amigo' | 'pendiente' | 'ninguna'
 
-                          return fotoAmigo ? (
-                            <img
-                              src={fotoAmigo}
-                              alt={usuario?.name ?? 'Amigo'}
-                              className='w-12 h-12 object-cover'
-                            />
-                          ) : (
-                            <span className='text-2xl'>👤</span>
-                          );
-                        })()}
-                      </div>
-                      <div className='flex flex-col'>
-                        <span className='font-semibold text-white'>{usuario?.name ?? '—'}</span>
-                        <span className='text-sm text-purple-200'>{usuario?.email ?? '—'}</span>
-                        <span className='text-xs text-purple-200'>
-                          {/* Puntaje: {usuario?.puntaje ?? '—'} ·*/} País: {usuario?.pais ?? '—'}
-                        </span>
-                      </div>
-                    </div>
+                    const jugadorAsociado =
+                      jugadoresPorId[Number(usuario.jugador_id)] ?? null;
 
-                    <motion.button
-                      type='button'
-                      className='bg-red-500 hover:bg-red-600 rounded w-32 cursor-pointer 
-                        justify-self-end text-white py-1.5'
-                      whileTap={{ scale: 1.1 }}
-                      onClick={() =>
-                        setConfirmDelete({
-                          open: true,
-                          amigoId: amigo.id,
-                          nombre: usuario?.name ?? 'este amigo',
-                        })
-                      }
-                    >
-                      {t('deleteFriend')}
-                    </motion.button>
-                  </div>
-                ))}
+                    const puntajeUsuario =
+                      jugadorAsociado?.puntaje ?? usuario?.puntaje ?? '—';
+
+                    return (
+                      <div
+                        key={usuario.id}
+                        className='border rounded-xl p-4 bg-white/10 hover:bg-white/20 
+                        mb-2 flex items-center justify-between gap-4 cursor-pointer'
+                        onClick={() =>
+                          setSelectedPerson({
+                            name: usuario?.name ?? '—',
+                            email: usuario?.email ?? '—',
+                            pais: usuario?.pais ?? '—',
+                            puntaje: puntajeUsuario,
+                            foto: usuario?.foto_perfil ? resolveFotoAjena(usuario.foto_perfil) : null,
+                          })
+                        }
+                      >
+                        <div className='flex items-center gap-3'>
+                          <div className='w-12 h-12 rounded-full overflow-hidden bg-black/30 flex items-center justify-center flex-shrink-0'>
+                            {(() => {
+                              const fotoUser = usuario?.foto_perfil
+                                ? resolveFotoAjena(usuario.foto_perfil)
+                                : null;
+
+                              return fotoUser ? (
+                                <img
+                                  src={resolveFotoAjena(fotoUser)}
+                                  alt={usuario?.name ?? 'Usuario'}
+                                  className='w-12 h-12 object-cover'
+                                />
+                              ) : (
+                                <span className='text-2xl'>👤</span>
+                              );
+                            })()}
+                          </div>
+                          <div className='flex flex-col'>
+                            <span className='font-semibold text-white'>{usuario?.name ?? '—'}</span>
+                            <span className='text-sm text-purple-200'>{usuario?.email ?? '—'}</span>
+                            <span className='text-xs text-purple-200'>
+                              País: {usuario?.pais ?? '—'}
+                            </span>
+                            <span className='text-xs text-yellow-300'>
+                              Puntaje: {puntajeUsuario}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Estado de relación / botón */}
+                        <div className='flex items-center'>
+                          {relacion === 'amigo' && (
+                            <span className='text-lg font-semibold px-3 py-1 rounded-full 
+                          bg-fuchsia-900/70 text-fuchsia-200'>
+                              Amigos
+                            </span>
+                          )}
+
+                          {relacion === 'pendiente' && (
+                            <span className='text-xs font-semibold px-3 py-1 rounded-full 
+                          bg-yellow-500/20 text-yellow-300'>
+                              Pendiente
+                            </span>
+                          )}
+
+                          {relacion === 'ninguna' && (
+                            <button
+                              type='button'
+                              className='bg-green-600 hover:bg-green-700 rounded w-36 cursor-pointer 
+                              justify-self-end text-white py-1.5 text-sm disabled:opacity-60'
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAgregarAmigoDesdeUsuario(usuario);
+                              }}
+                              disabled={addingFriendId === Number(usuario.jugador_id)}
+                            >
+                              {addingFriendId === Number(usuario.jugador_id)
+                                ? 'Enviando...'
+                                : 'Agregar amigo' ?? (t('addFriend'))}
+                            </button>
+                          )}
+                        </div>
+
+                      </div>
+                    );
+                  })
+                )}
               </div>
 
-              {totalFriendsPages > 1 && (
+              {totalNewFriendsPages > 1 && (
                 <div className='flex items-center justify-end gap-2 px-2 pb-2 text-sm text-white'>
                   <button
                     type='button'
-                    onClick={() => setFriendsPage((p) => Math.max(1, p - 1))}
-                    disabled={friendsPage === 1}
-                    className='px-2 py-1 rounded bg-white/10 disabled:opacity-40'
+                    onClick={() => setNewFriendsPage((p) => Math.max(1, p - 1))}
+                    disabled={newFriendsPage === 1}
+                    className='px-2 py-1 rounded bg-white/10 disabled:opacity-40 cursor-pointer'
                   >
                     « Anterior
                   </button>
                   <span>
-                    Página {friendsPage} de {totalFriendsPages}
+                    Página {newFriendsPage} de {totalNewFriendsPages}
                   </span>
                   <button
                     type='button'
-                    onClick={() => setFriendsPage((p) => Math.min(totalFriendsPages, p + 1))}
-                    disabled={friendsPage === totalFriendsPages}
-                    className='px-2 py-1 rounded bg-white/10 disabled:opacity-40'
+                    onClick={() => setNewFriendsPage((p) => Math.min(totalNewFriendsPages, p + 1))}
+                    disabled={newFriendsPage === totalNewFriendsPages}
+                    className='px-2 py-1 rounded bg-white/10 disabled:opacity-40 cursor-pointer'
                   >
                     Siguiente »
                   </button>
                 </div>
               )}
             </>
-          ) : (
-            <p className='indent-2 text-white mb-4'>
-              {friendsDetails.length === 0
-                ? t('noHaveFriend')
-                : 'No se encontraron amigos con ese nombre.'}
-            </p>
           )}
         </div>
+
+        <AnimatePresence>
+          {selectedPerson && (
+            <motion.div
+              key='modal-persona'
+              className='fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center'
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0, y: 10 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, y: 10 }}
+                className='bg-slate-900/95 border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl'
+              >
+                <h3 className='text-xl font-semibold text-white mb-4'>
+                  {t('playerDetail') ?? 'Detalle del jugador'}
+                </h3>
+
+                <div className='flex items-center gap-4 mb-4'>
+                  <div className='w-40 h-40 rounded-full overflow-hidden bg-black/40 flex items-center justify-center'>
+                    {selectedPerson.foto ? (
+                      <img
+                        src={resolveFotoAjena(selectedPerson.foto)}
+                        alt={selectedPerson.name}
+                        className='w-full h-full object-cover'
+                      />
+                    ) : (
+                      <span className='text-6xl'>👤</span>
+                    )}
+                  </div>
+
+                  <div className='flex flex-col text-lg text-slate-100'>
+                    <p>
+                      <span className='font-semibold'>Nombre:</span> {selectedPerson.name}
+                    </p>
+                    <p>
+                      <span className='font-semibold'>País:</span> {selectedPerson.pais}
+                    </p>
+                    <p>
+                      <span className='font-semibold'>Puntaje:</span> {selectedPerson.puntaje ?? '—'}
+                    </p>
+                    <p>
+                      <span className='font-semibold'>Email:</span> {selectedPerson.email}
+                    </p>
+                  </div>
+
+                </div>
+                <div className='mt-6 flex justify-end'>
+                  <button
+                    type='button'
+                    className='px-4 py-2 rounded-lg bg-slate-600 text-white hover:bg-slate-500 cursor-pointer'
+                    onClick={() => setSelectedPerson(null)}
+                  >
+                    {'Cerrar' ?? t('close')}
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
 
         <AnimatePresence>
           {confirmDelete.open && (
@@ -3302,6 +3849,8 @@ const Perfil = () => {
             </motion.div>
           )}
         </AnimatePresence>
+
+
       </div>
     </div>
   );

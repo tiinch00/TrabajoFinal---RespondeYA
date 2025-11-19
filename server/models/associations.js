@@ -46,12 +46,14 @@ Opcion.belongsTo(Administrador, { foreignKey: 'admin_id' });
 // USER HERENCIA - Jugador - 1:1
 User.hasOne(Jugador, {
   foreignKey: 'user_id',
+  as: 'jugador',          // 👈 alias CONSISTENTE con el include
   onUpdate: 'CASCADE',
   onDelete: 'CASCADE',
 });
 
 Jugador.belongsTo(User, {
   foreignKey: 'user_id',
+  as: 'user',             // 👈 alias para el lado inverso
 });
 
 //USER - Password

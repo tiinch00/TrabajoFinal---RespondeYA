@@ -1,4 +1,5 @@
-import { User } from '../models/associations.js';
+import { Jugador, User } from '../models/associations.js';
+
 import { fileURLToPath } from "node:url";
 import fs from "node:fs/promises";
 import path from "path";
@@ -12,7 +13,16 @@ const deleteSafe = async (absPath) => {
 
 const index = async (req, res) => {
   try {
-    const users = await User.findAll();
+    const users = await User.findAll({
+      attributes: { exclude: ['password'] },
+      include: [
+        {
+          model: Jugador,
+          as: 'jugador',                 // 👈 ahora coincide con la asociación
+          attributes: ['jugador_id', 'puntaje'], // 👈 nombre real de la PK
+        },
+      ],
+    });
     res.json(users);
   } catch (error) {
     console.error(error);
@@ -71,29 +81,33 @@ const store = async (req, res) => {
     return res.status(500).send('Internal server error');
   }
 };
+
 const update = async (req, res) => {
   const { id } = req.params;
-  const { name, email, password } = req.body;
-  if (!name || !email) {
-    return res.status(400).json({ error: 'Name y email son requeridos' });
+  const { name, email, password, pais } = req.body;
+
+  if (!name || !email || !pais) {
+    return res.status(400).json({ error: 'Name, email y pais son requeridos' });
   }
+
   try {
     const user = await User.findByPk(id);
     if (!user) {
       return res.status(404).send('User not found');
     }
 
-    const payload = { name, email };
+    const payload = { name, email, pais };
+
     if (typeof password === 'string' && password.trim()) {
       payload.password = password.trim();
     }
 
     await user.update(payload);
+
     const { password: _pw, ...safe } = user.toJSON();
     res.json(safe);
   } catch (error) {
     if (error.name === 'SequelizeUniqueConstraintError') {
-      // armamos un objeto con errores por campo
       const fieldErrors = {};
 
       (error.errors || []).forEach((e) => {
@@ -105,7 +119,6 @@ const update = async (req, res) => {
         }
       });
 
-      // si por alguna razón no detecta campo, mandamos algo genérico
       if (!Object.keys(fieldErrors).length) {
         return res
           .status(400)
@@ -122,6 +135,7 @@ const update = async (req, res) => {
     return res.status(500).send('Internal server error');
   }
 };
+
 
 const destroy = async (req, res) => {
   const { id } = req.params;

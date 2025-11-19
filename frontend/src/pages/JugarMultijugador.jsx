@@ -11,11 +11,16 @@ import ficeSeconds from '/sounds/fiveSeconds.mp3';
 import finalDeJuego from '/sounds/finalDeJuego.wav';
 import i18n from 'i18next';
 import incorrecta from '/sounds/incorrecta.wav';
-import musicaPreguntas from '/sounds/musicaPreguntasEdit.mp3';
 import { resolveFotoAjena } from '../utils/resolveFotoAjena.js';
 import { useGame } from '../context/ContextJuego.jsx';
 import useSound from 'use-sound';
 import { useTranslation } from 'react-i18next';
+
+//import musicaPreguntas from '/sounds/musicaPreguntasEdit.mp3';
+
+
+
+
 
 function formatearTimestampParaMySQL(timestampEnMilisegundos) {
   const MS_3HS = 3 * 60 * 60 * 1000;

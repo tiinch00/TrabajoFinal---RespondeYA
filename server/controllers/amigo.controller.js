@@ -41,27 +41,30 @@ const show = async (req, res) => {
 
 
 const store = async (req, res) => {
-  const { jugador_id, amigo_id, aceptado_en } = req.body;
+  let { jugador_id, amigo_id, aceptado_en } = req.body;
 
-  if (!jugador_id || !amigo_id) {
+  const jId = Number(jugador_id);
+  const aId = Number(amigo_id);
+
+  if (!Number.isFinite(jId) || jId <= 0 || !Number.isFinite(aId) || aId <= 0) {
     return res.status(400).json({ error: "jugador_id and amigo_id are required" });
   }
-  if (jugador_id === amigo_id) {
+  if (jId === aId) {
     return res.status(400).json({ error: "jugador_id and amigo_id cannot be the same" });
   }
 
   try {
-    const jugador = await Jugador.findByPk(jugador_id); // dueño de la lista
-    const amigoUsuario = await User.findByPk(amigo_id); // usuario al que agrego
+    const jugador = await Jugador.findByPk(jId);
+    const amigoJugador = await Jugador.findByPk(aId);
 
-    if (!jugador || !amigoUsuario) {
+    if (!jugador || !amigoJugador) {
       return res.status(400).json({ error: "Invalid jugador_id or amigo_id" });
     }
 
     const nuevoAmigo = await Amigo.create({
-      jugador_id,
-      amigo_id,
-      aceptado_en: aceptado_en || null,     // 👈 null = pendiente
+      jugador_id: jId,
+      amigo_id: aId,
+      aceptado_en: aceptado_en || null,
     });
 
     return res.status(201).json(nuevoAmigo);
