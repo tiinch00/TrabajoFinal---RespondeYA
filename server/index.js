@@ -139,7 +139,16 @@ const bootstrap = async () => {
     //await sequelize.sync({ alter: true });
     console.log('✅ DB conectada y tablas sincronizadas');
     console.log('🔊 Levantando API en puerto:', PORT);
-    server.listen(PORT, () => console.log(`🚀 API en http://localhost:${PORT}`));
+    //server.listen(PORT, () => console.log(`🚀 API en http://localhost:${PORT}`));
+    /*
+    La ruta /test-db funciona perfecto ✅
+    Tu API se conecta a la misma RDS y a la base respondeya ✅
+    Sequelize ve la tabla test_backend, así que la conexión a la DB está bien ✅
+    O sea: lo de “Table 'respondeya.users' doesn't exist” ya no es un problema de conexión, sino que eran errores viejos en el log. Ahora estamos bien con la base
+    */
+    server.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 API escuchando en 0.0.0.0:${PORT}`);
+    });
   } catch (e) {
     console.error('❌ Error de arranque:', e);
     process.exit(1);
