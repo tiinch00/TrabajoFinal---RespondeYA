@@ -21,7 +21,8 @@ const index = async (req, res) => {
           model: Jugador, // Sala.belongsToMany(Jugador)
           include: [
             {
-              model: User,        // Jugador.belongsTo(User)
+              model: User,            // Jugador.belongsTo(User)
+              as: 'user',             // 👈 IMPORTANTE: mismo alias que en associations.js
               attributes: ['id', 'name', 'pais', 'foto_perfil'],
             },
           ],

@@ -5,22 +5,22 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import cine from '/sounds/cine.mp3';
 import confetti from 'canvas-confetti';
+import conocimientoGeneral from '/sounds/conocimientoGeneral.mp3';
 import correcta from '/sounds/correcta.wav';
-import ficeSeconds from '/sounds/fiveSeconds.mp3';
 import finalDeJuego from '/sounds/finalDeJuego.wav';
+import fiveSeconds from '/sounds/fiveSeconds.mp3';
+import geografia from '/sounds/geografia.mp3';
+import historia from '/sounds/historia.mp3';
 import i18n from 'i18next';
 import incorrecta from '/sounds/incorrecta.wav';
+import informatica from '/sounds/informatica.mp3';
+import musicaPreguntasDefault from '/sounds/musicaPreguntasDefault.mp3';
 import { resolveFotoAjena } from '../utils/resolveFotoAjena.js';
 import { useGame } from '../context/ContextJuego.jsx';
 import useSound from 'use-sound';
 import { useTranslation } from 'react-i18next';
-
-//import musicaPreguntas from '/sounds/musicaPreguntasEdit.mp3';
-
-
-
-
 
 function formatearTimestampParaMySQL(timestampEnMilisegundos) {
   const MS_3HS = 3 * 60 * 60 * 1000;
@@ -103,11 +103,19 @@ export default function JugarMultijugador() {
     typeof p === 'string' && p.startsWith('http') ? p : `${API_URL}${p || '/uploads/default.png'}`;
 
   // sonidos
-  const [playCorrect] = useSound(correcta, { volume: 0.6 });
-  const [playWrong] = useSound(incorrecta, { volume: 0.6 });
-  const [playTimeout] = useSound(finalDeJuego, { volume: 0.7 });
-  const [fiveSeconds, { stop: stopFiveSeconds }] = useSound(ficeSeconds, { volume: 0.7 });
-  const [playing, { stop }] = useSound(musicaPreguntas, { volume: 0.2, loop: true });
+  const [playCorrect] = useSound(correcta, { volume: 0.3 });
+  const [playWrong] = useSound(incorrecta, { volume: 0.3 });
+  const [playTimeout] = useSound(finalDeJuego, { volume: 0.5 });
+  const [fiveSecondsSound, { stop: stopFiveSeconds }] = useSound(fiveSeconds, { volume: 0.4 });
+  // MÚSICA DE FONDO POR CATEGORÍA
+  const [playing, { stop }] = useSound(musicaPreguntasDefault, { volume: 0.5 });
+  const [playingCine, { stop: cineStop }] = useSound(cine, { volume: 0.7 });
+  const [playingHistoria, { stop: historiaStop }] = useSound(historia, { volume: 0.3 });
+  const [playingGeografia, { stop: geografiaStop }] = useSound(geografia, { volume: 0.4 });
+  const [playingInformatica, { stop: informaticaStop }] = useSound(informatica, { volume: 0.4 });
+  const [playingConocimiento, { stop: conocimientoStop }] = useSound(conocimientoGeneral, {
+    volume: 0.5,
+  });
 
   // estado del juego
   const [config, setConfig] = useState(null); // {categoria, dificultad, tiempo}
@@ -156,6 +164,7 @@ export default function JugarMultijugador() {
 
   const [ganador, setGanador] = useState(null);
   const [perdedor, setPerdedor] = useState(null);
+  const [esperandoResultado, setEsperandoResultado] = useState(false);
 
   // === NUEVO: socket y buffer de respuestas por jugador ===
   const socketRef = useRef(null);
@@ -181,10 +190,23 @@ export default function JugarMultijugador() {
   useEffect(() => {
     return () => {
       stop();
+      cineStop();
+      historiaStop();
+      geografiaStop();
+      informaticaStop();
+      conocimientoStop();
       stopFiveSeconds();
-      if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [stop, stopFiveSeconds]);
+  }, [
+    stop,
+    cineStop,
+    historiaStop,
+    geografiaStop,
+    informaticaStop,
+    conocimientoStop,
+    stopFiveSeconds,
+  ]);
+
 
   // === NEW: identificar al usuario actual (desde localStorage) ===
   const currentUserId = (() => {
@@ -210,23 +232,11 @@ export default function JugarMultijugador() {
       if (ls?.categoria && ls?.dificultad && ls?.tiempo) {
         setConfig(ls);
       }
-    } catch {}
+    } catch { }
   }, [config, location.state]);
 
   //console.log("config: ", config);
 
-  const actualizarPuntajeJugadorEstadisticas = async (jugador, configuracion) => {
-    try {
-      const jugador_id = jugador.jugador_id;
-
-      await axios.put(`${API_URL}/jugadores/updatePuntajeEstadistica/${jugador_id}`, {
-        puntaje: jugador.puntaje_total,
-        partida_id: configuracion.partida_id,
-      });
-    } catch (error) {
-      console.log('@@@@ Error PUT /jugadores/updatePuntajeEstadistica\n', error);
-    }
-  };
 
   // 2) Función pura que devuelve [ganador, perdedor] como objetos
   function getGanadorYPerdedor(creador, invitado, statsCreador, statsInvitado) {
@@ -283,14 +293,7 @@ export default function JugarMultijugador() {
   async function finalizarPartida(creador, invitado, statsCreador, statsInvitado, config) {
     const [ganador, perdedor] = getGanadorYPerdedor(creador, invitado, statsCreador, statsInvitado);
 
-    if (ganador && perdedor) {
-      await Promise.all([
-        actualizarPuntajeJugadorEstadisticas(ganador, config),
-        actualizarPuntajeJugadorEstadisticas(perdedor, config),
-      ]);
-    }
-
-    // acá devolvés al front, o hacés emit, lo que toque:
+    // ⛔ ya no tocamos BD acá, solo devolvemos para UI
     return { ganador, perdedor };
   }
 
@@ -359,6 +362,15 @@ export default function JugarMultijugador() {
   const creador = ordenados[0] || null;
   const invitado = ordenados[1] || null;
 
+  // 👇 NUEVO: quién soy yo en esta partida
+  const jugadorActual = (() => {
+    if (creador?.userId === currentUserId) return creador;
+    if (invitado?.userId === currentUserId) return invitado;
+    return null;
+  })();
+
+  const jugadorActualId = jugadorActual ? Number(jugadorActual.jugador_id) : null;
+
   // === NEW: Máximo 2 jugadores. Si el actual NO está entre los 2, redirige a SalaPartidas ===
   useEffect(() => {
     if (!Array.isArray(jugadores) || jugadores.length === 0) return;
@@ -425,7 +437,7 @@ export default function JugarMultijugador() {
     let ultimaCfg = null;
     try {
       ultimaCfg = JSON.parse(localStorage.getItem('ultima_config_multijugador') || 'null');
-    } catch {}
+    } catch { }
 
     // 1) Tomo el partida_id de la config efectiva que vas a enviar
     const cfgEfectiva = ultimaCfg || config;
@@ -492,21 +504,62 @@ export default function JugarMultijugador() {
   }, [creador, invitado, config, salaId, preguntas]);
 
   // 3) Contador inicial + música
+  // 3) Contador inicial + música por categoría
   useEffect(() => {
     if (!mostrarContador) return;
+
     if (contadorInicial > 0) {
-      if (contadorInicial === 3) fiveSeconds();
+      if (contadorInicial === 3) {
+        // sonido de "prepárate"
+        fiveSecondsSound();
+      }
+
       const t = setTimeout(() => setContadorInicial((v) => v - 1), 1000);
       return () => clearTimeout(t);
     }
+
+    // cuando llega a 0 y aún no arrancó el juego
     if (!juegoIniciado && !juegoTerminado) {
       setJuegoIniciado(true);
+      setTiempoRestante(tiempoPorPregunta(config?.tiempo));
+
       if (!musicStartedRef.current) {
-        playing();
+        const cat = String(config?.categoria || '').toLowerCase();
+
+        if (cat === 'cine' || cat === 'cinema') {
+          playingCine();
+        } else if (cat === 'historia' || cat === 'history') {
+          playingHistoria();
+        } else if (cat === 'geografía' || cat === 'geografia' || cat === 'geografhy') {
+          playingGeografia();
+        } else if (cat === 'informatica' || cat === 'informatic') {
+          playingInformatica();
+        } else if (cat === 'conocimiento general' || cat === 'general knowledge') {
+          playingConocimiento();
+        } else {
+          // default si no matchea ninguna
+          playing();
+        }
+
         musicStartedRef.current = true;
       }
     }
-  }, [mostrarContador, contadorInicial, juegoIniciado, juegoTerminado, playing, fiveSeconds]);
+  }, [
+    mostrarContador,
+    contadorInicial,
+    juegoIniciado,
+    juegoTerminado,
+    config?.categoria,
+    config?.tiempo,
+    fiveSecondsSound,
+    playing,
+    playingCine,
+    playingHistoria,
+    playingGeografia,
+    playingInformatica,
+    playingConocimiento,
+  ]);
+
 
   // 4) Cronómetro por pregunta
   useEffect(() => {
@@ -537,6 +590,11 @@ export default function JugarMultijugador() {
 
   // 5) Guardar respuesta y avanzar
   const handleGuardarRespuesta = (opcion) => {
+    // ⛔ Evitar doble ejecución (timer + click) o después de terminar
+    if (cronometroPausado || juegoTerminado || respuestaSeleccionada) {
+      return;
+    }
+
     setCronometroPausado(true);
     const elapsedMs = Math.max(
       1,
@@ -601,13 +659,27 @@ export default function JugarMultijugador() {
     }, 3000);
   };
 
+
   // 6) Stop música al terminar
   useEffect(() => {
     if (juegoTerminado) {
       stop();
+      historiaStop();
+      cineStop();
+      geografiaStop();
+      informaticaStop();
+      conocimientoStop();
       musicStartedRef.current = false;
     }
-  }, [juegoTerminado, stop]);
+  }, [
+    juegoTerminado,
+    stop,
+    cineStop,
+    historiaStop,
+    geografiaStop,
+    informaticaStop,
+    conocimientoStop,
+  ]);
 
   // mostrar todas las respuestas despues de jugar y este terminado
   useEffect(() => {
@@ -619,8 +691,8 @@ export default function JugarMultijugador() {
       creador?.userId === myId
         ? invitado?.userId
         : invitado?.userId === myId
-        ? creador?.userId
-        : null;
+          ? creador?.userId
+          : null;
 
     //console.log('▶︎ Respuestas del jugador actual:', respuestas);
 
@@ -668,9 +740,9 @@ export default function JugarMultijugador() {
 
   const [partidaCompleta, setPartidaCompleta] = useState(null);
   // === NUEVO: al terminar la partida, armo las 20 respuestas (2 jugadores x 10 preguntas), calculo ganador y envío ===
+  // === NUEVO: al terminar la partida, SOLO el último jugador guarda en BD ===
   useEffect(() => {
     if (!juegoTerminado) {
-      // por si en algún momento permitís jugar otra partida en la misma pantalla
       finPartidaProcesadaRef.current = false;
       return;
     }
@@ -679,6 +751,7 @@ export default function JugarMultijugador() {
     if (!Array.isArray(preguntas) || preguntas.length === 0) return;
     if (!Array.isArray(respuestas) || respuestas.length === 0) return;
     if (!socketRef.current) return;
+    if (!jugadorActualId) return; // 👈 necesitamos saber quién soy
 
     const top2 = [creador, invitado].filter(Boolean);
     if (top2.length !== 2) return;
@@ -760,107 +833,74 @@ export default function JugarMultijugador() {
       });
     };
 
-    // calculo respuestas y stats para ambos jugadores (esto lo pueden hacer los dos clientes)
-    const respuestasCreador = buildRespuestasPara(creador);
-    const respuestasInvitado = buildRespuestasPara(invitado);
+    // 👉 primero le aviso al server "yo terminé"
+    socketRef.current.emit(
+      'jugador_termino',
+      { salaId, jugador_id: jugadorActualId },
+      (resp) => {
+        if (!resp?.ok) {
+          console.log('Error en jugador_termino:', resp?.error);
+          return;
+        }
 
-    const statsCreador = buildStats(respuestasCreador);
-    const statsInvitado = buildStats(respuestasInvitado);
+        // si NO soy el último -> solo muestro "esperando" y no calculo nada
+        if (!resp.esUltimo) {
+          setEsperandoResultado(true);
+          return;
+        }
 
-    // 👉 si soy el CREADOR, hago TODO (BD + socket + podio)
-    if (creador && creador.userId === currentUserId) {
-      // evitar duplicar en este cliente
-      if (finPartidaProcesadaRef.current) return;
-      finPartidaProcesadaRef.current = true;
+        // 👇 SOY EL ÚLTIMO → recién acá proceso todo y guardo en BD
+        if (finPartidaProcesadaRef.current) return;
+        finPartidaProcesadaRef.current = true;
+        setEsperandoResultado(false);
 
-      (async () => {
-        const { ganador, perdedor } = await finalizarPartida(
-          creador,
-          invitado,
-          statsCreador,
-          statsInvitado,
-          config
-        );
+        const respuestasCreador = buildRespuestasPara(creador);
+        const respuestasInvitado = buildRespuestasPara(invitado);
 
-        setGanador(ganador);
-        setPerdedor(perdedor);
+        const statsCreador = buildStats(respuestasCreador);
+        const statsInvitado = buildStats(respuestasInvitado);
 
-        const jugadorIdGanador = ganador ? Number(ganador.jugador_id) : null;
+        (async () => {
+          // ⚠️ ya no usamos finalizarPartida para setear ganador/perdedor
+          const respuestasCreador = buildRespuestasPara(creador);
+          const respuestasInvitado = buildRespuestasPara(invitado);
 
-        setJugadorIdGanador(jugadorIdGanador);
+          const statsCreador = buildStats(respuestasCreador);
+          const statsInvitado = buildStats(respuestasInvitado);
 
-        const payload = {
-          salaId,
-          partida_id: Number(config.partida_id),
-          dificultad: String(config?.dificultad || ''),
-          tiempo: String(config?.tiempo || ''),
-          respuestas: [...respuestasCreador, ...respuestasInvitado],
-          resumen: {
-            jugadores: [
-              {
-                jugador_id: Number(creador.jugador_id),
-                ...statsCreador,
-                ganador: ganador?.jugador_id === creador.jugador_id ? 1 : 0,
-              },
-              {
-                jugador_id: Number(invitado.jugador_id),
-                ...statsInvitado,
-                ganador: ganador?.jugador_id === invitado.jugador_id ? 1 : 0,
-              },
-            ],
-            ganador_jugador_id: jugadorIdGanador,
-            ended_at: formatearTimestampParaMySQL(Date.now()),
-          },
-        };
-
-        setPartidaCompleta(payload);
-
-        socketRef.current.emit('guardar_respuestas', payload, (ack) => {
-          console.log('guardar_respuestas → ack:', ack);
-        });
-      })();
-    } else {
-      // 👉 si soy el INVITADO, SOLO calculo ganador/perdedor
-      const [ganadorLocal, perdedorLocal] = getGanadorYPerdedor(
-        creador,
-        invitado,
-        statsCreador,
-        statsInvitado
-      );
-
-      setGanador(ganadorLocal);
-      setPerdedor(perdedorLocal);
-
-      const jugadorIdGanador = ganadorLocal ? Number(ganadorLocal.jugador_id) : null;
-      setJugadorIdGanador(jugadorIdGanador);
-
-      // opcional: también podés armar partidaCompleta local
-      const payload = {
-        salaId,
-        partida_id: Number(config.partida_id),
-        dificultad: String(config?.dificultad || ''),
-        tiempo: String(config?.tiempo || ''),
-        respuestas: [...respuestasCreador, ...respuestasInvitado],
-        resumen: {
-          jugadores: [
-            {
-              jugador_id: Number(creador.jugador_id),
-              ...statsCreador,
-              ganador: ganadorLocal?.jugador_id === creador.jugador_id ? 1 : 0,
+          const payload = {
+            salaId,
+            partida_id: Number(config.partida_id),
+            dificultad: String(config?.dificultad || ''),
+            tiempo: String(config?.tiempo || ''),
+            respuestas: [...respuestasCreador, ...respuestasInvitado],
+            resumen: {
+              jugadores: [
+                {
+                  jugador_id: Number(creador.jugador_id),
+                  ...statsCreador,
+                  // el server recalcula y le suma bonus, no pasa nada
+                },
+                {
+                  jugador_id: Number(invitado.jugador_id),
+                  ...statsInvitado,
+                },
+              ],
+              // el server también puede recalcular ganador_jugador_id si hace falta
+              ganador_jugador_id: null,
+              ended_at: formatearTimestampParaMySQL(Date.now()),
             },
-            {
-              jugador_id: Number(invitado.jugador_id),
-              ...statsInvitado,
-              ganador: ganadorLocal?.jugador_id === invitado.jugador_id ? 1 : 0,
-            },
-          ],
-          ganador_jugador_id: jugadorIdGanador,
-          ended_at: Date.now(),
-        },
-      };
+          };
 
-      setPartidaCompleta(payload);
-    }
+          setPartidaCompleta(payload);
+
+          socketRef.current.emit('guardar_respuestas', payload, (ack) => {
+            console.log('guardar_respuestas → ack:', ack);
+          });
+        })();
+
+      }
+    );
   }, [
     juegoTerminado,
     config?.partida_id,
@@ -869,9 +909,60 @@ export default function JugarMultijugador() {
     creador,
     invitado,
     currentUserId,
+    jugadorActualId,
     respuestasPorJugador,
     partidasPreguntasDeLaPartida,
+    salaId,
+    t,
   ]);
+
+  // 👂 Escuchar cuando el server avisa que la partida terminó (para ambos jugadores)
+  useEffect(() => {
+    const s = socketRef.current;
+    if (!s) return;
+
+    const onFinPartida = (payload) => {
+      setPartidaCompleta(payload);
+      setEsperandoResultado(false);
+      setJuegoTerminado(true);
+      setAlerta('Juego terminado ✅');
+
+      const ganadorId = payload?.resumen?.ganador_jugador_id ?? null;
+      const jugadoresResumen = payload?.resumen?.jugadores || [];
+
+      if (ganadorId != null) {
+        // hay ganador
+        const g =
+          jugadoresResumen.find(
+            (j) => Number(j.jugador_id) === Number(ganadorId)
+          ) || null;
+
+        const p =
+          jugadoresResumen.find(
+            (j) => Number(j.jugador_id) !== Number(ganadorId)
+          ) || null;
+
+        setGanador(g);
+        setPerdedor(p);
+        setJugadorIdGanador(ganadorId);
+      } else {
+        // empate: los dos tienen posición 1 y +250
+        const j1 = jugadoresResumen[0] || null;
+        const j2 = jugadoresResumen[1] || null;
+        setGanador(j1);
+        setPerdedor(j2);
+        setJugadorIdGanador(null);
+      }
+    };
+
+    s.on('sala:fin_partida', onFinPartida);
+
+    return () => {
+      s.off('sala:fin_partida', onFinPartida);
+    };
+  }, []);
+
+
 
   // crear instancia una vez que el canvas existe
   useEffect(() => {
@@ -913,50 +1004,9 @@ export default function JugarMultijugador() {
     }
   }, [juegoTerminado, partidaCompleta]);
 
-  // ====== UI ======
-  // if (mostrarContador && contadorInicial > 0) {
-  //     return (
-  //         <div className='min-h-screen flex items-start justify-center relative overflow-hidden'>
-  //             <div className='relative z-10 text-center'>
-  //                 <h1 className='text-5xl md:text-6xl font-black text-white mb-8 drop-shadow-lg'>
-  //                     ¡Prepárate!
-  //                 </h1>
-  //                 <div className='bg-gradient-to-r from-purple-600 to-purple-700 px-4 py-4 rounded-3xl text-white text-2xl font-bold mb-6 shadow-2xl border-2 border-purple-400'>
-  //                     🎮 Categoría:{' '}
-  //                     <span className='text-yellow-300'>
-  //                         {String(config?.categoria || '').toUpperCase()}
-  //                     </span>
-  //                 </div>
-  //                 <div className='space-y-5 mb-4 bg-black/30 p-4 rounded-2xl backdrop-blur-sm border border-purple-400/50'>
-  //                     <p className='text-white text-xl flex items-center justify-center gap-3'>
-  //                         <span className='text-2xl'>⏱️</span>
-  //                         Tiempo por pregunta:{' '}
-  //                         <span className='font-bold text-yellow-300'>
-  //                             {tiempoPorPregunta(config?.tiempo)}s
-  //                         </span>
-  //                     </p>
-  //                     <p className='text-white text-xl flex items-center justify-center gap-3'>
-  //                         <span className='text-2xl'>📊</span>
-  //                         Dificultad:{' '}
-  //                         <span className='font-bold text-orange-400 capitalize'>
-  //                             {String(config?.dificultad || '')}
-  //                         </span>
-  //                     </p>
-  //                     <p className='text-white text-xl flex items-center justify-center gap-3'>
-  //                         <span className='text-2xl'>❓</span>
-  //                         Total de preguntas: <span className='font-bold text-green-400'>10</span>
-  //                     </p>
-  //                 </div>
-  //                 <div className='mb-4'>
-  //                     <div className='text-[200px] font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-400 to-yellow-300 animate-pulse drop-shadow-[0_0_60px_rgba(250,204,21,1)]'>
-  //                         {contadorInicial}
-  //                     </div>
-  //                 </div>
-  //                 <div className='text-white text-2xl font-bold animate-bounce'>El juego comenzará en...</div>
-  //             </div>
-  //         </div>
-  //     );
-  // }
+
+
+  // ============================================================= html =====================================================================
   return (
     <div className='w-full h-full text-white pt-5 mb-10'>
       {/* Canvas SIEMPRE montado */}
@@ -1042,16 +1092,24 @@ export default function JugarMultijugador() {
                 {alerta}
               </div>
 
-              {partidaCompleta?.resumen?.ganador_jugador_id != null ? ( // != permite null y undefined
+              {esperandoResultado && !partidaCompleta && (
+                <div className='bg-black/50 rounded-2xl p-8 mt-10 w-full max-w-2xl text-center'>
+                  <p className='text-xl font-bold text-yellow-300'>
+                    {'Esperando a que el otro jugador termine...' || t('waitingOpponent')}
+                  </p>
+                </div>
+              )}
+
+              {!esperandoResultado && partidaCompleta?.resumen?.ganador_jugador_id != null ? (
                 <>
-                  {/* PODIO de juego terminado */}
+                  {/* PODIO de juego terminado - HAY GANADOR */}
                   <div className='flex flex-row items-end mt-10'>
                     {/* ganador */}
                     <div className='flex flex-col items-center'>
                       {/* número 1 */}
                       <span
                         className='mb-2 w-10 h-10 rounded-full bg-yellow-400 text-slate-900 
-                                    flex items-center justify-center text-xl font-extrabold'
+                      flex items-center justify-center text-xl font-extrabold'
                       >
                         1
                       </span>
@@ -1063,8 +1121,8 @@ export default function JugarMultijugador() {
                               {ganador ? (
                                 <>
                                   {ganador?.foto_perfil &&
-                                  ganador?.foto_perfil !== `${API_URL}/uploads/default.png` &&
-                                  ganador?.foto_perfil !== `/uploads/default.png` ? (
+                                    ganador?.foto_perfil !== `${API_URL}/uploads/default.png` &&
+                                    ganador?.foto_perfil !== `/uploads/default.png` ? (
                                     <img
                                       src={resolveFotoAjena(ganador?.foto_perfil)}
                                       alt='ganador'
@@ -1096,7 +1154,7 @@ export default function JugarMultijugador() {
                       {/* número 2 */}
                       <span
                         className='mb-2 w-8 h-8 rounded-full bg-gray-300 text-slate-900 
-                                    flex items-center justify-center text-md font-bold'
+                      flex items-center justify-center text-md font-bold'
                       >
                         2
                       </span>
@@ -1108,8 +1166,8 @@ export default function JugarMultijugador() {
                               {perdedor ? (
                                 <>
                                   {perdedor.foto_perfil &&
-                                  perdedor.foto_perfil !== `/uploads/default.png` &&
-                                  perdedor?.foto_perfil !== `/uploads/default.png` ? (
+                                    perdedor.foto_perfil !== `/uploads/default.png` &&
+                                    perdedor?.foto_perfil !== `/uploads/default.png` ? (
                                     <img
                                       src={resolveFotoAjena(perdedor.foto_perfil)}
                                       alt='perdedor'
@@ -1139,15 +1197,15 @@ export default function JugarMultijugador() {
 
                   <div className='bg-black/50 mt-5 rounded-full w-96 text-center'>
                     <p className=' text-xl font-bold text-gray-200 p-4'>
-                      {ganador ? `${ganador?.nombre}` + t('hasWon') : t('calculatingWinner')}{' '}
+                      {ganador ? `${ganador?.nombre} ` + t('hasWon') : t('calculatingWinner')}{' '}
                     </p>
                   </div>
                 </>
-              ) : (
+              ) : !esperandoResultado && partidaCompleta ? (
                 <>
-                  {/* PODIO de juego terminado */}
+                  {/* PODIO de juego terminado - EMPATE */}
                   <div className='flex flex-row items-end mt-10'>
-                    {/* ganador */}
+                    {/* jugador 1 */}
                     <div className='flex flex-col items-center'>
                       <div className='w-52'>
                         <div className='flex flex-col items-center justify-start'>
@@ -1156,8 +1214,8 @@ export default function JugarMultijugador() {
                               {jugadores[0] ? (
                                 <>
                                   {jugadores[0]?.foto_perfil &&
-                                  jugadores[0]?.foto_perfil !== `${API_URL}/uploads/default.png` &&
-                                  jugadores[0]?.foto_perfil !== `/uploads/default.png` ? (
+                                    jugadores[0]?.foto_perfil !== `${API_URL}/uploads/default.png` &&
+                                    jugadores[0]?.foto_perfil !== `/uploads/default.png` ? (
                                     <img
                                       src={resolveFotoAjena(jugadores[0]?.foto_perfil)}
                                       alt='jugador creador'
@@ -1171,7 +1229,6 @@ export default function JugarMultijugador() {
                                   <span className='bg-blue-900 px-4 py-2 rounded-full text-sm font-bold text-center text-yellow-300'>
                                     {jugadores[0]?.nombre || 'jugador creador'}
                                   </span>
-                                  {/* <span className='text-xs mt-2 opacity-70'>{ganador?.puntaje_total} puntos!</span> */}
                                 </>
                               ) : (
                                 <div className='w-24 h-24 rounded-full bg-white/20' />
@@ -1182,7 +1239,7 @@ export default function JugarMultijugador() {
                       </div>
                     </div>
 
-                    {/* perdedor */}
+                    {/* jugador 2 */}
                     <div className='flex flex-col items-center mt-10'>
                       <div className='w-52'>
                         <div className='flex flex-col items-center gap-4'>
@@ -1191,8 +1248,8 @@ export default function JugarMultijugador() {
                               {jugadores[1] ? (
                                 <>
                                   {jugadores[1].foto_perfil &&
-                                  jugadores[1].foto_perfil !== `/uploads/default.png` &&
-                                  jugadores[1]?.foto_perfil !== `/uploads/default.png` ? (
+                                    jugadores[1].foto_perfil !== `/uploads/default.png` &&
+                                    jugadores[1]?.foto_perfil !== `/uploads/default.png` ? (
                                     <img
                                       src={resolveFotoAjena(jugadores[1].foto_perfil)}
                                       alt='jugador invitado'
@@ -1206,7 +1263,6 @@ export default function JugarMultijugador() {
                                   <span className='bg-green-800 px-4 py-2 rounded-full text-sm font-bold text-center text-yellow-300'>
                                     {jugadores[1]?.nombre || 'jugador invitado'}
                                   </span>
-                                  {/* <span className='text-xs mt-2 opacity-70'>{perdedor?.puntaje_total} puntos!</span> */}
                                 </>
                               ) : (
                                 <div className='w-24 h-24 rounded-full bg-white/20' />
@@ -1217,13 +1273,13 @@ export default function JugarMultijugador() {
                       </div>
                     </div>
                   </div>
-                  {console.log('jugadores: ', jugadores)}
 
                   <div className='bg-black/50 mt-5 rounded-full w-96 text-center'>
                     <p className=' text-xl font-bold text-gray-200 p-4'>{t('matchDraw')}</p>
                   </div>
                 </>
-              )}
+              ) : null}
+
 
               {/*==============================  Resumen de Respuestas =======================================*/}
               {juegoTerminado && (
@@ -1243,9 +1299,8 @@ export default function JugarMultijugador() {
                           <span className='font-bold text-yellow-300'>P{index + 1}:</span>{' '}
                           {respuesta.texto}
                           <span
-                            className={`ml-2 font-bold ${
-                              respuesta.es_correcta ? 'text-green-400' : 'text-red-400'
-                            }`}
+                            className={`ml-2 font-bold ${respuesta.es_correcta ? 'text-green-400' : 'text-red-400'
+                              }`}
                           >
                             {respuesta.es_correcta ? '✓' : '✗'}
                           </span>
@@ -1261,17 +1316,15 @@ export default function JugarMultijugador() {
               {/* === NUEVO CSS: reloj centrado arriba, como en “individual” === */}
               <div className='w-full h-full text-white flex items-center justify-center'>
                 <div
-                  className={`rounded-3xl px-6 py-4 text-center flex flex-col items-center justify-center shadow-2xl  w-60 h-48  border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20 ${
-                    tiempoRestante <= 5 && tiempoRestante > 0
-                      ? ' border-red-500/80 animate-pulse'
-                      : ' border-blue-400/30'
-                  }`}
+                  className={`rounded-3xl px-6 py-4 text-center flex flex-col items-center justify-center shadow-2xl  w-60 h-48  border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20 ${tiempoRestante <= 5 && tiempoRestante > 0
+                    ? ' border-red-500/80 animate-pulse'
+                    : ' border-blue-400/30'
+                    }`}
                 >
                   <p className='text-4xl font-bold text-gray-800 mb-2'>⏱️</p>
                   <p
-                    className={`text-5xl font-black ${
-                      tiempoRestante > 5 ? 'text-white' : 'text-red-600'
-                    }`}
+                    className={`text-5xl font-black ${tiempoRestante > 5 ? 'text-white' : 'text-red-600'
+                      }`}
                   >
                     {tiempoRestante}
                   </p>
@@ -1316,8 +1369,8 @@ export default function JugarMultijugador() {
                       {creador ? (
                         <>
                           {creador?.foto_perfil &&
-                          creador?.foto_perfil !== `${API_URL}/uploads/default.png` &&
-                          creador?.foto_perfil !== `/uploads/default.png` ? (
+                            creador?.foto_perfil !== `${API_URL}/uploads/default.png` &&
+                            creador?.foto_perfil !== `/uploads/default.png` ? (
                             <img
                               src={resolveFotoAjena(creador?.foto_perfil)}
                               alt='Creador'
@@ -1387,7 +1440,7 @@ export default function JugarMultijugador() {
                             key={index}
                             className={`w-full rounded-xl py-4 px-6 cursor-pointer transition-all font-bold text-lg text-white shadow-lg border-2 border-transparent hover:border-yellow-300 disabled:opacity-50 ${colorClase}`}
                             onClick={() => handleGuardarRespuesta(opcion)}
-                            disabled={!!respuestaSeleccionada}
+                            disabled={!!respuestaSeleccionada || cronometroPausado || tiempoRestante <= 0}
                           >
                             {idioma === 'en' ? opcion.texto_en : opcion.texto}
                           </button>
@@ -1404,8 +1457,8 @@ export default function JugarMultijugador() {
                       {invitado ? (
                         <>
                           {invitado.foto_perfil &&
-                          invitado.foto_perfil !== `/uploads/default.png` &&
-                          invitado?.foto_perfil !== `/uploads/default.png` ? (
+                            invitado.foto_perfil !== `/uploads/default.png` &&
+                            invitado?.foto_perfil !== `/uploads/default.png` ? (
                             <img
                               src={resolveFotoAjena(invitado.foto_perfil)}
                               alt='Invitado'

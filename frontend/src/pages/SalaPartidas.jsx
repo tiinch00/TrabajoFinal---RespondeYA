@@ -196,10 +196,9 @@ const SalaPartidas = () => {
                     type='button'
                     onClick={() => setFilterCategoria('')}
                     className={`px-3 py-1 rounded-full border text-sm cursor-pointer transition 
-                      ${
-                        filterCategoria === ''
-                          ? 'bg-pink-500 text-white border-pink-400'
-                          : 'bg-transparent text-pink-200 border-pink-400/60 hover:bg-pink-500/20'
+                      ${filterCategoria === ''
+                        ? 'bg-pink-500 text-white border-pink-400'
+                        : 'bg-transparent text-pink-200 border-pink-400/60 hover:bg-pink-500/20'
                       }`}
                   >
                     {t('all')}
@@ -210,10 +209,9 @@ const SalaPartidas = () => {
                       type='button'
                       onClick={() => setFilterCategoria(cat)}
                       className={`px-3 py-1 rounded-full border text-sm cursor-pointer transition 
-                        ${
-                          filterCategoria === cat
-                            ? 'bg-pink-500 text-white border-pink-400'
-                            : 'bg-transparent text-pink-200 border-pink-400/60 hover:bg-pink-500/20'
+                        ${filterCategoria === cat
+                          ? 'bg-pink-500 text-white border-pink-400'
+                          : 'bg-transparent text-pink-200 border-pink-400/60 hover:bg-pink-500/20'
                         }`}
                     >
                       {cat}
@@ -230,10 +228,9 @@ const SalaPartidas = () => {
                     type='button'
                     onClick={() => setFilterTiempo('')}
                     className={`px-3 py-1 rounded-full border text-sm cursor-pointer transition 
-                      ${
-                        filterTiempo === ''
-                          ? 'bg-blue-500 text-white border-blue-400'
-                          : 'bg-transparent text-blue-200 border-blue-400/60 hover:bg-blue-500/20'
+                      ${filterTiempo === ''
+                        ? 'bg-blue-500 text-white border-blue-400'
+                        : 'bg-transparent text-blue-200 border-blue-400/60 hover:bg-blue-500/20'
                       }`}
                   >
                     {t('all')}
@@ -244,10 +241,9 @@ const SalaPartidas = () => {
                       type='button'
                       onClick={() => setFilterTiempo(dif)}
                       className={`px-3 py-1 rounded-full border text-sm cursor-pointer transition 
-                        ${
-                          filterTiempo === dif
-                            ? 'bg-blue-500 text-white border-blue-400'
-                            : 'bg-transparent text-blue-200 border-blue-400/60 hover:bg-blue-500/20'
+                        ${filterTiempo === dif
+                          ? 'bg-blue-500 text-white border-blue-400'
+                          : 'bg-transparent text-blue-200 border-blue-400/60 hover:bg-blue-500/20'
                         }`}
                     >
                       {dif}
@@ -266,10 +262,9 @@ const SalaPartidas = () => {
                     type='button'
                     onClick={() => setFilterPregunta('')}
                     className={`px-3 py-1 rounded-full border text-sm cursor-pointer transition 
-                      ${
-                        filterPregunta === ''
-                          ? 'bg-amber-500 text-white border-amber-400'
-                          : 'bg-transparent text-amber-200 border-amber-400/60 hover:bg-amber-500/20'
+                      ${filterPregunta === ''
+                        ? 'bg-amber-500 text-white border-amber-400'
+                        : 'bg-transparent text-amber-200 border-amber-400/60 hover:bg-amber-500/20'
                       }`}
                   >
                     {t('all')}
@@ -280,10 +275,9 @@ const SalaPartidas = () => {
                       type='button'
                       onClick={() => setFilterPregunta(dif)}
                       className={`px-3 py-1 rounded-full border text-sm cursor-pointer transition 
-                        ${
-                          filterPregunta === dif
-                            ? 'bg-amber-500 text-white border-amber-400'
-                            : 'bg-transparent text-amber-200 border-amber-400/60 hover:bg-amber-500/20'
+                        ${filterPregunta === dif
+                          ? 'bg-amber-500 text-white border-amber-400'
+                          : 'bg-transparent text-amber-200 border-amber-400/60 hover:bg-amber-500/20'
                         }`}
                     >
                       {dif}
@@ -353,11 +347,10 @@ const SalaPartidas = () => {
                       onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                       disabled={safePage === 1}
                       className={`px-3 py-1 rounded-full border text-sm cursor-pointer transition 
-              ${
-                safePage === 1
-                  ? 'border-gray-500 text-gray-500 cursor-not-allowed'
-                  : 'border-purple-400 text-purple-100 hover:bg-purple-500/20'
-              }`}
+              ${safePage === 1
+                          ? 'border-gray-500 text-gray-500 cursor-not-allowed'
+                          : 'border-purple-400 text-purple-100 hover:bg-purple-500/20'
+                        }`}
                     >
                       {t('preview')}
                     </button>
@@ -369,11 +362,10 @@ const SalaPartidas = () => {
                         type='button'
                         onClick={() => setCurrentPage(num)}
                         className={`w-8 h-8 rounded-full text-sm font-semibold cursor-pointer transition 
-                ${
-                  safePage === num
-                    ? 'bg-purple-500 text-white'
-                    : 'bg-transparent text-purple-100 border border-purple-400/60 hover:bg-purple-500/20'
-                }`}
+                ${safePage === num
+                            ? 'bg-purple-500 text-white'
+                            : 'bg-transparent text-purple-100 border border-purple-400/60 hover:bg-purple-500/20'
+                          }`}
                       >
                         {num}
                       </button>
@@ -385,11 +377,10 @@ const SalaPartidas = () => {
                       onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                       disabled={safePage === totalPages}
                       className={`px-3 py-1 rounded-full border text-sm cursor-pointer transition 
-              ${
-                safePage === totalPages
-                  ? 'border-gray-500 text-gray-500 cursor-not-allowed'
-                  : 'border-purple-400 text-purple-100 hover:bg-purple-500/20'
-              }`}
+              ${safePage === totalPages
+                          ? 'border-gray-500 text-gray-500 cursor-not-allowed'
+                          : 'border-purple-400 text-purple-100 hover:bg-purple-500/20'
+                        }`}
                     >
                       {t('next')}
                     </button>
@@ -418,7 +409,7 @@ const SalaPartidas = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
-              {console.log(selectedSala)}
+              {/* {console.log(selectedSala)} */}
               <motion.div
                 onClick={(e) => e.stopPropagation()}
                 initial={{ opacity: 0, y: 20, scale: 0.96 }}
@@ -477,7 +468,7 @@ const SalaPartidas = () => {
                       <h4 className='text-xl font-semibold mb-2'>{t('goingToPlay')}:</h4>
                       {(() => {
                         const opponent = getOpponent(selectedSala);
-                        const user = opponent?.User;
+                        const user = opponent?.user; // alias de jugador del modelo en associations.js
 
                         if (!opponent || !user) {
                           return <p className='text-sm text-gray-300'>{t('noInfoYet')}</p>;
