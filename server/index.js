@@ -120,6 +120,16 @@ const server = http.createServer(app);
 // Inicializa Socket.IO organizado por controllers
 crearSocketServer(server); // ← listo, Socket.IO queda inicializado y organizado por “controllers”
 
+app.get('/test-db', async (req, res) => {
+  try {
+    const [rows] = await sequelize.query('SELECT * FROM test_backend;');
+    res.json(rows);
+  } catch (error) {
+    console.error('❌ Error en /test-db:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 console.log("DB_HOST:", process.env.DB_HOST);
 console.log("DB_NAME:", process.env.DB_NAME);
 
