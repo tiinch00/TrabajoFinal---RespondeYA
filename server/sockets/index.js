@@ -10,9 +10,16 @@ export function crearSocketServer(httpServer) {
     const io = new Server(httpServer, {
         path: '/socket.io',
         cors: {
-            origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
-            methods: ['GET', 'POST'],
-            credentials: false,
+            origin: [
+                "http://localhost:5173",
+                "http://127.0.0.1:5173",
+                "http://52.15.53.177:3000",
+                "http://52.15.53.177",
+                //"https://respondeya.vercel.app",
+                //"https://api.respondeya.com",
+            ],
+            methods: ["GET", "POST"],
+            credentials: true
         },
     });
 
