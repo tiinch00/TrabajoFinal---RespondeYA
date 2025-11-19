@@ -240,7 +240,7 @@
   "of": "of",
   "deletingFriend": "Deleting...",
   "deleteFriendConfirm": "Are you sure you want to remove <1>{{name}}</1> from your friends list?",
-  "repeatPass": "Repit new password",
+  "repeatPass": "Repite new password",
   "gamesList": "List of games to join",
   "all": "All",
   "state": "State",
@@ -269,5 +269,16 @@
   "matchDraw": "¡Game Draw!",
   "playerGone": "The other player leaves. Waiting for another player...",
   "connecting": "Connecting...",
-  "noAnswer": "No answer"
+  "noAnswer": "No answer",
+  "searchNewFriend": "Looking for a new friend",
+  "addFriend": "Add friend",
+  "pending": "Pending",
+  "friend": "Friend",
+  "backToTheList": "Back to the list",
+  "close": "Close",
+  "countryAvatar": "Country",
+  "playerDetail": "Player details",
+  "noUsersFound": "No users were found matching the search.",
+  "writeName": "Enter a name to find new friends",
+  "noHaveFriendList": "No friends were found with that name..."
 }

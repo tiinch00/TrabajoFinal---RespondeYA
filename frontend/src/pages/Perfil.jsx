@@ -13,10 +13,6 @@ import { useAuth } from '../context/auth-context.jsx';
 
 //import SimpleBarChart from '../components/simpleBarChart';
 
-
-
-
-
 // normalizador simple (tildes, mayúsculas, espacios) y evita errores con null/undefined/objetos raros.
 function normalize(s) {
   return (s ?? '')
@@ -62,6 +58,17 @@ const Perfil = () => {
     'Conocimiento General': t('generalKnowLedge'),
     Geografía: t('geography'),
     Informatica: t('informatic'),
+  };
+  const modeTranslationsAvatar = {
+    Humano: t('human'),
+    Humana: t('human'),
+    Soldado: t('soldier'),
+    Master: t('master'),
+    Mago: t('mage'),
+    Computo: t('computo'),
+    Maga: t('mage'),
+    Ingeniero: t('ingenier'),
+    Principal: t('main'),
   };
 
   const timeDifficultyTranslations = {
@@ -200,7 +207,6 @@ const Perfil = () => {
     return nameNorm.includes(normalizedFriendQuery);
   });
 
-
   // para botones de aceptar/cancelar
   const [processingRequestId, setProcessingRequestId] = useState(null);
 
@@ -285,16 +291,15 @@ const Perfil = () => {
     return true;
   });
 
-
   const normalizedNewFriendQuery = normalize(newFriendSearch);
 
   // filtro SOLO por nombre
   const filteredNewFriends = !normalizedNewFriendQuery
     ? [] // input vacío: no mostramos nada
     : candidateUsersBase.filter((u) => {
-      const nameNorm = normalize(u.name ?? '');
-      return nameNorm.includes(normalizedNewFriendQuery);
-    });
+        const nameNorm = normalize(u.name ?? '');
+        return nameNorm.includes(normalizedNewFriendQuery);
+      });
 
   // paginado “buscar nuevo amigo”
   const totalNewFriends = filteredNewFriends.length;
@@ -307,7 +312,6 @@ const Perfil = () => {
   useEffect(() => {
     setNewFriendsPage(1);
   }, [newFriendSearch, amigos, friendRequests, allUsers]);
-
 
   // handlers
   const goPrev = () => setCurrentPage((p) => Math.max(1, p - 1));
@@ -851,8 +855,6 @@ const Perfil = () => {
     }
   };
 
-
-
   useEffect(() => {
     let cancel = false;
 
@@ -861,7 +863,7 @@ const Perfil = () => {
         ...new Set(
           (allUsers ?? [])
             .map((u) => Number(u.jugador_id))
-            .filter((n) => Number.isFinite(n) && n > 0)   // solo ids válidos
+            .filter((n) => Number.isFinite(n) && n > 0) // solo ids válidos
         ),
       ];
 
@@ -883,11 +885,9 @@ const Perfil = () => {
       );
 
       const mapa = {};
-      arr
-        .filter(Boolean)
-        .forEach(({ id, jugador }) => {
-          mapa[id] = jugador;
-        });
+      arr.filter(Boolean).forEach(({ id, jugador }) => {
+        mapa[id] = jugador;
+      });
 
       if (!cancel) setJugadoresPorId(mapa);
     })();
@@ -896,7 +896,6 @@ const Perfil = () => {
       cancel = true;
     };
   }, [allUsers]);
-
 
   const eliminarAmigo = async (id) => {
     try {
@@ -926,21 +925,18 @@ const Perfil = () => {
       const jidA = Number(a.jugador_id);
       const jidB = Number(a.amigo_id);
 
-      return (
-        (jidA === miJid && jidB === otroJid) ||
-        (jidA === otroJid && jidB === miJid)
-      );
+      return (jidA === miJid && jidB === otroJid) || (jidA === otroJid && jidB === miJid);
     });
 
     if (relacion) {
-      if (relacion.aceptado_en) return 'amigo';     // ya somos amigos
-      return 'pendiente';                            // solicitud enviada (pendiente)
+      if (relacion.aceptado_en) return 'amigo'; // ya somos amigos
+      return 'pendiente'; // solicitud enviada (pendiente)
     }
 
     // 2) Solicitudes PENDIENTES que ellos me enviaron (friendRequests)
     const recibida = (friendRequests ?? []).find((r) => {
-      const jReq = Number(r.jugador_id);  // el que envía
-      const aReq = Number(r.amigo_id);    // el que recibe (yo)
+      const jReq = Number(r.jugador_id); // el que envía
+      const aReq = Number(r.amigo_id); // el que recibe (yo)
       return jReq === otroJid && aReq === miJid && !r.aceptado_en;
     });
 
@@ -948,7 +944,6 @@ const Perfil = () => {
 
     return 'ninguna';
   };
-
 
   const handleAgregarAmigo = async (registroSala) => {
     try {
@@ -1007,9 +1002,9 @@ const Perfil = () => {
       setAddingFriendId(amigoJugadorId);
 
       const payload = {
-        jugador_id: Number(jugador_id),   // yo
-        amigo_id: amigoJugadorId,         // el otro jugador
-        aceptado_en: null,                // pendiente
+        jugador_id: Number(jugador_id), // yo
+        amigo_id: amigoJugadorId, // el otro jugador
+        aceptado_en: null, // pendiente
       };
 
       const { data } = await axios.post(`${API_URL}/amigos/create`, payload);
@@ -1030,7 +1025,6 @@ const Perfil = () => {
       setAddingFriendId(null);
     }
   };
-
 
   // obtiene un objeto categoria
   const getCategorias = async (id) => {
@@ -1073,8 +1067,8 @@ const Perfil = () => {
       const arr = Array.isArray(data)
         ? data
         : Array.isArray(data?.sala_jugadores)
-          ? data.sala_jugadores
-          : [];
+        ? data.sala_jugadores
+        : [];
       setArraySalaJugadores(arr);
     } catch (e) {
       console.error('GET /sala_jugadores', e.response?.data?.error || e.message);
@@ -1453,7 +1447,6 @@ const Perfil = () => {
     }
   };
 
-
   const getUsuario = async (id) => {
     try {
       const { data } = await axios.get(`${API_URL}/users/${id}`);
@@ -1581,7 +1574,8 @@ const Perfil = () => {
           getEstadisticas(),
           getRespuestas(),
           getFriendRequests(),
-          getAllUsers(), ,
+          getAllUsers(),
+          ,
         ]);
       } finally {
         if (!alive) return;
@@ -1749,8 +1743,8 @@ const Perfil = () => {
   // Jugadores que participaron en esa sala
   const jugadoresSalaActual = Array.isArray(arrayUsuariosJugadores)
     ? arrayUsuariosJugadores.filter(
-      (sj) => salaIdActual != null && Number(sj.sala_id) === Number(salaIdActual)
-    )
+        (sj) => salaIdActual != null && Number(sj.sala_id) === Number(salaIdActual)
+      )
     : [];
 
   // Contrincantes = todos menos el jugador logueado
@@ -1764,18 +1758,18 @@ const Perfil = () => {
   // Relación (si existe) entre YO y el contrincante
   const relacionConContrincante = contrincante
     ? amigos.find((a) => {
-      const miJid = Number(jugador_id);
-      const otroJid = Number(contrincante?.jugador?.id);
+        const miJid = Number(jugador_id);
+        const otroJid = Number(contrincante?.jugador?.id);
 
-      const jidA = Number(a.jugador_id);
-      const jidB = Number(a.amigo_id);
+        const jidA = Number(a.jugador_id);
+        const jidB = Number(a.amigo_id);
 
-      // ¿La relación es entre yo y el contrincante, en cualquier orden?
-      const esMismaPareja =
-        (jidA === miJid && jidB === otroJid) || (jidA === otroJid && jidB === miJid);
+        // ¿La relación es entre yo y el contrincante, en cualquier orden?
+        const esMismaPareja =
+          (jidA === miJid && jidB === otroJid) || (jidA === otroJid && jidB === miJid);
 
-      return esMismaPareja;
-    })
+        return esMismaPareja;
+      })
     : null;
 
   const esAmigo = !!relacionConContrincante && !!relacionConContrincante.aceptado_en;
@@ -1861,8 +1855,8 @@ const Perfil = () => {
               miJid === jidA
                 ? jidB // yo soy jugador_id → amigo es el otro
                 : miJid === jidB
-                  ? jidA // yo soy amigo_id → jugador_id es el otro
-                  : jidB; // fallback por las dudas
+                ? jidA // yo soy amigo_id → jugador_id es el otro
+                : jidB; // fallback por las dudas
 
             const jugador = await getJugador(otroJugadorId).catch((err) => {
               console.error('Error en getJugador(otroJugadorId):', otroJugadorId, err);
@@ -2398,7 +2392,7 @@ const Perfil = () => {
                   {/* SI NO hay avatarDetalle → se muestra la LISTA en grid */}
                   {!avatarDetalle && (
                     <>
-                      <h2 className='w-full text-lg font-semibold mb-2'>Lista de mis avatares</h2>
+                      <h2 className='w-full text-lg font-semibold mb-2'>{t('avatarsList')}</h2>
                       <hr />
 
                       <ul
@@ -2423,7 +2417,9 @@ const Perfil = () => {
                             />
                             <span className='font-semibold text-center text-sm'>{item.nombre}</span>
                             {item.division && (
-                              <span className='text-xs text-indigo-100'>{item.division}</span>
+                              <span className='text-xs text-indigo-100'>
+                                {modeTranslationsAvatar[item.division]}
+                              </span>
                             )}
                           </motion.li>
                         ))}
@@ -2443,7 +2439,10 @@ const Perfil = () => {
 
                       {avatarDetalle.division && (
                         <p className='mb-2 text-sm text-indigo-100'>
-                          División: <span className='font-semibold'>{avatarDetalle.division}</span>
+                          {t('formDivition')}:{' '}
+                          <span className='font-semibold'>
+                            {modeTranslationsAvatar[avatarDetalle.division]}
+                          </span>
                         </p>
                       )}
 
@@ -2460,7 +2459,7 @@ const Perfil = () => {
                 text-white text-sm cursor-pointer'
                         onClick={() => setAvatarDetalle(null)} // vuelve al grid
                       >
-                        Volver a la lista
+                        {t('backToTheList')}
                       </button>
                     </div>
                   )}
@@ -2542,9 +2541,7 @@ const Perfil = () => {
                 onChange={handleChange}
                 className='w-full px-3 py-2 rounded text-black bg-white/90 hover:bg-white'
               >
-                <option value=''>
-                  { 'Seleccioná un país' || t('selectCountry')}
-                </option>
+                <option value=''>{'Seleccioná un país' || t('selectCountry')}</option>
                 {paises.map((p) => (
                   <option key={p.codigo} value={p.nombre}>
                     {p.nombre}
@@ -2563,11 +2560,8 @@ const Perfil = () => {
                 </p>
               )}
 
-              {formErrors.pais && (
-                <p className='text-red-500 text-sm'>{formErrors.pais}</p>
-              )}
+              {formErrors.pais && <p className='text-red-500 text-sm'>{formErrors.pais}</p>}
             </div>
-
 
             <div>
               <label className='block text-sm mb-1'>{t('pass')}</label>
@@ -2651,9 +2645,7 @@ const Perfil = () => {
           </div>
 
           {estadisticas.length === 0 ? (
-            <p className='indent-2 text-white'>
-              {'No encontramos resultados' ?? t('noResultsMatches')}:
-            </p>
+            <p className='indent-2 text-white'>{t('noResultsMatches')}</p>
           ) : (
             <div>
               {/* buscador de estadísticas */}
@@ -2780,8 +2772,9 @@ const Perfil = () => {
                       type='button'
                       onClick={goPrev}
                       disabled={currentPage === 1}
-                      className={`px-3 py-1 rounded-lg bg-white/10 text-white disabled:opacity-50  hover:bg-white/20 ${currentPage === 1 ? 'cursor-not-allowed' : 'cursor-pointer'
-                        }`}
+                      className={`px-3 py-1 rounded-lg bg-white/10 text-white disabled:opacity-50  hover:bg-white/20 ${
+                        currentPage === 1 ? 'cursor-not-allowed' : 'cursor-pointer'
+                      }`}
                     >
                       ‹
                     </button>
@@ -2791,10 +2784,11 @@ const Perfil = () => {
                         key={p}
                         type='button'
                         onClick={() => goTo(p)}
-                        className={`px-3 py-1 rounded-lg ${p === currentPage
-                          ? 'bg-slate-800 cursor-not-allowed text-white'
-                          : 'bg-white/10 text-white cursor-pointer hover:bg-white/20'
-                          }`}
+                        className={`px-3 py-1 rounded-lg ${
+                          p === currentPage
+                            ? 'bg-slate-800 cursor-not-allowed text-white'
+                            : 'bg-white/10 text-white cursor-pointer hover:bg-white/20'
+                        }`}
                       >
                         {p}
                       </button>
@@ -2804,8 +2798,9 @@ const Perfil = () => {
                       type='button'
                       onClick={goNext}
                       disabled={currentPage === totalPages}
-                      className={`px-3 py-1 rounded-lg bg-white/10 text-white disabled:opacity-50 hover:bg-white/20 ${currentPage === totalPages ? 'cursor-not-allowed' : 'cursor-pointer'
-                        }`}
+                      className={`px-3 py-1 rounded-lg bg-white/10 text-white disabled:opacity-50 hover:bg-white/20 ${
+                        currentPage === totalPages ? 'cursor-not-allowed' : 'cursor-pointer'
+                      }`}
                     >
                       ›
                     </button>
@@ -2903,10 +2898,10 @@ const Perfil = () => {
                           partidaSeleccionada.modo === 'individual'
                             ? t('practice')
                             : partidaSeleccionada.empate
-                              ? t('draw')
-                              : partidaSeleccionada.posicion > 0
-                                ? t('won') // ganaste
-                                : t('youLoss') // perdiste
+                            ? t('draw')
+                            : partidaSeleccionada.posicion > 0
+                            ? t('won') // ganaste
+                            : t('youLoss') // perdiste
                         }
                       </p>
                       <p className='p-1'>
@@ -2993,20 +2988,21 @@ const Perfil = () => {
                               }
                               onClick={() => handleAgregarAmigo(contrincante)}
                               className={`ml-auto px-4 py-2 rounded-xl text-sm cursor-pointer
-                        ${esAmigo
-                                  ? 'bg-green-700/70 text-white cursor-default'
-                                  : pendienteConContrincante
-                                    ? 'bg-yellow-600/80 text-white cursor-default'
-                                    : 'bg-pink-600 hover:bg-pink-700 text-white disabled:opacity-60'
-                                }`}
+                        ${
+                          esAmigo
+                            ? 'bg-green-700/70 text-white cursor-default'
+                            : pendienteConContrincante
+                            ? 'bg-yellow-600/80 text-white cursor-default'
+                            : 'bg-pink-600 hover:bg-pink-700 text-white disabled:opacity-60'
+                        }`}
                             >
                               {esAmigo
                                 ? 'Amigos'
                                 : pendienteConContrincante
-                                  ? 'Pendiente'
-                                  : addingFriendId === contrincante.jugador?.id
-                                    ? 'Agregando...'
-                                    : 'Agregar amigo'}
+                                ? 'Pendiente'
+                                : addingFriendId === contrincante.jugador?.id
+                                ? 'Agregando...'
+                                : 'Agregar amigo'}
                             </button>
                           </div>
                         </div>
@@ -3398,10 +3394,11 @@ const Perfil = () => {
                   disabled={requestsPage === 1}
                   className='px-2 py-1 rounded bg-white/10 disabled:opacity-40'
                 >
-                  « Anterior
+                  « {t('preview')}
                 </button>
                 <span>
-                  Página {requestsPage} de {totalRequestsPages}
+                  {t('page')}
+                  {requestsPage} {t('of')} {totalRequestsPages}
                 </span>
                 <button
                   type='button'
@@ -3409,7 +3406,7 @@ const Perfil = () => {
                   disabled={requestsPage === totalRequestsPages}
                   className='px-2 py-1 rounded bg-white/10 disabled:opacity-40'
                 >
-                  Siguiente »
+                  {t('next')} »
                 </button>
               </div>
             )}
@@ -3425,10 +3422,11 @@ const Perfil = () => {
           <button
             type='button'
             onClick={() => setActiveFriendsTab('friends')}
-            className={`text-lg font-semibold pb-2 border-b-2 transition-colors cursor-pointer ${activeFriendsTab === 'friends'
-              ? 'text-white border-purple-400'
-              : 'text-white/60 border-transparent hover:text-white'
-              }`}
+            className={`text-lg font-semibold pb-2 border-b-2 transition-colors cursor-pointer ${
+              activeFriendsTab === 'friends'
+                ? 'text-white border-purple-400'
+                : 'text-white/60 border-transparent hover:text-white'
+            }`}
           >
             {t('friends')}
           </button>
@@ -3436,12 +3434,13 @@ const Perfil = () => {
           <button
             type='button'
             onClick={() => setActiveFriendsTab('search')}
-            className={`text-lg font-semibold pb-2 border-b-2 transition-colors cursor-pointer ${activeFriendsTab === 'search'
-              ? 'text-white border-purple-400'
-              : 'text-white/60 border-transparent hover:text-white'
-              }`}
+            className={`text-lg font-semibold pb-2 border-b-2 transition-colors cursor-pointer ${
+              activeFriendsTab === 'search'
+                ? 'text-white border-purple-400'
+                : 'text-white/60 border-transparent hover:text-white'
+            }`}
           >
-            {'Buscar nuevo amigo' ?? t('searchNewFriend')}
+            {t('searchNewFriend')}
           </button>
         </div>
 
@@ -3462,86 +3461,94 @@ const Perfil = () => {
           {/* === TAB 1: MIS AMIGOS === */}
           {activeFriendsTab === 'friends' && (
             <>
-              {filteredFriendsDetails.length > 0 ? (
+              {filteredFriendsDetails ? (
                 <>
-                  {/* Input de búsqueda de amigos */}
                   <div className='px-2 mb-2'>
                     <input
                       type='text'
                       value={friendsSearch}
                       onChange={(e) => setFriendsSearch(e.target.value)}
-                      placeholder='Buscar amigo por nombre...'
+                      placeholder={t('findFriend')}
                       className='w-full px-3 py-1.5 rounded-lg bg-black/30 text-white text-sm 
                   border border-white/20 focus:outline-none focus:ring-1 focus:ring-purple-400'
                     />
                   </div>
 
-                  <div className='mb-2 p-0.5 space-y-2'>
-                    {/* {console.log("visibleFriends: ", visibleFriends)} */}
-                    {visibleFriends.map(({ amigo, jugador, usuario }) => (
-                      <div
-                        key={amigo.id}
-                        className='border rounded-xl p-4 bg-white/10 hover:bg-white/20 
-                    mb-2 flex items-center justify-between gap-4 cursor-pointer'
-                        onClick={() =>
-                          setSelectedPerson({
-                            name: usuario?.name ?? '—',
-                            email: usuario?.email ?? '—',
-                            pais: usuario?.pais ?? '—',
-                            puntaje: jugador?.puntaje ?? usuario?.puntaje ?? '—',
-                            foto: usuario?.foto_perfil ? resolveFotoAjena(usuario.foto_perfil) : null,
-                          })
-                        }
-                      >
-                        <div className='flex items-center gap-3'>
-                          <div className='w-12 h-12 rounded-full overflow-hidden bg-black/30 flex items-center justify-center flex-shrink-0'>
-                            {(() => {
-                              const fotoAmigo = usuario?.foto_perfil
+                  {visibleFriends.length === 0 ? (
+                    <p className='indent-2 text-white mb-4'>{t('noHaveFriendList')}</p>
+                  ) : (
+                    <div className='mb-2 p-0.5 space-y-2'>
+                      {visibleFriends.map(({ amigo, jugador, usuario }) => (
+                        <div
+                          key={amigo.id}
+                          className='border rounded-xl p-4 bg-white/10 hover:bg-white/20 
+                        mb-2 flex items-center justify-between gap-4 cursor-pointer'
+                          onClick={() =>
+                            setSelectedPerson({
+                              name: usuario?.name ?? '—',
+                              email: usuario?.email ?? '—',
+                              pais: usuario?.pais ?? '—',
+                              puntaje: jugador?.puntaje ?? usuario?.puntaje ?? '—',
+                              foto: usuario?.foto_perfil
                                 ? resolveFotoAjena(usuario.foto_perfil)
-                                : null;
-
-                              return fotoAmigo ? (
-                                <img
-                                  src={resolveFotoAjena(fotoAmigo)}
-                                  alt={usuario?.name ?? 'Amigo'}
-                                  className='w-12 h-12 object-cover'
-                                />
-                              ) : (
-                                <span className='text-2xl'>👤</span>
-                              );
-                            })()}
-                          </div>
-                          <div className='flex flex-col'>
-                            <span className='font-semibold text-white'>{usuario?.name ?? '—'}</span>
-                            <span className='text-sm text-purple-200'>{usuario?.email ?? '—'}</span>
-                            <span className='text-xs text-purple-200'>
-                              País: {usuario?.pais ?? '—'}
-                            </span>
-                            <span className='text-xs text-yellow-300'>
-                              Puntaje: {jugador?.puntaje ?? '—'}
-                            </span>
-                          </div>
-                        </div>
-
-                        <motion.button
-                          type='button'
-                          className='bg-red-500 hover:bg-red-600 rounded w-32 cursor-pointer 
-                      justify-self-end text-white py-1.5'
-                          whileTap={{ scale: 1.1 }}
-                          onClick={(e) => {
-                            e.stopPropagation(); // 👈 no abre el modal
-                            setConfirmDelete({
-                              open: true,
-                              amigoId: amigo.id,
-                              nombre: usuario?.name ?? 'este amigo',
-                            });
-                          }}
+                                : null,
+                            })
+                          }
                         >
-                          {t('deleteFriend')}
-                        </motion.button>
-                      </div>
-                    ))}
-                  </div>
+                          <div className='flex items-center gap-3'>
+                            <div className='w-12 h-12 rounded-full overflow-hidden bg-black/30 flex items-center justify-center flex-shrink-0'>
+                              {(() => {
+                                const fotoAmigo = usuario?.foto_perfil
+                                  ? resolveFotoAjena(usuario.foto_perfil)
+                                  : null;
+
+                                return fotoAmigo ? (
+                                  <img
+                                    src={resolveFotoAjena(fotoAmigo)}
+                                    alt={usuario?.name ?? 'Amigo'}
+                                    className='w-12 h-12 object-cover'
+                                  />
+                                ) : (
+                                  <span className='text-2xl'>👤</span>
+                                );
+                              })()}
+                            </div>
+                            <div className='flex flex-col'>
+                              <span className='font-semibold text-white'>
+                                {usuario?.name ?? '—'}
+                              </span>
+                              <span className='text-sm text-purple-200'>
+                                {usuario?.email ?? '—'}
+                              </span>
+                              <span className='text-xs text-purple-200'>
+                                {t('countryAvatar')}: {usuario?.pais ?? '—'}
+                              </span>
+                              <span className='text-xs text-yellow-300'>
+                                {t('points')}: {jugador?.puntaje ?? '—'}
+                              </span>
+                            </div>
+                          </div>
+
+                          <motion.button
+                            type='button'
+                            className='bg-red-500 hover:bg-red-600 rounded w-32 cursor-pointer 
+                          justify-self-end text-white py-1.5'
+                            whileTap={{ scale: 1.1 }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setConfirmDelete({
+                                open: true,
+                                amigoId: amigo.id,
+                                nombre: usuario?.name ?? 'este amigo',
+                              });
+                            }}
+                          >
+                            {t('deleteFriend')}
+                          </motion.button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
                   {totalFriendsPages > 1 && (
                     <div className='flex items-center justify-end gap-2 px-2 pb-2 text-sm text-white'>
@@ -3551,10 +3558,10 @@ const Perfil = () => {
                         disabled={friendsPage === 1}
                         className='px-2 py-1 rounded bg-white/10 disabled:opacity-40'
                       >
-                        « Anterior
+                        « {t('preview')}
                       </button>
                       <span>
-                        Página {friendsPage} de {totalFriendsPages}
+                        {t('page')} {friendsPage} de {totalFriendsPages}
                       </span>
                       <button
                         type='button'
@@ -3562,16 +3569,14 @@ const Perfil = () => {
                         disabled={friendsPage === totalFriendsPages}
                         className='px-2 py-1 rounded bg-white/10 disabled:opacity-40'
                       >
-                        Siguiente »
+                        {t('next')} »
                       </button>
                     </div>
                   )}
                 </>
               ) : (
                 <p className='indent-2 text-white mb-4'>
-                  {friendsDetails.length === 0
-                    ? t('noHaveFriend')
-                    : 'No se encontraron amigos con ese nombre.'}
+                  {filteredFriendsDetails.length === 0 && t('noHaveFriendList')}
                 </p>
               )}
             </>
@@ -3586,7 +3591,7 @@ const Perfil = () => {
                   type='text'
                   value={newFriendSearch}
                   onChange={(e) => setNewFriendSearch(e.target.value)}
-                  placeholder='Buscar usuario por nombre...'
+                  placeholder={t('findFriend')}
                   className='w-full px-3 py-1.5 rounded-lg bg-black/30 text-white text-sm 
               border border-white/20 focus:outline-none focus:ring-1 focus:ring-purple-400'
                 />
@@ -3595,19 +3600,15 @@ const Perfil = () => {
               <div className='mb-2 p-0.5 space-y-2'>
                 {visibleNewFriends.length === 0 ? (
                   <p className='indent-2 text-white mb-4'>
-                    {newFriendSearch.trim()
-                      ? 'No se encontraron usuarios que coincidan con la búsqueda.'
-                      : 'Escribí un nombre para buscar nuevos amigos.'}
+                    {newFriendSearch.trim() ? t('noUsersFound') : t('writeName')}
                   </p>
                 ) : (
                   visibleNewFriends.map((usuario) => {
                     const relacion = getRelacionConUsuario(usuario); // 'amigo' | 'pendiente' | 'ninguna'
 
-                    const jugadorAsociado =
-                      jugadoresPorId[Number(usuario.jugador_id)] ?? null;
+                    const jugadorAsociado = jugadoresPorId[Number(usuario.jugador_id)] ?? null;
 
-                    const puntajeUsuario =
-                      jugadorAsociado?.puntaje ?? usuario?.puntaje ?? '—';
+                    const puntajeUsuario = jugadorAsociado?.puntaje ?? usuario?.puntaje ?? '—';
 
                     return (
                       <div
@@ -3620,7 +3621,9 @@ const Perfil = () => {
                             email: usuario?.email ?? '—',
                             pais: usuario?.pais ?? '—',
                             puntaje: puntajeUsuario,
-                            foto: usuario?.foto_perfil ? resolveFotoAjena(usuario.foto_perfil) : null,
+                            foto: usuario?.foto_perfil
+                              ? resolveFotoAjena(usuario.foto_perfil)
+                              : null,
                           })
                         }
                       >
@@ -3646,10 +3649,10 @@ const Perfil = () => {
                             <span className='font-semibold text-white'>{usuario?.name ?? '—'}</span>
                             <span className='text-sm text-purple-200'>{usuario?.email ?? '—'}</span>
                             <span className='text-xs text-purple-200'>
-                              País: {usuario?.pais ?? '—'}
+                              {t('countryAvatar')} {usuario?.pais ?? '—'}
                             </span>
                             <span className='text-xs text-yellow-300'>
-                              Puntaje: {puntajeUsuario}
+                              {t('points')} {puntajeUsuario}
                             </span>
                           </div>
                         </div>
@@ -3657,16 +3660,20 @@ const Perfil = () => {
                         {/* Estado de relación / botón */}
                         <div className='flex items-center'>
                           {relacion === 'amigo' && (
-                            <span className='text-lg font-semibold px-3 py-1 rounded-full 
-                          bg-fuchsia-900/70 text-fuchsia-200'>
-                              Amigos
+                            <span
+                              className='text-lg font-semibold px-3 py-1 rounded-full 
+                          bg-fuchsia-900/70 text-fuchsia-200'
+                            >
+                              {t('friend')}
                             </span>
                           )}
 
                           {relacion === 'pendiente' && (
-                            <span className='text-xs font-semibold px-3 py-1 rounded-full 
-                          bg-yellow-500/20 text-yellow-300'>
-                              Pendiente
+                            <span
+                              className='text-xs font-semibold px-3 py-1 rounded-full 
+                          bg-yellow-500/20 text-yellow-300'
+                            >
+                              {t('pending')}
                             </span>
                           )}
 
@@ -3682,12 +3689,11 @@ const Perfil = () => {
                               disabled={addingFriendId === Number(usuario.jugador_id)}
                             >
                               {addingFriendId === Number(usuario.jugador_id)
-                                ? 'Enviando...'
-                                : 'Agregar amigo' ?? (t('addFriend'))}
+                                ? t('sending')
+                                : t('addFriend')}
                             </button>
                           )}
                         </div>
-
                       </div>
                     );
                   })
@@ -3702,10 +3708,10 @@ const Perfil = () => {
                     disabled={newFriendsPage === 1}
                     className='px-2 py-1 rounded bg-white/10 disabled:opacity-40 cursor-pointer'
                   >
-                    « Anterior
+                    « {t('preview')}
                   </button>
                   <span>
-                    Página {newFriendsPage} de {totalNewFriendsPages}
+                    {t('page')} {newFriendsPage} {t('of')} {totalNewFriendsPages}
                   </span>
                   <button
                     type='button'
@@ -3713,7 +3719,7 @@ const Perfil = () => {
                     disabled={newFriendsPage === totalNewFriendsPages}
                     className='px-2 py-1 rounded bg-white/10 disabled:opacity-40 cursor-pointer'
                   >
-                    Siguiente »
+                    {t('next')} »
                   </button>
                 </div>
               )}
@@ -3755,19 +3761,20 @@ const Perfil = () => {
 
                   <div className='flex flex-col text-lg text-slate-100'>
                     <p>
-                      <span className='font-semibold'>Nombre:</span> {selectedPerson.name}
+                      <span className='font-semibold'>{t('name')}:</span> {selectedPerson.name}
                     </p>
                     <p>
-                      <span className='font-semibold'>País:</span> {selectedPerson.pais}
+                      <span className='font-semibold'>{t('countryAvatar')}:</span>{' '}
+                      {selectedPerson.pais}
                     </p>
                     <p>
-                      <span className='font-semibold'>Puntaje:</span> {selectedPerson.puntaje ?? '—'}
+                      <span className='font-semibold'>{t('points')}:</span>{' '}
+                      {selectedPerson.puntaje ?? '—'}
                     </p>
                     <p>
-                      <span className='font-semibold'>Email:</span> {selectedPerson.email}
+                      <span className='font-semibold'>{t('email')}:</span> {selectedPerson.email}
                     </p>
                   </div>
-
                 </div>
                 <div className='mt-6 flex justify-end'>
                   <button
@@ -3775,14 +3782,13 @@ const Perfil = () => {
                     className='px-4 py-2 rounded-lg bg-slate-600 text-white hover:bg-slate-500 cursor-pointer'
                     onClick={() => setSelectedPerson(null)}
                   >
-                    {'Cerrar' ?? t('close')}
+                    {t('close')}
                   </button>
                 </div>
               </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
-
 
         <AnimatePresence>
           {confirmDelete.open && (
@@ -3821,7 +3827,7 @@ const Perfil = () => {
                       })
                     }
                   >
-                    {t('cancel') ?? 'Cancelar'}
+                    {t('cancel')}
                   </button>
 
                   <button
@@ -3842,15 +3848,13 @@ const Perfil = () => {
                       }
                     }}
                   >
-                    {confirmDeleting ? 'Eliminando...' : t('deleteFriend')}
+                    {confirmDeleting ? t('deleting') : t('deleteFriend')}
                   </button>
                 </div>
               </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
-
-
       </div>
     </div>
   );

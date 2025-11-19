@@ -67,7 +67,6 @@ const JugarIndividual = () => {
 
   const [idioma, setIdioma] = useState(i18n.language);
   const { categoria, tiempo, dificultad } = useParams();
-  console.log(categoria);
   const [preguntas, setPreguntas] = useState([]);
   const [preguntaActual, setPreguntaActual] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -309,8 +308,6 @@ const JugarIndividual = () => {
       puntosDificultad = 10 * respuestasCor.length;
     if (dificult.includes('difícil') || dificult.includes('hard'))
       puntosDificultad = 15 * respuestasCor.length;
-    console.log(puntos);
-    console.log(puntosDificultad);
     return Math.round((puntos + puntosDificultad) * multiplicador);
   };
 

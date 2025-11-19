@@ -26,7 +26,7 @@
   "sendEmail": "Enviar Correo",
   "addSkin": " + Agregar nueva skin",
   "addSkin2": "Agregar nueva skin",
-  "formDivition": "Division",
+  "formDivition": "División",
   "formValue": "Valor",
   "formUrl": "URL de imagen",
   "cancel": "Cancelar",
@@ -269,5 +269,16 @@
   "matchDraw": "¡La partida es un empate!",
   "playerGone": "El otro jugador se fue. Esperando jugador 2...",
   "connecting": "Conectando...",
-  "noAnswer": "Sin respuesta"
+  "noAnswer": "Sin respuesta",
+  "searchNewFriend": "Buscar nuevo amigo",
+  "addFriend": "Agregar amigo",
+  "pending": "Pendiente",
+  "friend": "Amigo",
+  "backToTheList": "Volver a la lista",
+  "close": "Cerrar",
+  "countryAvatar": "País",
+  "playerDetail": "Detalles del jugador",
+  "noUsersFound": "No se encontraron usuarios que coincidan con la búsqueda",
+  "writeName": "Escribe un nombre para buscar nuevos amigos.",
+  "noHaveFriendList": "No se encontraron amigos con ese nombre..."
 }
