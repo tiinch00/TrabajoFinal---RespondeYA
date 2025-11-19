@@ -16,8 +16,8 @@ const CrearPartida = ({ modo }) => {
   const [alerta, setAlerta] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const [isSpinning, setIsSpinning] = useState(false);
-  const [touchButton] = useSound(pop, { volume: 0.3 });
-  const [startButton] = useSound(start, { volume: 0.3 });
+  const [touchButton] = useSound(pop, { volume: 0.2 });
+  const [startButton] = useSound(start, { volume: 0.2 });
   const navigate = useNavigate();
 
   const categoryTranslations = {
@@ -37,10 +37,10 @@ const CrearPartida = ({ modo }) => {
       setAlerta(t('alert'));
       return;
     }
-    console.log('Datos de la partida a jugar');
-    console.log(categoria);
-    console.log(tiempo);
-    console.log(dificultad);
+    // console.log('Datos de la partida a jugar');
+    // console.log(categoria);
+    // console.log(tiempo);
+    // console.log(dificultad);
     startButton();
     setAlerta(t('goodLuck'));
 
