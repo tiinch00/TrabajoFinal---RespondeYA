@@ -121,7 +121,7 @@ const server = http.createServer(app);
 crearSocketServer(server); // ← listo, Socket.IO queda inicializado y organizado por “controllers”
 
 console.log("DB_HOST:", process.env.DB_HOST);
-
+console.log("DB_NAME:", process.env.DB_NAME);
 
 const bootstrap = async () => {
   try {
