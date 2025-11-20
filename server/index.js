@@ -36,49 +36,27 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 const allowedOrigins = [
-  'http://localhost:5173',
-  'http://127.0.0.1:5173',
-  'https://respondeya.website',                // <- backend con dominio
-  'https://trabajo-final-responde-ya.vercel.app', // cuando el front esté en Vercel
-  // 'https://api.tudominio.com',
+  "https://proyecto-respondeya.vercel.app",
+  "https://respondeya.website",
+  "http://localhost:5173",
 ];
 
-// Middlewares base
-app.use(express.json());
-
-// antes de usar amazon
-//  app.use(
-//    cors({
-//      origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
-//      credentials: true,
-//    })
-//  );
-
+// 1) CORS primero
 app.use(
   cors({
-    origin: (origin, callback) => {
-      // requests sin origin (ej: curl, Postman) -> se permiten
-      if (!origin) return callback(null, true);
-
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-
-      // si querés modo “super abierto” mientras probás:
-      // return callback(null, true);
-
-      console.log('🚫 CORS bloqueó origen:', origin);
-      callback(new Error('Not allowed by CORS'));
-    },
+    origin: allowedOrigins,
+    methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   })
 );
 
-// 💓 Healthcheck bien arriba
-app.get('/health', (req, res) => res.status(200).send('ok'));
+// 2) Luego JSON
+app.use(express.json());
 
-app.get('/env-check', (_req, res) => {
-  res.json({ JWT_KEY: process.env.JWT_KEY ? 'set' : 'missing' });
+// 💓 Healthcheck
+app.get("/health", (req, res) => res.status(200).send("ok"));
+app.get("/env-check", (_req, res) => {
+  res.json({ JWT_KEY: process.env.JWT_KEY ? "set" : "missing" });
 });
 
 // Rutas de la API
@@ -103,14 +81,8 @@ app.use(salaJugadoresRoutes);
 app.use(partidaPreguntasRoutes);
 app.use(respuestasRoutes);
 
-// (Opcional) raíz para verificar rápido
-app.get('/', (req, res) => res.status(200).json({ api: 'RespondeYA OK' }));
-
-// 💓 Healthcheck bien arriba
-app.get('/health', (req, res) => res.status(200).send('ok'));
-app.get('/env-check', (_req, res) => {
-  res.json({ JWT_KEY: process.env.JWT_KEY ? 'set' : 'missing' });
-});
+// raíz rápida
+app.get("/", (req, res) => res.status(200).json({ api: "RespondeYA OK" }));
 
 const PORT = process.env.PORT || 3006;
 
