@@ -1,20 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
+import { Link } from 'react-router-dom';
 import axios from 'axios';
+import cine from '/sounds/cine.mp3';
 import confetti from 'canvas-confetti';
+import conocimientoGeneral from '/sounds/conocimientoGeneral.mp3';
 import correcta from '/sounds/correcta.wav';
 import finalDeJuego from '/sounds/finalDeJuego.wav';
 import fiveSeconds from '/sounds/fiveSeconds.mp3';
-import { resolveFotoAjena } from '../utils/resolveFotoAjena.js';
+import geografia from '/sounds/geografia.mp3';
+import historia from '/sounds/historia.mp3';
 import i18n from 'i18next';
 import incorrecta from '/sounds/incorrecta.wav';
-import musicaPreguntasDefault from '/sounds/musicaPreguntasDefault.mp3';
-import cine from '/sounds/cine.mp3';
-import historia from '/sounds/historia.mp3';
-import geografia from '/sounds/geografia.mp3';
 import informatica from '/sounds/informatica.mp3';
-import conocimientoGeneral from '/sounds/conocimientoGeneral.mp3';
+import musicaPreguntasDefault from '/sounds/musicaPreguntasDefault.mp3';
+import { resolveFotoAjena } from '../utils/resolveFotoAjena.js';
 import useSound from 'use-sound';
 import { useTranslation } from 'react-i18next';
 
@@ -665,17 +666,15 @@ const JugarIndividual = () => {
 
         {/* Timer - Mobile */}
         <div
-          className={`rounded-2xl px-4 py-3 text-center w-full shadow-2xl border-2 transition-all duration-300 ${
-            tiempoRestante <= 5 && tiempoRestante > 0
+          className={`rounded-2xl px-4 py-3 text-center w-full shadow-2xl border-2 transition-all duration-300 ${tiempoRestante <= 5 && tiempoRestante > 0
               ? 'border-red-500/80 animate-pulse'
               : 'border-blue-400/30'
-          }`}
+            }`}
         >
           <p className='text-2xl sm:text-3xl font-bold text-gray-200 mb-1'>⏱️</p>
           <p
-            className={`text-4xl sm:text-5xl font-black ${
-              tiempoRestante > 5 ? 'text-white' : 'text-red-600'
-            }`}
+            className={`text-4xl sm:text-5xl font-black ${tiempoRestante > 5 ? 'text-white' : 'text-red-600'
+              }`}
           >
             {tiempoRestante}
           </p>
@@ -762,9 +761,8 @@ const JugarIndividual = () => {
                       <span className='font-bold text-yellow-300'>P{index + 1}:</span>{' '}
                       {respuesta.texto}
                       <span
-                        className={`ml-2 font-bold ${
-                          respuesta.es_correcta ? 'text-green-400' : 'text-red-400'
-                        }`}
+                        className={`ml-2 font-bold ${respuesta.es_correcta ? 'text-green-400' : 'text-red-400'
+                          }`}
                       >
                         {respuesta.es_correcta ? '✓' : '✗'}
                       </span>
@@ -826,9 +824,26 @@ const JugarIndividual = () => {
           </div>
 
           {alerta ? (
-            <div className='bg-red-500/20 border-2 border-red-500 text-red-200 p-6 rounded-2xl text-xl font-bold text-center'>
-              {alerta}
-            </div>
+            <>
+              <Link
+                to='/'
+                className='inline-flex items-center text-yellow-600 hover:text-yellow-800 mb-3 transition-colors'
+              >
+                <svg className='w-5 h-5 mr-2' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth={2}
+                    d='M15 19l-7-7 7-7'
+                  />
+                </svg>
+                {t('back')}
+              </Link>
+
+              <div className='bg-red-500/20 border-2 border-red-500 text-red-200 p-6 rounded-2xl text-xl font-bold text-center'>
+                {alerta}
+              </div>
+            </>
           ) : mostrarEspera ? (
             <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-8 w-full max-w-2xl shadow-2xl text-center'>
               <div className='flex flex-col items-center justify-center gap-4'>
@@ -901,9 +916,8 @@ const JugarIndividual = () => {
                       <span className='font-bold text-yellow-300'>P{index + 1}:</span>{' '}
                       {respuesta.texto}
                       <span
-                        className={`ml-2 font-bold ${
-                          respuesta.es_correcta ? 'text-green-400' : 'text-red-400'
-                        }`}
+                        className={`ml-2 font-bold ${respuesta.es_correcta ? 'text-green-400' : 'text-red-400'
+                          }`}
                       >
                         {respuesta.es_correcta ? '✓' : '✗'}
                       </span>
@@ -917,17 +931,15 @@ const JugarIndividual = () => {
 
         <div className='col-span-1 flex flex-col items-center justify-start'>
           <div
-            className={`rounded-3xl px-6 py-4 text-center flex flex-col items-center justify-center shadow-2xl w-60 h-48 border-2 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20 ${
-              tiempoRestante <= 5 && tiempoRestante > 0
+            className={`rounded-3xl px-6 py-4 text-center flex flex-col items-center justify-center shadow-2xl w-60 h-48 border-2 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20 ${tiempoRestante <= 5 && tiempoRestante > 0
                 ? 'border-red-500/80 animate-pulse'
                 : 'border-blue-400/30 hover:border-cyan-400/50'
-            }`}
+              }`}
           >
             <p className='text-4xl font-bold text-gray-800 mb-2'>⏱️</p>
             <p
-              className={`text-6xl font-black ${
-                tiempoRestante > 5 ? 'text-white' : 'text-red-600'
-              }`}
+              className={`text-6xl font-black ${tiempoRestante > 5 ? 'text-white' : 'text-red-600'
+                }`}
             >
               {tiempoRestante}
             </p>
