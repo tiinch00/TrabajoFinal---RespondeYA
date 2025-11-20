@@ -39,7 +39,7 @@ const allowedOrigins = [
   'http://localhost:5173',
   'http://127.0.0.1:5173',
   // cuando tengas el dominio / Vercel, los agregás acá:
-  // 'https://respondeya-frontend.vercel.app',
+  'https://trabajo-final-responde-ya.vercel.app', // dominio real de Vercel
   // 'https://api.tudominio.com',
 ];
 
