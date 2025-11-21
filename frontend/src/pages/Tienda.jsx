@@ -269,83 +269,100 @@ const Tienda = () => {
     Array.isArray(jugadorAvatares) &&
     avatares[selected] &&
     jugadorAvatares.some((a) => a.avatar_id === avatares[selected].id);
+
   return (
-    <div className='min-h-screen my-5 py-5 '>
+    <div className='min-h-screen px-3 py-6 sm:px-6 lg:px-10'>
+      {/* TÍTULO */}
       <motion.h1
-        className='text-6xl font-extrabold text-center tracking-wider text-white neon-text'
+        className='text-3xl sm:text-5xl lg:text-6xl font-extrabold text-center tracking-wider text-white neon-text'
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.8 }}
       >
         ✨ {t('store')} ✨
-      </motion.h1>
+      </motion.h1>      
 
-      <h2 className='text-white/80 text-3xl mt-8 mb-4 text-center'>Puntos: {user.puntaje}</h2>
+      {/* Puntos */}
+      <div className='flex flex-col items-center justify-center mt-6'>
+        <div className='w-56 sm:w-52 bg-black/40 rounded-xl py-1 flex justify-center sm:h-10'>
+          <p className='text-white/80 text-md sm:text-lg lg:text-xl text-center'>
+            {t('points')}: {Number(user.puntaje).toLocaleString('es-AR')}
+          </p>
+        </div>
+      </div>
 
+      {/* BOTÓN ADMIN */}
       {administrador && administrador === 'administrador' && (
-        <div className='text-center mt-6'>
+        <div className='text-center mt-4'>
           <button
             onClick={() => setMostrarModal(true)}
-            className='px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded cursor-pointer'
+            className='px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded cursor-pointer text-sm sm:text-base'
           >
             {t('addSkin')}
           </button>
         </div>
       )}
+
+      {/* MODAL AGREGAR AVATAR (ADMIN) */}
       {mostrarModal && (
-        <div className='fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex justify-center items-center'>
-          <div className='bg-indigo-900 p-6 rounded-2xl w-96 text-white'>
-            <h2 className='text-2xl mb-4 text-center'>{t('addSkin2')}</h2>
-            <label htmlFor='nombre'>
+        <div className='fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex justify-center items-center px-3'>
+          <div className='bg-indigo-900 p-4 sm:p-6 rounded-2xl w-full max-w-md text-white'>
+            <h2 className='text-xl sm:text-2xl mb-4 text-center'>{t('addSkin2')}</h2>
+
+            <label htmlFor='nombre' className='block mb-2'>
               <input
                 type='text'
                 name='nombre'
                 placeholder={t('formName')}
                 value={form.nombre}
                 onChange={handleChangeForm}
-                className='w-full mb-2 p-2 rounded'
+                className='w-full mb-2 p-2 rounded bg-indigo-800/60 border border-indigo-500/40 focus:outline-none'
               />
             </label>
-            <label htmlFor='division'>
+
+            <label htmlFor='division' className='block mb-2'>
               <input
                 type='text'
                 name='division'
                 placeholder={t('formDivition')}
                 value={form.division}
                 onChange={handleChangeForm}
-                className='w-full mb-2 p-2 rounded'
+                className='w-full mb-2 p-2 rounded bg-indigo-800/60 border border-indigo-500/40 focus:outline-none'
               />
             </label>
-            <label htmlFor='precio_puntos'>
+
+            <label htmlFor='precio_puntos' className='block mb-2'>
               <input
                 type='number'
                 name='precio_puntos'
                 placeholder={t('formValue')}
                 value={form.precio_puntos}
                 onChange={handleChangeForm}
-                className='w-full mb-2 p-2 rounded'
+                className='w-full mb-2 p-2 rounded bg-indigo-800/60 border border-indigo-500/40 focus:outline-none'
               />
             </label>
-            <label htmlFor='preview_url'>
+
+            <label htmlFor='preview_url' className='block mb-2'>
               <input
                 type='text'
                 name='preview_url'
                 placeholder={t('formUrl')}
                 value={form.preview_url}
                 onChange={handleChangeForm}
-                className='w-full mb-2 p-2 rounded'
+                className='w-full mb-2 p-2 rounded bg-indigo-800/60 border border-indigo-500/40 focus:outline-none'
               />
             </label>
-            <div className='flex justify-between mt-4'>
+
+            <div className='flex justify-between mt-4 gap-3'>
               <button
                 onClick={() => setMostrarModal(false)}
-                className='px-3 py-2 bg-red-600 hover:bg-red-700 rounded cursor-pointer'
+                className='flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 rounded cursor-pointer text-sm sm:text-base'
               >
                 {t('cancel')}
               </button>
               <button
                 onClick={handleAgregarAvatar}
-                className='px-3 py-2 bg-green-600 hover:bg-green-700 rounded cursor-pointer'
+                className='flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 rounded cursor-pointer text-sm sm:text-base'
               >
                 {t('save')}
               </button>
@@ -354,85 +371,94 @@ const Tienda = () => {
         </div>
       )}
 
-      <div className='grid grid-cols-6 gap-4 py-10'>
+      {/* GRID DE AVATARES */}
+      <div className='mt-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6 justify-items-center'>
         {avatares.map((avatar, index) => (
           <motion.img
             key={index}
             src={avatar.preview_url}
             alt={`Avatar ${index + 1}`}
-            className='flex w-40 h-50 object-cover rounded-full p-4 cursor-pointer'
-            whileHover={{ scale: 1.5 }}
-            whileTap={{ scale: 1.3 }}
+            className='w-28 h-28 sm:w-32 sm:h-32 lg:w-36 lg:h-36 object-cover rounded-full cursor-pointer bg-indigo-900/60 p-2 shadow-lg'
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => setSelected(index)}
-          ></motion.img>
+          />
         ))}
       </div>
 
-      {/* div overlay absoluto en toda la pantalla) */}
+      {/* OVERLAY DETALLE AVATAR */}
       {selected !== null && (
         <div
-          className='fixed inset-0 z-20  bg-black/50 backdrop-blur-sm'
+          className='fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-center justify-center px-3'
           onClick={() => setSelected(null)}
         >
           <motion.div
-            onClick={(e) => e.stopPropagation()} // evita que el click burbujee al overlay
+            onClick={(e) => e.stopPropagation()}
             initial={{ opacity: 0, y: 10, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10 }}
-            className='absolute left-1/2 top-120 -translate-x-1/2 -translate-y-1/2
-                      w-120 h-195 sm:h-190 sm:w-120  rounded-2xl bg-indigo-900 text-white p-6 shadow-2xl'
+            className='relative w-full max-w-lg max-h-[90vh] overflow-y-auto
+                     rounded-2xl bg-indigo-900 text-white p-4 sm:p-6 shadow-2xl'
           >
-            {/* Boton X */}
+            {/* Botón X */}
             <button
               type='button'
               aria-label='Cerrar'
-              className='absolute top-2 right-2 rounded-full w-9 h-9 grid place-items-center
-                        hover:bg-black/5 active:scale-95 cursor-pointer'
+              className='absolute top-2 right-2 rounded-full w-8 h-8 grid place-items-center
+                       hover:bg-black/10 active:scale-95 cursor-pointer'
               onClick={() => setSelected(null)}
             >
               ✕
             </button>
 
+            {/* Imagen avatar */}
             <img
               src={avatares[selected].preview_url}
               alt={`Avatar ${selected + 1}`}
-              className='w-60 h-80 object-cover rounded-full mx-auto'
+              className='w-40 h-40 sm:w-52 sm:h-52 object-cover rounded-full mx-auto mt-4'
             />
 
-            <hr className='my-7 border-1 border-sky-500' />
+            <hr className='my-6 border border-sky-500/60' />
 
-            <div className='text-6xl text-center mt-6'>{avatares[selected].nombre}</div>
+            {/* Nombre */}
+            <div className='text-2xl sm:text-3xl font-bold text-center mt-2 break-words'>
+              {avatares[selected].nombre}
+            </div>
 
-            <div className='text-2xl text-center mt-4 mb-4'>
+            {/* División */}
+            <div className='text-lg sm:text-2xl text-center mt-3 mb-4'>
               {modeTranslations[avatares[selected].division]}
             </div>
 
-            <div className='text-center mt-4'>
-              <p className='text-3xl font-bold text-yellow-400'>
+            {/* Precio */}
+            <div className='text-center mt-2'>
+              <p className='text-2xl sm:text-3xl font-bold text-yellow-400'>
                 {avatares[selected].precio_puntos} {t('points')}
               </p>
-              <p className='text-lg text-gray-400'>o</p>
-              <p className='text-2xl font-semibold text-green-400'>$1000 ARS {t('mp')} </p>
+              <p className='text-sm sm:text-lg text-gray-400 mt-1'>o</p>
+              <p className='text-lg sm:text-2xl font-semibold text-green-400 mt-1'>
+                $1000 ARS {t('mp')}
+              </p>
             </div>
 
+            {/* ADMIN vs JUGADOR */}
             {administrador === 'administrador' ? (
               // 💼 Modo Administrador → solo mostrar eliminar
               <div className='text-center mt-6'>
                 <button
                   onClick={() => setModalConfirmarEliminar(true)}
-                  className='px-4 py-2 bg-red-500 hover:bg-amber-700 text-white rounded cursor-pointer'
+                  className='px-4 py-2 bg-red-500 hover:bg-amber-700 text-white rounded cursor-pointer text-sm sm:text-base'
                 >
                   {t('deleteSkin')}
                 </button>
               </div>
             ) : (
-              // 👤 Modo Jugador → todo el flujo normal de compra
               <>
-                {/* Botón de compra con puntos o estado actual */}
+                {/* Compra con puntos */}
                 {yaLoTiene ? (
                   <div className='flex-col items-center justify-center text-center mt-5'>
                     <button
-                      className='text-xl mt-3 px-4 py-2 rounded bg-gray-500 hover:bg-gray-600 text-white cursor-not-allowed'
+                      className='text-base sm:text-xl mt-3 px-4 py-2 rounded bg-gray-500 hover:bg-gray-600 text-white cursor-not-allowed'
                       disabled
                     >
                       {t('gotThis')}
@@ -440,18 +466,20 @@ const Tienda = () => {
                   </div>
                 ) : jugador.puntaje >= avatares[selected].precio_puntos ? (
                   confirmar ? (
-                    <div className='mt-2'>
-                      <p className='text-4xl text-center'>¿Estás seguro de comprar este avatar?</p>
-                      <div className='flex justify-center gap-5 my-5 text-xl'>
+                    <div className='mt-4'>
+                      <p className='text-xl sm:text-2xl text-center mb-3'>
+                        ¿Estás seguro de comprar este avatar?
+                      </p>
+                      <div className='flex justify-center gap-4 my-4 text-base sm:text-xl'>
                         <button
-                          className='cursor-pointer w-24 rounded bg-red-600 hover:bg-red-700'
+                          className='cursor-pointer w-24 rounded bg-red-600 hover:bg-red-700 px-3 py-2'
                           onClick={() => setConfirmar(false)}
                         >
                           {t('cancel')}
                         </button>
 
                         <button
-                          className='cursor-pointer w-24 rounded bg-green-600 hover:bg-green-700'
+                          className='cursor-pointer w-24 rounded bg-green-600 hover:bg-green-700 px-3 py-2'
                           onClick={() => handleSubmit(avatares[selected].id)}
                           disabled={selected == null || !avatares[selected]}
                         >
@@ -460,9 +488,9 @@ const Tienda = () => {
                       </div>
                     </div>
                   ) : (
-                    <div className='flex-col items-center justify-center text-center'>
+                    <div className='flex-col items-center justify-center text-center mt-4'>
                       <button
-                        className='text-xl mt-3 px-4 py-2 rounded bg-sky-600 text-white hover:bg-sky-700 cursor-pointer mr-2'
+                        className='text-base sm:text-xl mt-3 px-4 py-2 rounded bg-sky-600 text-white hover:bg-sky-700 cursor-pointer'
                         onClick={() => setConfirmar(true)}
                       >
                         {t('buyWPoints')}
@@ -470,46 +498,48 @@ const Tienda = () => {
                     </div>
                   )
                 ) : (
-                  <div className='flex-col items-center justify-center text-center'>
+                  <div className='flex-col items-center justify-center text-center mt-4'>
                     <button
-                      className='mt-3 px-2 py-2 rounded bg-gray-500 text-white hover:bg-gray-600 cursor-not-allowed'
+                      className='mt-3 px-3 py-2 rounded bg-gray-500 text-white hover:bg-gray-600 cursor-not-allowed text-sm sm:text-base'
                       disabled
                     >
                       {t('buyWPoints')}
                     </button>
-                    <p className='text-red-700'>{t('noMoney')}</p>
+                    <p className='text-sm sm:text-base text-red-400 mt-1'>{t('noMoney')}</p>
                   </div>
                 )}
 
-                <div className='flex items-center justify-center'>
+                {/* Compra con MercadoPago */}
+                <div className='flex items-center justify-center mt-3'>
                   <button
                     onClick={() => crearPago(avatares[selected].nombre)}
-                    className={`text-xl mt-3 px-2 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 cursor-pointer ${
-                      yaLoTiene || confirmar ? 'hidden' : ''
-                    }`}
+                    className={`text-base sm:text-xl mt-3 px-3 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 cursor-pointer ${yaLoTiene || confirmar ? 'hidden' : ''
+                      }`}
                   >
                     {t('buyWMP')}
                   </button>
                 </div>
               </>
             )}
+
+            {/* MODAL CONFIRMAR ELIMINAR */}
             {modalConfirmarEliminar && (
-              <div className='fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex justify-center items-center'>
-                <div className='bg-indigo-900 p-6 rounded-2xl w-96 '>
-                  <p className='text-center'>{t('avatarDeleteSure')}</p>
-                  <div className='flex justify-between'>
+              <div className='fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex justify-center items-center px-3'>
+                <div className='bg-indigo-900 p-4 sm:p-6 rounded-2xl w-full max-w-sm'>
+                  <p className='text-center mb-4'>{t('avatarDeleteSure')}</p>
+                  <div className='flex justify-between gap-3'>
                     <button
                       onClick={() => {
                         setModalConfirmarEliminar(false);
                         setSelected(null);
                       }}
-                      className='px-4 py-2 bg-green-500 hover:bg-amber-700 text-white rounded cursor-pointer'
+                      className='flex-1 px-4 py-2 bg-green-500 hover:bg-amber-700 text-white rounded cursor-pointer text-sm sm:text-base'
                     >
                       {t('cancel')}
                     </button>
                     <button
                       onClick={() => handleEliminarAvatar(avatares[selected].id)}
-                      className='px-4 py-2 bg-red-500 hover:bg-amber-700 text-white rounded cursor-pointer'
+                      className='flex-1 px-4 py-2 bg-red-500 hover:bg-amber-700 text-white rounded cursor-pointer text-sm sm:text-base'
                     >
                       {t('acepted')}
                     </button>
@@ -518,15 +548,17 @@ const Tienda = () => {
               </div>
             )}
 
+            {/* TOAST COMPRADO */}
             <AnimatePresence>
               {comprado && (
                 <motion.p
                   key='toast'
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0, transition: { duration: 0.25 } }}
-                  exit={{ opacity: 0, y: 8, transition: { duration: 0.8 } }} // salida lenta
+                  exit={{ opacity: 0, y: 8, transition: { duration: 0.8 } }
+                  }
                   className='fixed bottom-6 left-1/2 -translate-x-1/2
-                            bg-green-600 text-white px-4 py-2 rounded shadow-lg z-[100]'
+                           bg-green-600 text-white px-4 py-2 rounded shadow-lg z-[100]'
                 >
                   {t('avatarADDED')}
                 </motion.p>
@@ -537,6 +569,7 @@ const Tienda = () => {
       )}
     </div>
   );
+
 };
 
 export default Tienda;

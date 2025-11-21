@@ -1,7 +1,7 @@
 // src/pages/SalaPartidas.jsx
 
 import { AnimatePresence, motion } from 'framer-motion';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import axios from 'axios';
 import { resolveFotoAjena } from '../utils/resolveFotoAjena.js';
@@ -13,13 +13,13 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006';
 const SalaPartidas = () => {
   const { t } = useTranslation();
   const [salas, setSalas] = useState([]);
-  const [selectedSala, setSelectedSala] = useState(null); // sala seleccionada para el modal
-  const [showConfirm, setShowConfirm] = useState(false); // reconfirmación "¿Estás seguro?"
+  const [selectedSala, setSelectedSala] = useState(null);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [filterCategoria, setFilterCategoria] = useState('');
   const [filterTiempo, setFilterTiempo] = useState('');
   const [filterPregunta, setFilterPregunta] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 6; // por ej: 6 tarjetas por página (3 columnas x 2 filas)
+  const pageSize = 6;
 
   const navigate = useNavigate();
 
@@ -37,14 +37,14 @@ const SalaPartidas = () => {
     facil: t('easy'),
   };
 
-  // suponiendo que guardás tu id de jugador en localStorage
   const currentJugadorId = (() => {
     const raw = localStorage.getItem('jugador_id');
     const n = Number(raw);
     return Number.isFinite(n) ? n : null;
   })();
 
-  const getSalas = async () => {
+  // ⬇️ getSalas envuelto en useCallback para poder usarlo en el intervalo
+  const getSalas = useCallback(async () => {
     try {
       const estado = 'esperando';
       const { data } = await axios.get(`${API_URL}/salas`, {
@@ -54,7 +54,7 @@ const SalaPartidas = () => {
     } catch (e) {
       console.error('GET /salas', e.response?.data?.error || e.message);
     }
-  };
+  }, []);
 
   const updateEstadoSala = async (id) => {
     try {
@@ -70,27 +70,30 @@ const SalaPartidas = () => {
     }
   };
 
+  // ⬇️ Primer fetch + polling cada 5 segundos
   useEffect(() => {
-    getSalas();
-  }, []);
+    getSalas(); // primer carga inmediata
+
+    const intervalId = setInterval(() => {
+      getSalas();
+    }, 5000); // 5000 ms = 5 segundos
+
+    // limpieza al desmontar
+    return () => clearInterval(intervalId);
+  }, [getSalas]);
 
   // si cambian filtros o cantidad de salas, volvemos a la página 1
   useEffect(() => {
     setCurrentPage(1);
   }, [filterCategoria, filterTiempo, filterPregunta, salas.length]);
 
-  // obtener el oponente (el otro jugador de la sala)
+  // ... 👇 el resto de tu componente queda igual
   const getOpponent = (sala) => {
     if (!sala?.jugadores || sala.jugadores.length === 0) return null;
-
-    // si todavía no sabemos quién soy yo, devolvemos el primero
     if (!currentJugadorId) {
       return sala.jugadores[0];
     }
-
-    // buscamos alguien cuyo jugador_id sea distinto al mío
     const otro = sala.jugadores.find((j) => j?.jugador_id !== currentJugadorId);
-
     return otro || sala.jugadores[0];
   };
 
@@ -108,7 +111,6 @@ const SalaPartidas = () => {
     if (!selectedSala) return;
     try {
       await updateEstadoSala(selectedSala.id);
-      // luego de cambiar estado, navegamos a la sala de espera
       navigate(`/salaEspera/${selectedSala.codigo}`);
     } catch (e) {
       console.error('Error al unirse a la partida', e);
@@ -127,7 +129,7 @@ const SalaPartidas = () => {
       case 'dificil':
         return 'text-red-400';
       default:
-        return 'text-blue-300'; // default
+        return 'text-blue-300';
     }
   };
 
@@ -168,35 +170,44 @@ const SalaPartidas = () => {
   const salasPagina = salasFiltradas.slice(startIndex, endIndex);
 
   return (
-    <div className='h-full w-full p-8'>
+    <div className='min-h-screen w-full px-3 py-4 sm:px-4 sm:py-6 md:px-6 lg:px-8'>
       <div className='max-w-6xl mx-auto'>
-        <div className='mb-8 flex items-center justify-center'>
+        {/* BOTÓN CREAR PARTIDA */}
+        <div className='mb-6 flex items-center justify-center'>
           <button
             type='button'
             onClick={() => navigate('/crearMultijugador')}
-            className='w-50 h-14 cursor-pointer bg-gradient-to-br from-green-400 to-green-500 rounded-full shadow-xl hover:shadow-green-500/50 transition-all duration-300 flex items-center justify-center gap-3 border-4 border-green-300'
+            className='w-full max-w-lvh sm:w-96 h-12 sm:h-16 cursor-pointer 
+                     bg-gradient-to-br from-green-400 to-green-500 
+                     rounded-full shadow-xl hover:shadow-green-500/50 
+                     transition-all duration-300 flex items-center justify-center gap-3 
+                     border-4 border-green-300 text-sm sm:text-base text-white text-center'
           >
             {t('createMatch')}
           </button>
         </div>
 
-        <h2 className='text-3xl font-bold text-purple-200 my-6 w-110 rounded-2xl'>
+        {/* TÍTULO */}
+        <h2 className='text-2xl sm:text-3xl font-bold text-purple-200 my-4 sm:my-6 
+                     text-center sm:text-left'>
           {t('gamesList')}
         </h2>
 
         {salas.length > 0 ? (
           <>
             {/* FILTROS */}
-            <div className='mb-6 flex flex-col gap-4 md:flex-row md:flex-wrap'>
+            <div className='mb-6 flex flex-col gap-4 md:flex-row md:flex-wrap md:items-end'>
               {/* Filtro categoría */}
-              <div className='flex flex-col gap-1'>
-                <span className='text-sm text-purple-100 font-semibold'>{t('category')}</span>
+              <div className='flex flex-col gap-1 w-full md:w-auto'>
+                <span className='text-xs sm:text-sm text-purple-100 font-semibold'>
+                  {t('category')}
+                </span>
                 <div className='flex gap-2 flex-wrap'>
                   <button
                     type='button'
                     onClick={() => setFilterCategoria('')}
-                    className={`px-3 py-1 rounded-full border text-sm cursor-pointer transition 
-                      ${filterCategoria === ''
+                    className={`px-3 py-1 rounded-full border text-xs sm:text-sm cursor-pointer transition 
+                    ${filterCategoria === ''
                         ? 'bg-pink-500 text-white border-pink-400'
                         : 'bg-transparent text-pink-200 border-pink-400/60 hover:bg-pink-500/20'
                       }`}
@@ -208,8 +219,8 @@ const SalaPartidas = () => {
                       key={cat}
                       type='button'
                       onClick={() => setFilterCategoria(cat)}
-                      className={`px-3 py-1 rounded-full border text-sm cursor-pointer transition 
-                        ${filterCategoria === cat
+                      className={`px-3 py-1 rounded-full border text-xs sm:text-sm cursor-pointer transition 
+                      ${filterCategoria === cat
                           ? 'bg-pink-500 text-white border-pink-400'
                           : 'bg-transparent text-pink-200 border-pink-400/60 hover:bg-pink-500/20'
                         }`}
@@ -221,14 +232,16 @@ const SalaPartidas = () => {
               </div>
 
               {/* Filtro dificultad de tiempo */}
-              <div className='flex flex-col gap-1'>
-                <span className='text-sm text-purple-100 font-semibold'>{t('dificultytime')}</span>
+              <div className='flex flex-col gap-1 w-full md:w-auto'>
+                <span className='text-xs sm:text-sm text-purple-100 font-semibold'>
+                  {t('dificultytime')}
+                </span>
                 <div className='flex gap-2 flex-wrap'>
                   <button
                     type='button'
                     onClick={() => setFilterTiempo('')}
-                    className={`px-3 py-1 rounded-full border text-sm cursor-pointer transition 
-                      ${filterTiempo === ''
+                    className={`px-3 py-1 rounded-full border text-xs sm:text-sm cursor-pointer transition 
+                    ${filterTiempo === ''
                         ? 'bg-blue-500 text-white border-blue-400'
                         : 'bg-transparent text-blue-200 border-blue-400/60 hover:bg-blue-500/20'
                       }`}
@@ -240,8 +253,8 @@ const SalaPartidas = () => {
                       key={dif}
                       type='button'
                       onClick={() => setFilterTiempo(dif)}
-                      className={`px-3 py-1 rounded-full border text-sm cursor-pointer transition 
-                        ${filterTiempo === dif
+                      className={`px-3 py-1 rounded-full border text-xs sm:text-sm cursor-pointer transition 
+                      ${filterTiempo === dif
                           ? 'bg-blue-500 text-white border-blue-400'
                           : 'bg-transparent text-blue-200 border-blue-400/60 hover:bg-blue-500/20'
                         }`}
@@ -253,16 +266,16 @@ const SalaPartidas = () => {
               </div>
 
               {/* Filtro dificultad de preguntas */}
-              <div className='flex flex-col gap-1'>
-                <span className='text-sm text-purple-100 font-semibold'>
+              <div className='flex flex-col gap-1 w-full md:w-auto'>
+                <span className='text-xs sm:text-sm text-purple-100 font-semibold'>
                   {t('dificultyquestion')}
                 </span>
                 <div className='flex gap-2 flex-wrap'>
                   <button
                     type='button'
                     onClick={() => setFilterPregunta('')}
-                    className={`px-3 py-1 rounded-full border text-sm cursor-pointer transition 
-                      ${filterPregunta === ''
+                    className={`px-3 py-1 rounded-full border text-xs sm:text-sm cursor-pointer transition 
+                    ${filterPregunta === ''
                         ? 'bg-amber-500 text-white border-amber-400'
                         : 'bg-transparent text-amber-200 border-amber-400/60 hover:bg-amber-500/20'
                       }`}
@@ -274,8 +287,8 @@ const SalaPartidas = () => {
                       key={dif}
                       type='button'
                       onClick={() => setFilterPregunta(dif)}
-                      className={`px-3 py-1 rounded-full border text-sm cursor-pointer transition 
-                        ${filterPregunta === dif
+                      className={`px-3 py-1 rounded-full border text-xs sm:text-sm cursor-pointer transition 
+                      ${filterPregunta === dif
                           ? 'bg-amber-500 text-white border-amber-400'
                           : 'bg-transparent text-amber-200 border-amber-400/60 hover:bg-amber-500/20'
                         }`}
@@ -290,7 +303,7 @@ const SalaPartidas = () => {
             {/* GRID DE SALAS */}
             {salasFiltradas.length > 0 ? (
               <>
-                <ul className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+                <ul className='grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3'>
                   {salasPagina.map((sala) => {
                     const categoria = sala.categoria;
                     const partida = sala.partida;
@@ -301,34 +314,37 @@ const SalaPartidas = () => {
                         className='cursor-pointer h-full'
                         onClick={() => handleOpenModal(sala)}
                       >
-                        <div className='h-full bg-gradient-to-br from-pink-300/10 via-violet-500/90 to-pink-800/10 rounded-3xl shadow-2xl hover:shadow-violet-500/50 transition-all duration-300 border-2 sm:border-3 md:border-4 border-violet-400 text-white p-4 flex flex-col justify-between'>
+                        <div className='h-full bg-gradient-to-br from-pink-300/10 via-violet-500/90 to-pink-800/10 
+                                      rounded-3xl shadow-2xl hover:shadow-violet-500/50 
+                                      transition-all duration-300 border-2 md:border-4 border-violet-400 
+                                      text-white p-3 sm:p-4 flex flex-col justify-between'>
                           <div>
-                            <p className='font-semibold text-lg mb-1'>
+                            <p className='font-semibold text-base sm:text-lg mb-1'>
                               {t('category')}:{' '}
                               <span className='text-pink-400/95'>
                                 {categoryTranslations[categoria?.nombre] || 'Sin categoría'}
                               </span>
                             </p>
-                            <p className='font-semibold text-sm mb-1'>
+                            <p className='font-semibold text-xs sm:text-sm mb-1'>
                               {t('dificultytime')}:{' '}
                               <span className={getDifficultyClass(partida?.dificultad_tiempo)}>
                                 {dificultadTranslations[partida?.dificultad_tiempo] || '-'}
                               </span>
                             </p>
-                            <p className='font-semibold text-sm mb-1'>
+                            <p className='font-semibold text-xs sm:text-sm mb-1'>
                               {t('dificultyquestion')}:{' '}
                               <span className={getDifficultyClass(partida?.dificultad_pregunta)}>
                                 {dificultadTranslations[partida?.dificultad_pregunta] || '-'}
                               </span>
                             </p>
-                            <p className='font-semibold text-sm mb-1'>
+                            <p className='font-semibold text-xs sm:text-sm mb-1'>
                               {t('questionTotal')}:{' '}
                               <span className='text-blue-300'>
                                 {partida?.total_preguntas || '-'}
                               </span>
                             </p>
                           </div>
-                          <p className='font-semibold text-sm mt-3'>
+                          <p className='font-semibold text-xs sm:text-sm mt-3'>
                             {t('state')}:{' '}
                             <span className='text-purple-100'>
                               {sala.estado === 'esperando' && t('waiting')}
@@ -339,15 +355,17 @@ const SalaPartidas = () => {
                     );
                   })}
                 </ul>
+
+                {/* PAGINADO */}
                 {totalPages > 1 && (
-                  <div className='mt-6 flex items-center justify-center gap-2'>
+                  <div className='mt-6 flex items-center justify-center gap-2 flex-wrap'>
                     {/* Prev */}
                     <button
                       type='button'
                       onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                       disabled={safePage === 1}
-                      className={`px-3 py-1 rounded-full border text-sm cursor-pointer transition 
-              ${safePage === 1
+                      className={`px-3 py-1 rounded-full border text-xs sm:text-sm cursor-pointer transition 
+                      ${safePage === 1
                           ? 'border-gray-500 text-gray-500 cursor-not-allowed'
                           : 'border-purple-400 text-purple-100 hover:bg-purple-500/20'
                         }`}
@@ -361,8 +379,9 @@ const SalaPartidas = () => {
                         key={num}
                         type='button'
                         onClick={() => setCurrentPage(num)}
-                        className={`w-8 h-8 rounded-full text-sm font-semibold cursor-pointer transition 
-                ${safePage === num
+                        className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full text-xs sm:text-sm font-semibold 
+                                  cursor-pointer transition 
+                        ${safePage === num
                             ? 'bg-purple-500 text-white'
                             : 'bg-transparent text-purple-100 border border-purple-400/60 hover:bg-purple-500/20'
                           }`}
@@ -376,8 +395,8 @@ const SalaPartidas = () => {
                       type='button'
                       onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                       disabled={safePage === totalPages}
-                      className={`px-3 py-1 rounded-full border text-sm cursor-pointer transition 
-              ${safePage === totalPages
+                      className={`px-3 py-1 rounded-full border text-xs sm:text-sm cursor-pointer transition 
+                      ${safePage === totalPages
                           ? 'border-gray-500 text-gray-500 cursor-not-allowed'
                           : 'border-purple-400 text-purple-100 hover:bg-purple-500/20'
                         }`}
@@ -394,7 +413,7 @@ const SalaPartidas = () => {
             )}
           </>
         ) : (
-          <div>
+          <div className='mt-4'>
             <span className='text-white'>{t('noSalasHolding')}</span>
           </div>
         )}
@@ -404,42 +423,44 @@ const SalaPartidas = () => {
           {selectedSala && (
             <motion.div
               key='modal-sala'
-              className='fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center'
+              className='fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center px-3'
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
-              {/* {console.log(selectedSala)} */}
               <motion.div
                 onClick={(e) => e.stopPropagation()}
                 initial={{ opacity: 0, y: 20, scale: 0.96 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 20, scale: 0.96 }}
-                className='relative w-[95vw] max-w-xl max-h-[85vh] bg-indigo-900 text-white rounded-2xl shadow-2xl p-6 flex flex-col'
+                className='relative w-full max-w-xl max-h-[85vh] bg-indigo-900 text-white 
+                         rounded-2xl shadow-2xl p-4 sm:p-6 flex flex-col'
               >
-                {/* Botón cerrar arriba a la derecha */}
+                {/* Botón cerrar */}
                 <button
                   type='button'
                   onClick={handleCloseModal}
                   aria-label='Cerrar'
-                  className='absolute top-3 right-3 rounded-full w-9 h-9 border border-white/30 flex items-center justify-center hover:bg-white/10 transition-colors cursor-pointer'
+                  className='absolute top-3 right-3 rounded-full w-8 h-8 sm:w-9 sm:h-9 
+                           border border-white/30 flex items-center justify-center 
+                           hover:bg-white/10 transition-colors cursor-pointer'
                 >
                   ✕
                 </button>
 
                 {/* Contenido principal del modal */}
-                <div className='space-y-4 pr-4 overflow-y-auto'>
-                  <h3 className='text-2xl font-bold mb-2'>{t('salaDetails')}</h3>
-                  <div className='flex flex-row justify-between gap-4'>
+                <div className='space-y-4 pr-1 sm:pr-4 overflow-y-auto mt-4 sm:mt-2'>
+                  <h3 className='text-xl sm:text-2xl font-bold mb-2'>{t('salaDetails')}</h3>
+                  <div className='flex flex-col md:flex-row justify-between gap-4'>
                     {/* Info sala/partida */}
-                    <div className='bg-black/20 rounded-xl p-4 space-y-2'>
-                      <p>
+                    <div className='bg-black/20 rounded-xl p-3 sm:p-4 space-y-2 flex-1'>
+                      <p className='text-sm sm:text-base'>
                         <span className='font-semibold'>{t('category')}:</span>{' '}
                         <span className='text-pink-400/95'>
                           {categoryTranslations[selectedSala.categoria?.nombre] || 'Sin categoría'}
                         </span>
                       </p>
-                      <p>
+                      <p className='text-sm sm:text-base'>
                         <span className='font-semibold'>{t('dificultytime')}:</span>{' '}
                         <span
                           className={getDifficultyClass(selectedSala.partida?.dificultad_tiempo)}
@@ -447,7 +468,7 @@ const SalaPartidas = () => {
                           {dificultadTranslations[selectedSala.partida?.dificultad_tiempo] || '-'}
                         </span>
                       </p>
-                      <p>
+                      <p className='text-sm sm:text-base'>
                         <span className='font-semibold'>{t('dificultyquestion')}:</span>{' '}
                         <span
                           className={getDifficultyClass(selectedSala.partida?.dificultad_pregunta)}
@@ -455,7 +476,7 @@ const SalaPartidas = () => {
                           {dificultadTranslations[selectedSala.partida?.dificultad_pregunta] || '-'}
                         </span>
                       </p>
-                      <p>
+                      <p className='text-sm sm:text-base'>
                         <span className='font-semibold'>{t('questionTotal')}:</span>{' '}
                         <span className='text-blue-300'>
                           {selectedSala.partida?.total_preguntas || '-'}
@@ -464,26 +485,33 @@ const SalaPartidas = () => {
                     </div>
 
                     {/* Info del oponente */}
-                    <div className='bg-black/20 rounded-xl p-4 space-y-2'>
-                      <h4 className='text-xl font-semibold mb-2'>{t('goingToPlay')}:</h4>
+                    <div className='bg-black/20 rounded-xl p-3 sm:p-4 space-y-2 flex-1'>
+                      <h4 className='text-lg sm:text-xl font-semibold mb-2'>
+                        {t('goingToPlay')}:
+                      </h4>
                       {(() => {
                         const opponent = getOpponent(selectedSala);
-                        const user = opponent?.user; // alias de jugador del modelo en associations.js
+                        const user = opponent?.user;
 
                         if (!opponent || !user) {
-                          return <p className='text-sm text-gray-300'>{t('noInfoYet')}</p>;
+                          return (
+                            <p className='text-xs sm:text-sm text-gray-300'>
+                              {t('noInfoYet')}
+                            </p>
+                          );
                         }
 
                         return (
-                          <div className='flex items-center gap-4'>
+                          <div className='flex items-center gap-3 sm:gap-4'>
                             {user.foto_perfil && (
                               <img
                                 src={resolveFotoAjena(user.foto_perfil)}
                                 alt={user.name}
-                                className='w-16 h-16 rounded-full object-cover border-2 border-yellow-400'
+                                className='w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover 
+                                         border-2 border-yellow-400 flex-shrink-0'
                               />
                             )}
-                            <div className='space-y-1'>
+                            <div className='space-y-1 text-xs sm:text-sm'>
                               <p>
                                 <span className='font-semibold'>{t('name')}:</span>{' '}
                                 <span className='text-yellow-300'>{user.name}</span>
@@ -509,13 +537,15 @@ const SalaPartidas = () => {
                   <button
                     type='button'
                     onClick={() => setShowConfirm(true)}
-                    className='px-10 py-2 rounded-full bg-green-500 hover:bg-green-600 font-semibold shadow-lg cursor-pointer'
+                    className='w-full sm:w-auto px-8 sm:px-10 py-2 rounded-full 
+                             bg-green-500 hover:bg-green-600 font-semibold shadow-lg 
+                             cursor-pointer text-sm sm:text-base text-center'
                   >
                     {t('play')}
                   </button>
                 </div>
 
-                {/* Reconfirmación como overlay absoluto */}
+                {/* Reconfirmación */}
                 <AnimatePresence>
                   {showConfirm && (
                     <motion.div
@@ -523,27 +553,32 @@ const SalaPartidas = () => {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
-                      className='absolute inset-0 z-20 bg-white/5 flex items-center justify-center'
+                      className='absolute inset-0 z-20 bg-white/5 flex items-center justify-center px-3'
                     >
                       <motion.div
                         initial={{ scale: 0.9, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0.9, opacity: 0 }}
-                        className='bg-indigo-950 rounded-2xl p-6 max-w-md w-[90%] shadow-2xl space-y-4 border border-white/30'
+                        className='bg-indigo-950 rounded-2xl p-4 sm:p-6 max-w-md w-full 
+                                 shadow-2xl space-y-4 border border-white/30'
                       >
-                        <p className='font-semibold text-white text-lg'>{t('sure')}</p>
+                        <p className='font-semibold text-white text-base sm:text-lg'>
+                          {t('sure')}
+                        </p>
                         <div className='flex gap-3 flex-wrap justify-end'>
                           <button
                             type='button'
                             onClick={() => setShowConfirm(false)}
-                            className='px-4 py-2 rounded-full bg-red-500 hover:bg-red-600 text-white font-semibold shadow cursor-pointer'
+                            className='px-4 py-2 rounded-full bg-red-500 hover:bg-red-600 
+                                     text-white font-semibold shadow cursor-pointer text-sm'
                           >
                             {t('cancel')}
                           </button>
                           <button
                             type='button'
                             onClick={handleJoinGameConfirmed}
-                            className='px-4 py-2 rounded-full bg-green-500 hover:bg-green-600 text-white font-semibold shadow cursor-pointer'
+                            className='px-4 py-2 rounded-full bg-green-500 hover:bg-green-600 
+                                     text-white font-semibold shadow cursor-pointer text-sm'
                           >
                             {t('yesPlay')}
                           </button>
@@ -559,6 +594,7 @@ const SalaPartidas = () => {
       </div>
     </div>
   );
+
 };
 
 export default SalaPartidas;

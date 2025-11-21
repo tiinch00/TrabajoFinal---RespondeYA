@@ -348,14 +348,18 @@ export default function SalaEspera() {
   // }
 
   return (
-    <div className='m-3 flex items-center justify-center'>
-      <div className='p-6 rounded-3xl text-white w-full max-w-4xl bg-gradient-to-br from-purple-900/30 via-purple-800/40 to-indigo-900/50 shadow-2xl'>
-        <h2 className='text-center text-2xl font-extrabold mb-6'>
+    <div className='min-h-screen w-full px-3 py-4 flex items-center justify-center'>
+      <div className='w-full max-w-4xl rounded-3xl p-4 sm:p-6 text-white 
+                    bg-gradient-to-br from-purple-900/30 via-purple-800/40 to-indigo-900/50 
+                    shadow-2xl'>
+        {/* Título */}
+        <h2 className='text-center text-xl sm:text-2xl font-extrabold mb-4 sm:mb-6 break-words'>
           {t('holdingRoom')}#{id}
         </h2>
 
-        <div className='grid grid-cols-3 gap-4 items-center'>
-          {/* Jugador 1 (izquierda) */}
+        {/* Contenedor jugadores + centro */}
+        <div className='grid grid-cols-1 sm:grid-cols-3 gap-6 items-center'>
+          {/* Jugador 1 */}
           <div className='flex flex-col items-center'>
             {jugador1 ? (
               <>
@@ -363,29 +367,32 @@ export default function SalaEspera() {
                   <img
                     src={resolveFotoAjena(jugador1.foto_perfil)}
                     alt='jugador1'
-                    className='w-28 h-28 rounded-full object-cover border-4 border-green-400'
+                    className='w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-green-400'
                   />
                 ) : (
-                  <p className='text-[70px] w-28 h-28 bg-gray-200/90 rounded-full text-center'>
+                  <p className='text-[52px] sm:text-[70px] w-24 h-24 sm:w-28 sm:h-28 
+                               bg-gray-200/90 rounded-full flex items-center justify-center'>
                     👤
                   </p>
                 )}
-                <p className='mt-2 font-bold'>{jugador1.nombre}</p>
-                <span className='text-xs opacity-70'>
+                <p className='mt-2 font-bold text-sm sm:text-base text-center px-2 break-words'>
+                  {jugador1.nombre}
+                </p>
+                <span className='text-[11px] sm:text-xs opacity-70'>
                   {jugador1?.esCreador ? t('creator') : 'Jugador 1'}
                 </span>
               </>
             ) : (
-              <div className='w-28 h-28 rounded-full bg-white/20' />
+              <div className='w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-white/20' />
             )}
           </div>
 
           {/* Centro: estado / countdown */}
           <div className='text-center'>
             {cuenta !== null ? (
-              <p className='text-5xl font-extrabold'>{cuenta}</p>
+              <p className='text-4xl sm:text-5xl font-extrabold'>{cuenta}</p>
             ) : (
-              <p className='text-xl font-bold'>
+              <p className='text-lg sm:text-xl font-bold px-4'>
                 {mensaje || (jugadores.length < 2 ? t('waitingPlayer') : t('readyToStart'))}
               </p>
             )}
@@ -394,13 +401,15 @@ export default function SalaEspera() {
             {redirIn !== null && (
               <div className='mt-4 text-center'>
                 {redirIn > 0 ? (
-                  <div className='inline-flex items-center gap-3 bg-black/60 text-white px-4 py-2 rounded-xl'>
+                  <div className='inline-flex flex-wrap items-center justify-center gap-2 
+                                bg-black/60 text-white px-4 py-2 rounded-xl text-sm sm:text-base'>
                     <span>{t('completedRoom')}</span>
-                    <span className='text-2xl font-extrabold'>{redirIn}</span>
+                    <span className='text-xl sm:text-2xl font-extrabold'>{redirIn}</span>
                     <span>…</span>
                   </div>
                 ) : (
-                  <div className='inline-flex items-center bg-black/60 text-white px-4 py-2 rounded-xl'>
+                  <div className='inline-flex items-center bg-black/60 text-white px-4 py-2 
+                                rounded-xl text-sm sm:text-base'>
                     {t('redirecting')}
                   </div>
                 )}
@@ -408,7 +417,7 @@ export default function SalaEspera() {
             )}
           </div>
 
-          {/* Jugador 2 (derecha) */}
+          {/* Jugador 2 */}
           <div className='flex flex-col items-center'>
             {jugador2 ? (
               <>
@@ -416,29 +425,34 @@ export default function SalaEspera() {
                   <img
                     src={resolveFotoAjena(jugador2.foto_perfil)}
                     alt='jugador2'
-                    className='w-28 h-28 rounded-full object-cover border-4 border-green-400'
+                    className='w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-green-400'
                   />
                 ) : (
-                  <p className='text-[70px] w-28 h-28 bg-gray-200/90 rounded-full text-center'>
+                  <p className='text-[52px] sm:text-[70px] w-24 h-24 sm:w-28 sm:h-28 
+                               bg-gray-200/90 rounded-full flex items-center justify-center'>
                     👤
                   </p>
                 )}
-                <p className='mt-2 font-bold'>{jugador2.nombre}</p>
-                {/* Si es creador -> "Creador"; si no -> "Invitado" */}
-                <span className='text-xs opacity-70'>
+                <p className='mt-2 font-bold text-sm sm:text-base text-center px-2 break-words'>
+                  {jugador2.nombre}
+                </p>
+                <span className='text-[11px] sm:text-xs opacity-70'>
                   {jugador2?.esCreador ? t('creator') : t('guess')}
                 </span>
               </>
             ) : (
-              <div className='w-28 h-28 rounded-full bg-white/20' />
+              <div className='w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-white/20' />
             )}
           </div>
         </div>
 
         {!socketReady && (
-          <p className='text-center mt-6 text-yellow-300 font-semibold'>{t('conectingSala')}</p>
+          <p className='text-center mt-6 text-yellow-300 font-semibold text-sm sm:text-base'>
+            {t('conectingSala')}
+          </p>
         )}
       </div>
     </div>
   );
+
 }
