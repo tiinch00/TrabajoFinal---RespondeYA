@@ -27,6 +27,7 @@ const SalaPartidas = () => {
     Cine: t('cinema'),
     Historia: t('history'),
     'Conocimiento General': t('generalKnowLedge'),
+    'Conocimiento general': t('generalKnowLedge'),
     Geografía: t('geography'),
     Informatica: t('informatic'),
   };
@@ -156,6 +157,8 @@ const SalaPartidas = () => {
 
     return catOk && tiempoOk && preguntaOk;
   });
+
+  
 
   // datos para paginado
   const totalItems = salasFiltradas.length;
