@@ -2278,7 +2278,7 @@ const Perfil = () => {
           {perfil.name}
         </p>
         <p className='text-gray-400 text-base sm:text-lg md:text-xl mt-2 sm:mt-4'>
-          {t('points')}: {user.puntaje}
+          {t('points')}: {Number(user.puntaje).toLocaleString('es-AR')}
         </p>
       </div>
 

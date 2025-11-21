@@ -18,6 +18,7 @@ import incorrecta from '/sounds/incorrecta.wav';
 import informatica from '/sounds/informatica.mp3';
 import musicaPreguntasDefault from '/sounds/musicaPreguntasDefault.mp3';
 import { resolveFotoAjena } from '../utils/resolveFotoAjena.js';
+import { useAuth } from '../context/auth-context.jsx';
 import { useGame } from '../context/ContextJuego.jsx';
 import useSound from 'use-sound';
 import { useTranslation } from 'react-i18next';
@@ -73,6 +74,7 @@ function tiempoPorPregunta(t) {
 
 export default function JugarMultijugador() {
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006';
+  const { user, updateUser } = useAuth();
   const isDefaultFoto = (fp) => {
     if (!fp) return true;
     return fp === '/uploads/default.png' || fp === `${API_URL}/uploads/default.png`;
@@ -921,7 +923,7 @@ export default function JugarMultijugador() {
     const s = socketRef.current;
     if (!s) return;
 
-    const onFinPartida = (payload) => {
+    const onFinPartida = async (payload) => {
       setPartidaCompleta(payload);
       setEsperandoResultado(false);
       setJuegoTerminado(true);
@@ -946,12 +948,26 @@ export default function JugarMultijugador() {
         setPerdedor(p);
         setJugadorIdGanador(ganadorId);
       } else {
-        // empate: los dos tienen posición 1 y +250
+        // empate
         const j1 = jugadoresResumen[0] || null;
         const j2 = jugadoresResumen[1] || null;
         setGanador(j1);
         setPerdedor(j2);
         setJugadorIdGanador(null);
+      }
+
+      // ✅ Después de que el server cerró la partida y actualizó BD,
+      //    cada cliente sincroniza SU puntaje global
+      if (jugadorActualId) {
+        try {
+          const { data } = await axios.get(`${API_URL}/jugadores/${jugadorActualId}`);
+          const nuevoPuntaje = Number(data?.puntaje ?? 0);
+
+          // Esto actualiza el contexto y localStorage (igual que en Ruleta)
+          updateUser({ puntaje: nuevoPuntaje });
+        } catch (err) {
+          console.log('Error al sincronizar puntaje del jugador:', err.response?.data?.error || err.message);
+        }
       }
     };
 
@@ -960,7 +976,7 @@ export default function JugarMultijugador() {
     return () => {
       s.off('sala:fin_partida', onFinPartida);
     };
-  }, []);
+  }, [API_URL, jugadorActualId, updateUser]);
 
 
 
@@ -1008,7 +1024,7 @@ export default function JugarMultijugador() {
 
   // ============================================================= html =====================================================================
   return (
-    <div className='w-full h-full text-white pt-5 mb-10'>
+    <div className="w-full h-full text-white pt-5 mb-10">
       {/* Canvas SIEMPRE montado */}
       <canvas
         ref={canvasRef}
@@ -1023,470 +1039,486 @@ export default function JugarMultijugador() {
         }}
       />
 
-      {mostrarContador && contadorInicial > 0 ? (
-        // 🧮 PANTALLA DE CONTADOR (lo que antes estaba en el return temprano)
-        <div className='min-h-screen flex items-start justify-center relative overflow-hidden'>
-          <div className='relative z-10 text-center'>
-            <h1 className='text-5xl md:text-6xl font-black text-white mb-8 drop-shadow-lg'>
-              {t('beReady')}
-            </h1>
-            <div className='bg-gradient-to-r from-purple-600 to-purple-700 px-4 py-4 rounded-3xl text-white text-2xl font-bold mb-6 shadow-2xl border-2 border-purple-400'>
-              🎮 {t('category')}:{' '}
-              <span className='text-yellow-300'>{translatedCategory.toUpperCase()}</span>
-            </div>
-            <div className='space-y-5 mb-4 bg-black/30 p-4 rounded-2xl backdrop-blur-sm border border-purple-400/50'>
-              <p className='text-white text-xl flex items-center justify-center gap-3'>
-                <span className='text-2xl'>⏱️</span>
-                {t('timeQuestion')}:{' '}
-                <span className='font-bold text-yellow-300'>
-                  {tiempoPorPregunta(config?.tiempo)}s
+      {/* Contenedor central con ancho máximo */}
+      <div className="w-full">
+        {mostrarContador && contadorInicial > 0 ? (
+          // 🧮 PANTALLA DE CONTADOR
+          <div className="min-h-[70vh] flex items-center justify-center relative overflow-hidden">
+            <div className="relative z-10 text-center flex flex-col items-center gap-6 px-3">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white drop-shadow-lg">
+                {t('beReady')}
+              </h1>
+
+              <div className="bg-gradient-to-r from-purple-600 to-purple-700 px-4 py-3 rounded-3xl text-white text-lg sm:text-xl font-bold shadow-2xl border-2 border-purple-400/50 max-w-md w-full">
+                🎮 {t('category')}:{' '}
+                <span className="text-yellow-300">
+                  {translatedCategory.toUpperCase()}
                 </span>
-              </p>
-              <p className='text-white text-xl flex items-center justify-center gap-3'>
-                <span className='text-2xl'>📊</span>
-                {t('dificulty')}:{' '}
-                <span className='font-bold text-orange-400 capitalize'>
-                  {String(config?.dificultad || '')}
-                </span>
-              </p>
-              <p className='text-white text-xl flex items-center justify-center gap-3'>
-                <span className='text-2xl'>❓</span>
-                {t('questionTotal')}: <span className='font-bold text-green-400'>10</span>
-              </p>
-            </div>
-            <div className='mb-4'>
-              <div className='text-[200px] font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-400 to-yellow-300 animate-pulse drop-shadow-[0_0_60px_rgba(250,204,21,1)]'>
-                {contadorInicial}
+              </div>
+
+              <div className="space-y-4 bg-black/30 p-4 rounded-2xl backdrop-blur-sm border border-purple-400/50 max-w-md w-full">
+                <p className="text-white text-base sm:text-lg flex items-center justify-center gap-3">
+                  <span className="text-xl">⏱️</span>
+                  {t('timeQuestion')}:{' '}
+                  <span className="font-bold text-yellow-300">
+                    {tiempoPorPregunta(config?.tiempo)}s
+                  </span>
+                </p>
+                <p className="text-white text-base sm:text-lg flex items-center justify-center gap-3">
+                  <span className="text-xl">📊</span>
+                  {t('dificulty')}:{' '}
+                  <span className="font-bold text-orange-400 capitalize">
+                    {String(config?.dificultad || '')}
+                  </span>
+                </p>
+                <p className="text-white text-base sm:text-lg flex items-center justify-center gap-3">
+                  <span className="text-xl">❓</span>
+                  {t('questionTotal')}:{' '}
+                  <span className="font-bold text-green-400">10</span>
+                </p>
+              </div>
+
+              <div className="mb-2">
+                <div className="text-[120px] sm:text-[160px] md:text-[200px] font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-400 to-yellow-300 animate-pulse drop-shadow-[0_0_60px_rgba(250,204,21,1)] leading-none">
+                  {contadorInicial}
+                </div>
+              </div>
+
+              <div className="text-white text-xl sm:text-2xl font-bold animate-bounce">
+                {t('gameStartAt')}
               </div>
             </div>
-            <div className='text-white text-2xl font-bold animate-bounce'>{t('gameStartAt')}</div>
           </div>
-        </div>
-      ) : (
-        // 🎮 ACA VA TODO LO QUE YA TENÍAS: preguntas / podio / resumen
-        <div className='col-span-3 flex flex-col items-center justify-start'>
-          {loading ? (
-            <div className='text-center space-y-4'>
-              <p className='text-white text-2xl font-bold'>{t('loadingQuestions')}</p>
-              {alerta && <p className='text-white/80'>{alerta}</p>}
-            </div>
-          ) : alerta ? (
-            <>
-              <Link
-                to='/'
-                className='inline-flex items-center text-yellow-600 hover:text-yellow-800 mb-3 transition-colors'
-              >
-                <svg className='w-5 h-5 mr-2' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M15 19l-7-7 7-7'
-                  />
-                </svg>
-                {t('back')}
-              </Link>
-
-              {/* muestra "juego terminado" */}
-              <div className='bg-red-500/20 border-2 border-red-500 text-red-200 p-6 mt-5 rounded-2xl text-xl font-bold text-center'>
-                {alerta}
+        ) : (
+          // 🎮 PANTALLA PRINCIPAL (preguntas / podio / resumen)
+          <div className="flex flex-col items-center justify-start">
+            {loading ? (
+              <div className="text-center space-y-4 mt-10">
+                <p className="text-white text-2xl font-bold">{t('loadingQuestions')}</p>
+                {alerta && <p className="text-white/80">{alerta}</p>}
               </div>
-
-              {esperandoResultado && !partidaCompleta && (
-                <div className='bg-black/50 rounded-2xl p-8 mt-10 w-full max-w-2xl text-center'>
-                  <p className='text-xl font-bold text-yellow-300'>
-                    {'Esperando a que el otro jugador termine...' || t('waitingOpponent')}
-                  </p>
-                </div>
-              )}
-
-              {!esperandoResultado && partidaCompleta?.resumen?.ganador_jugador_id != null ? (
-                <>
-                  {/* PODIO de juego terminado - HAY GANADOR */}
-                  <div className='flex flex-row items-end mt-10'>
-                    {/* ganador */}
-                    <div className='flex flex-col items-center'>
-                      {/* número 1 */}
-                      <span
-                        className='mb-2 w-10 h-10 rounded-full bg-yellow-400 text-slate-900 
-                      flex items-center justify-center text-xl font-extrabold'
-                      >
-                        1
-                      </span>
-
-                      <div className='w-52'>
-                        <div className='flex flex-col items-center justify-start'>
-                          <div className='bg-gradient-to-b from-black/40 to-blue-800/10 p-6 shadow-xl w-full rounded-l-lg rounded-tr-lg border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20'>
-                            <div className='flex flex-col items-center'>
-                              {ganador ? (
-                                <>
-                                  {ganador?.foto_perfil &&
-                                    ganador?.foto_perfil !== `${API_URL}/uploads/default.png` &&
-                                    ganador?.foto_perfil !== `/uploads/default.png` ? (
-                                    <img
-                                      src={resolveFotoAjena(ganador?.foto_perfil)}
-                                      alt='ganador'
-                                      className='w-24 h-24 rounded-full object-cover border-4 border-blue-800/10 bg-gradient-to-br group-hover:scale-105 transition-transform duration-300 shadow-lg mb-4'
-                                    />
-                                  ) : (
-                                    <div className='w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-5xl mb-4 shadow-lg'>
-                                      👤
-                                    </div>
-                                  )}
-                                  <span className='bg-blue-900 px-4 py-2 rounded-full text-sm font-bold text-center text-yellow-300'>
-                                    {ganador?.nombre || 'ganador'}
-                                  </span>
-                                  <span className='text-xs mt-2 opacity-70'>
-                                    {ganador?.puntaje_total} {t('points')}
-                                  </span>
-                                </>
-                              ) : (
-                                <div className='w-24 h-24 rounded-full bg-white/20' />
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* perdedor */}
-                    <div className='flex flex-col items-center mt-6'>
-                      {/* número 2 */}
-                      <span
-                        className='mb-2 w-8 h-8 rounded-full bg-gray-300 text-slate-900 
-                      flex items-center justify-center text-md font-bold'
-                      >
-                        2
-                      </span>
-
-                      <div className='w-44'>
-                        <div className='flex flex-col items-center gap-4'>
-                          <div className='bg-gradient-to-b from-black/40 to-blue-800/10 p-4 shadow-xl w-full rounded-r-lg border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20'>
-                            <div className='flex flex-col items-center '>
-                              {perdedor ? (
-                                <>
-                                  {perdedor.foto_perfil &&
-                                    perdedor.foto_perfil !== `/uploads/default.png` &&
-                                    perdedor?.foto_perfil !== `/uploads/default.png` ? (
-                                    <img
-                                      src={resolveFotoAjena(perdedor.foto_perfil)}
-                                      alt='perdedor'
-                                      className='w-20 h-20 rounded-full object-cover border-4  border-blue-800/10 bg-gradient-to-br  group-hover:scale-105 transition-transform duration-300 shadow-lg mb-4'
-                                    />
-                                  ) : (
-                                    <div className='w-20 h-20 rounded-full bg-gradient-to-br  from-blue-400 to-blue-600 flex items-center justify-center text-4xl mb-4 shadow-lg'>
-                                      👤
-                                    </div>
-                                  )}
-                                  <span className='bg-green-800 px-4 py-2 rounded-full text-sm font-bold text-center text-yellow-300'>
-                                    {perdedor?.nombre || 'perdedor'}
-                                  </span>
-                                  <span className='text-xs mt-2 opacity-70'>
-                                    {perdedor?.puntaje_total} {t('points')}
-                                  </span>
-                                </>
-                              ) : (
-                                <div className='w-20 h-20 rounded-full bg-white/20' />
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className='bg-black/50 mt-5 rounded-full w-96 text-center'>
-                    <p className=' text-xl font-bold text-gray-200 p-4'>
-                      {ganador ? `${ganador?.nombre} ` + t('hasWon') : t('calculatingWinner')}{' '}
-                    </p>
-                  </div>
-                </>
-              ) : !esperandoResultado && partidaCompleta ? (
-                <>
-                  {/* PODIO de juego terminado - EMPATE */}
-                  <div className='flex flex-row items-end mt-10'>
-                    {/* jugador 1 */}
-                    <div className='flex flex-col items-center'>
-                      <div className='w-52'>
-                        <div className='flex flex-col items-center justify-start'>
-                          <div className='bg-gradient-to-b from-black/40 to-blue-800/10 p-6 shadow-xl w-full rounded-l-lg rounded-tr-lg border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20'>
-                            <div className='flex flex-col items-center'>
-                              {jugadores[0] ? (
-                                <>
-                                  {jugadores[0]?.foto_perfil &&
-                                    jugadores[0]?.foto_perfil !== `${API_URL}/uploads/default.png` &&
-                                    jugadores[0]?.foto_perfil !== `/uploads/default.png` ? (
-                                    <img
-                                      src={resolveFotoAjena(jugadores[0]?.foto_perfil)}
-                                      alt='jugador creador'
-                                      className='w-24 h-24 rounded-full object-cover border-4 border-blue-800/10 bg-gradient-to-br group-hover:scale-105 transition-transform duration-300 shadow-lg mb-4'
-                                    />
-                                  ) : (
-                                    <div className='w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-5xl mb-4 shadow-lg'>
-                                      👤
-                                    </div>
-                                  )}
-                                  <span className='bg-blue-900 px-4 py-2 rounded-full text-sm font-bold text-center text-yellow-300'>
-                                    {jugadores[0]?.nombre || 'jugador creador'}
-                                  </span>
-                                </>
-                              ) : (
-                                <div className='w-24 h-24 rounded-full bg-white/20' />
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* jugador 2 */}
-                    <div className='flex flex-col items-center mt-10'>
-                      <div className='w-52'>
-                        <div className='flex flex-col items-center gap-4'>
-                          <div className='bg-gradient-to-b from-black/40 to-blue-800/10 p-6 shadow-xl border-2 w-full rounded-r-lg border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20'>
-                            <div className='flex flex-col items-center '>
-                              {jugadores[1] ? (
-                                <>
-                                  {jugadores[1].foto_perfil &&
-                                    jugadores[1].foto_perfil !== `/uploads/default.png` &&
-                                    jugadores[1]?.foto_perfil !== `/uploads/default.png` ? (
-                                    <img
-                                      src={resolveFotoAjena(jugadores[1].foto_perfil)}
-                                      alt='jugador invitado'
-                                      className='w-24 h-24 rounded-full object-cover border-4  border-blue-800/10 bg-gradient-to-br from-blue-400 to-blue-600 shadow-lg mb-4 group-hover:scale-105 transition-transform duration-300'
-                                    />
-                                  ) : (
-                                    <div className='w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-4xl mb-4 shadow-lg'>
-                                      👤
-                                    </div>
-                                  )}
-                                  <span className='bg-green-800 px-4 py-2 rounded-full text-sm font-bold text-center text-yellow-300'>
-                                    {jugadores[1]?.nombre || 'jugador invitado'}
-                                  </span>
-                                </>
-                              ) : (
-                                <div className='w-24 h-24 rounded-full bg-white/20' />
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className='bg-black/50 mt-5 rounded-full w-96 text-center'>
-                    <p className=' text-xl font-bold text-gray-200 p-4'>{t('matchDraw')}</p>
-                  </div>
-                </>
-              ) : null}
-
-
-              {/*==============================  Resumen de Respuestas =======================================*/}
-              {juegoTerminado && (
-                <div className='bg-black/50 rounded-2xl p-8 mt-10 w-full max-w-2xl'>
-                  {/*console.log(juegoTerminado)*/}
-                  {/*console.log(respuestas)*/}
-                  {console.log('RespuestasPorJugador: ', respuestasPorJugador)}
-                  {console.log('partidaCompleta: ', partidaCompleta)}
-                  <h2 className='text-2xl font-bold text-yellow-300 mb-6'>{t('resumeAnswer')}</h2>
-                  <div className='space-y-3 max-h-64 overflow-y-auto'>
-                    {respuestas.map((respuesta, index) => (
-                      <div
-                        key={index}
-                        className='bg-purple-500/20 p-3 rounded-lg border border-purple-400'
-                      >
-                        <p className='text-sm'>
-                          <span className='font-bold text-yellow-300'>P{index + 1}:</span>{' '}
-                          {respuesta.texto}
-                          <span
-                            className={`ml-2 font-bold ${respuesta.es_correcta ? 'text-green-400' : 'text-red-400'
-                              }`}
-                          >
-                            {respuesta.es_correcta ? '✓' : '✗'}
-                          </span>
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </>
-          ) : preguntaActual && juegoIniciado ? (
-            <>
-              {/* === NUEVO CSS: reloj centrado arriba, como en “individual” === */}
-              <div className='w-full h-full text-white flex items-center justify-center'>
-                <div
-                  className={`rounded-3xl px-6 py-4 text-center flex flex-col items-center justify-center shadow-2xl  w-60 h-48  border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20 ${tiempoRestante <= 5 && tiempoRestante > 0
-                    ? ' border-red-500/80 animate-pulse'
-                    : ' border-blue-400/30'
-                    }`}
-                >
-                  <p className='text-4xl font-bold text-gray-800 mb-2'>⏱️</p>
-                  <p
-                    className={`text-5xl font-black ${tiempoRestante > 5 ? 'text-white' : 'text-red-600'
-                      }`}
+            ) : alerta ? (
+              <>
+                <div className="w-full flex justify-center mb-3">
+                  <Link
+                    to="/"
+                    className="inline-flex items-center text-yellow-600 hover:text-yellow-800 transition-colors"
                   >
-                    {tiempoRestante}
-                  </p>
-                  <p className={`text-3xl font-bold mt-2 text-white`}>{t('seconds')}</p>
+                    <svg
+                      className="w-5 h-5 mr-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 19l-7-7 7-7"
+                      />
+                    </svg>
+                    {t('back')}
+                  </Link>
                 </div>
-              </div>
 
-              {/* titulo de la categoria */}
-              {/* <div className='bg-gradient-to-r from-orange-500 to-pink-500 rounded-full px-8 py-3 mt-8 text-2xl font-black shadow-lg'>
-                                {String(config?.categoria || '').toUpperCase()}
-                            </div> */}
-
-              {/* NUEVA CATEGORÍA MEJORADA: con icono, gradiente animado y efectos de brillo */}
-              <div className='relative group mt-8 '>
-                {/* Efecto de resplandor de fondo */}
-                <div className='absolute inset-0 bg-gradient-to-r from-orange-400 via-pink-400 to-orange-400 rounded-full blur-xl opacity-50 group-hover:opacity-70 transition-opacity duration-300 animate-pulse'></div>
-                <div className='relative bg-gradient-to-r from-orange-500 via-pink-500 to-orange-500 rounded-full px-10 py-4 text-2xl font-black shadow-2xl border-2 border-yellow-300/50 hover:scale-105 transition-transform duration-300'>
-                  <span className='text-3xl mr-3'>
-                    {/* {categoryIcons[categoria.toLowerCase()] || '🎯'} */}
-                    {categoryIcons[String(config?.categoria || '').toUpperCase()] || '🎯'}
-                  </span>
-                  {categoryTranslations[config?.categoria]?.toUpperCase()}
-                  <span className='absolute -top-1 -right-1 text-yellow-300 text-xl animate-pulse'>
-                    ✨
-                  </span>
-                  <span
-                    className='absolute -bottom-1 -left-1 text-cyan-300 text-xl animate-pulse'
-                    style={{ animationDelay: '0.5s' }}
-                  >
-                    ⭐
-                  </span>
+                {/* muestra "juego terminado" */}
+                <div className="bg-red-500/20 border-2 border-red-500 text-red-200 p-4 sm:p-6 mt-2 rounded-2xl text-lg sm:text-xl font-bold text-center w-full max-w-xl mx-auto">
+                  {alerta}
                 </div>
-              </div>
 
-              {/* === NUEVO CSS: layout en 5 columnas (jugador izq, centro, jugador der) === */}
-              <div className='grid grid-cols-3 gap-6 h-fit pt-10'>
-                {/* izquierda - Jugador 1 - creador */}
-                <div className='col-span-1 flex flex-col items-center justify-start'>
-                  {/* bg-gradient-to-b from-black/40 to-blue-800/10 rounded-2xl p-6 shadow-xl border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20 */}
-                  <div className='bg-gradient-to-b from-black/40 to-blue-800/10 rounded-2xl p-6 shadow-xl border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20 w-52'>
-                    <div className='flex flex-col items-center'>
-                      {creador ? (
-                        <>
-                          {creador?.foto_perfil &&
-                            creador?.foto_perfil !== `${API_URL}/uploads/default.png` &&
-                            creador?.foto_perfil !== `/uploads/default.png` ? (
-                            <img
-                              src={resolveFotoAjena(creador?.foto_perfil)}
-                              alt='Creador'
-                              className='w-24 h-24 rounded-full object-cover border-4 border-blue-800/10 bg-gradient-to-br group-hover:scale-105 transition-transform duration-300 shadow-lg mb-4'
-                            />
-                          ) : (
-                            <div className='w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-5xl mb-4 shadow-lg'>
-                              👤
-                            </div>
-                          )}
-                          <span className='bg-blue-800 px-4 py-2 rounded-full text-sm font-bold text-center text-white'>
-                            {creador?.nombre || 'Creador'}
-                          </span>
-                          <span className='text-xs mt-2 opacity-70'>{t('creator')}</span>
-                        </>
-                      ) : (
-                        <div className='w-24 h-24 rounded-full bg-white/20' />
-                      )}
-                    </div>
-                  </div>
-                </div>
-                {/* Mesaje: Siguiente Pregunta... */}
-                {mostrarEspera ? (
-                  <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-8 w-full max-w-2xl shadow-2xl text-center'>
-                    <div className='flex flex-col items-center justify-center gap-4'>
-                      <div className='flex justify-center gap-2'>
-                        <div className='w-3 h-3 bg-yellow-300 rounded-full animate-bounce' />
-                        <div
-                          className='w-3 h-3 bg-yellow-300 rounded-full animate-bounce'
-                          style={{ animationDelay: '0.2s' }}
-                        />
-                        <div
-                          className='w-3 h-3 bg-yellow-300 rounded-full animate-bounce'
-                          style={{ animationDelay: '0.4s' }}
-                        />
-                      </div>
-                      <p className='text-2xl font-bold text-yellow-300 animate-pulse'>
-                        {t('nextQuestion')}
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-8 w-full max-w-2xl shadow-2xl'>
-                    <div className='mb-6'>
-                      <span className='text-sm font-bold text-yellow-300'>
-                        {t('question')} {contador + 1}/10
-                      </span>
-                    </div>
-
-                    <p className='text-2xl font-bold text-white mb-8 leading-relaxed'>
-                      {idioma === 'en' ? preguntaActual.enunciado_en : preguntaActual.enunciado}
+                {esperandoResultado && !partidaCompleta && (
+                  <div className="bg-black/50 rounded-2xl p-6 sm:p-8 mt-8 w-full max-w-2xl text-center mx-auto">
+                    <p className="text-lg sm:text-xl font-bold text-yellow-300">
+                      {'Esperando a que el otro jugador termine...' || t('waitingOpponent')}
                     </p>
-
-                    <div className='space-y-4'>
-                      {preguntaActual.Opciones.map((opcion, index) => {
-                        let colorClase =
-                          'bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600';
-
-                        if (respuestaSeleccionada === opcion) {
-                          colorClase = respuestaCorrecta
-                            ? 'bg-gradient-to-r from-green-500 to-emerald-500 scale-105'
-                            : 'bg-gradient-to-r from-red-500 to-pink-500 scale-105';
-                        }
-
-                        return (
-                          <button
-                            key={index}
-                            className={`w-full rounded-xl py-4 px-6 cursor-pointer transition-all font-bold text-lg text-white shadow-lg border-2 border-transparent hover:border-yellow-300 disabled:opacity-50 ${colorClase}`}
-                            onClick={() => handleGuardarRespuesta(opcion)}
-                            disabled={!!respuestaSeleccionada || cronometroPausado || tiempoRestante <= 0}
-                          >
-                            {idioma === 'en' ? opcion.texto_en : opcion.texto}
-                          </button>
-                        );
-                      })}
-                    </div>
                   </div>
                 )}
 
-                {/* derecha - Jugador 2 - invitado */}
-                <div className='col-span-1 flex flex-col items-center justify-start gap-4'>
-                  <div className='bg-gradient-to-b from-black/40 to-blue-800/10 rounded-2xl p-6 shadow-xl border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20 w-52'>
-                    <div className='flex flex-col items-center'>
-                      {invitado ? (
-                        <>
-                          {invitado.foto_perfil &&
-                            invitado.foto_perfil !== `/uploads/default.png` &&
-                            invitado?.foto_perfil !== `/uploads/default.png` ? (
-                            <img
-                              src={resolveFotoAjena(invitado.foto_perfil)}
-                              alt='Invitado'
-                              className='w-24 h-24 rounded-full object-cover border-4 border-blue-800/10 shadow-lg mb-4 group-hover:scale-105 transition-transform duration-300'
-                            />
-                          ) : (
-                            <div className='w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-5xl mb-4 shadow-lg'>
-                              👤
+                {/* PODIO: HAY GANADOR */}
+                {!esperandoResultado && partidaCompleta?.resumen?.ganador_jugador_id != null ? (
+                  <>
+                    <div className="flex flex-row md:flex-row items-center justify-center gap-0.5 mt-10 w-full">
+                      {/* Ganador */}
+                      <div className="flex flex-col items-center">
+                        <span className="mb-2 w-10 h-10 rounded-full bg-yellow-400 text-slate-900 flex items-center justify-center text-xl font-extrabold">
+                          1
+                        </span>
+
+                        <div className="w-full max-w-[13rem]">
+                          <div className="flex flex-col items-center justify-start">
+                            <div className="bg-gradient-to-b from-black/40 to-blue-800/10 p-4 sm:p-6 shadow-xl w-full rounded-2xl border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20">
+                              <div className="flex flex-col items-center">
+                                {ganador ? (
+                                  <>
+                                    {ganador?.foto_perfil &&
+                                      ganador?.foto_perfil !== `${API_URL}/uploads/default.png` &&
+                                      ganador?.foto_perfil !== `/uploads/default.png` ? (
+                                      <img
+                                        src={resolveFotoAjena(ganador?.foto_perfil)}
+                                        alt="ganador"
+                                        className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-blue-800/10 bg-gradient-to-br group-hover:scale-105 transition-transform duration-300 shadow-lg mb-4"
+                                      />
+                                    ) : (
+                                      <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-4xl sm:text-5xl mb-4 shadow-lg">
+                                        👤
+                                      </div>
+                                    )}
+                                    <span className="bg-blue-900 px-4 py-2 rounded-full text-xs sm:text-sm font-bold text-center text-yellow-300">
+                                      {ganador?.nombre || 'ganador'}
+                                    </span>
+                                    <span className="text-xs mt-2 opacity-70">
+                                      {ganador?.puntaje_total} {t('points')}
+                                    </span>
+                                  </>
+                                ) : (
+                                  <div className="w-20 h-20 rounded-full bg-white/20" />
+                                )}
+                              </div>
                             </div>
-                          )}
-                          <span className='bg-blue-600 px-4 py-2 rounded-full text-sm font-bold text-center text-yellow-300'>
-                            {invitado?.nombre || 'Invitado'}
-                          </span>
-                          <span className='text-xs mt-2 opacity-70'>{t('guess')}</span>
-                        </>
-                      ) : (
-                        <div className='w-24 h-24 rounded-full bg-white/20' />
-                      )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Perdedor */}
+                      <div className="flex flex-col items-center mt-6">
+                        <span className=" w-8 h-8 rounded-full bg-gray-300 text-slate-900 flex items-center justify-center text-sm font-bold">
+                          2
+                        </span>
+
+                        <div className="w-full max-w-[11rem] mt-2 md:mt-4">
+                          <div className="flex flex-col items-center">
+                            <div className="bg-gradient-to-b from-black/40 to-blue-800/10 p-4 shadow-xl w-full rounded-2xl border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20">
+                              <div className="flex flex-col items-center">
+                                {perdedor ? (
+                                  <>
+                                    {perdedor?.foto_perfil &&
+                                      perdedor?.foto_perfil !== `/uploads/default.png` ? (
+                                      <img
+                                        src={resolveFotoAjena(perdedor.foto_perfil)}
+                                        alt="perdedor"
+                                        className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-4 border-blue-800/10 bg-gradient-to-br group-hover:scale-105 transition-transform duration-300 shadow-lg mb-4"
+                                      />
+                                    ) : (
+                                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-3xl sm:text-4xl mb-4 shadow-lg">
+                                        👤
+                                      </div>
+                                    )}
+                                    <span className="bg-green-800 px-4 py-2 rounded-full text-xs sm:text-sm font-bold text-center text-yellow-300">
+                                      {perdedor?.nombre || 'perdedor'}
+                                    </span>
+                                    <span className="text-xs mt-2 opacity-70">
+                                      {perdedor?.puntaje_total} {t('points')}
+                                    </span>
+                                  </>
+                                ) : (
+                                  <div className="w-16 h-16 rounded-full bg-white/20" />
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-black/50 mt-5 rounded-full w-full max-w-md text-center mx-auto">
+                      <p className="text-lg sm:text-xl font-bold text-gray-200 p-3 sm:p-4">
+                        {ganador ? `${ganador?.nombre} ` + t('hasWon') : t('calculatingWinner')}
+                      </p>
+                    </div>
+                  </>
+                ) : !esperandoResultado && partidaCompleta ? (
+                  <>
+                    {/* PODIO EMPATE */}
+                    <div className="flex flex-row md:flex-row items-center justify-center gap-0.5 mt-10 w-full">
+                      {/* Jugador 1 */}
+                      <div className="flex flex-col items-center">
+                        <div className="w-full max-w-[13rem] mt-4 md:mt-10">
+                          <div className="flex flex-col items-center justify-start">
+                            <div className="bg-gradient-to-b from-black/40 to-blue-800/10 p-4 sm:p-6 shadow-xl w-full rounded-2xl border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20">
+                              <div className="flex flex-col items-center">
+                                {jugadores[0] ? (
+                                  <>
+                                    {jugadores[0]?.foto_perfil &&
+                                      jugadores[0]?.foto_perfil !== `${API_URL}/uploads/default.png` &&
+                                      jugadores[0]?.foto_perfil !== `/uploads/default.png` ? (
+                                      <img
+                                        src={resolveFotoAjena(jugadores[0]?.foto_perfil)}
+                                        alt="jugador creador"
+                                        className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-blue-800/10 bg-gradient-to-br group-hover:scale-105 transition-transform duration-300 shadow-lg mb-4"
+                                      />
+                                    ) : (
+                                      <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-4xl sm:text-5xl mb-4 shadow-lg">
+                                        👤
+                                      </div>
+                                    )}
+                                    <span className="bg-blue-900 px-4 py-2 rounded-full text-xs sm:text-sm font-bold text-center text-yellow-300">
+                                      {jugadores[0]?.nombre || 'jugador creador'}
+                                    </span>
+                                  </>
+                                ) : (
+                                  <div className="w-20 h-20 rounded-full bg-white/20" />
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Jugador 2 */}
+                      <div className="flex flex-col items-center">
+                        <div className="w-full max-w-[13rem] mt-4 md:mt-10">
+                          <div className="flex flex-col items-center gap-4">
+                            <div className="bg-gradient-to-b from-black/40 to-blue-800/10 p-4 sm:p-6 shadow-xl border-2 w-full rounded-2xl border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20">
+                              <div className="flex flex-col items-center">
+                                {jugadores[1] ? (
+                                  <>
+                                    {jugadores[1]?.foto_perfil &&
+                                      jugadores[1]?.foto_perfil !== `/uploads/default.png` ? (
+                                      <img
+                                        src={resolveFotoAjena(jugadores[1].foto_perfil)}
+                                        alt="jugador invitado"
+                                        className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-blue-800/10 bg-gradient-to-br from-blue-400 to-blue-600 shadow-lg mb-4 group-hover:scale-105 transition-transform duration-300"
+                                      />
+                                    ) : (
+                                      <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-4xl sm:text-5xl mb-4 shadow-lg">
+                                        👤
+                                      </div>
+                                    )}
+                                    <span className="bg-green-800 px-4 py-2 rounded-full text-xs sm:text-sm font-bold text-center text-yellow-300">
+                                      {jugadores[1]?.nombre || 'jugador invitado'}
+                                    </span>
+                                  </>
+                                ) : (
+                                  <div className="w-20 h-20 rounded-full bg-white/20" />
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-black/50 mt-5 rounded-full w-full max-w-md text-center mx-auto">
+                      <p className="text-lg sm:text-xl font-bold text-gray-200 p-3 sm:p-4">
+                        {t('matchDraw')}
+                      </p>
+                    </div>
+                  </>
+                ) : null}
+
+                {/*=====================  Resumen de Respuestas =====================*/}
+                {juegoTerminado && (
+                  <div className="bg-black/50 rounded-2xl p-6 sm:p-8 mt-8 w-full max-w-2xl mx-auto">
+                    <h2 className="text-xl sm:text-2xl font-bold text-yellow-300 mb-4 sm:mb-6">
+                      {t('resumeAnswer')}
+                    </h2>
+                    <div className="space-y-3 max-h-64 overflow-y-auto">
+                      {respuestas.map((respuesta, index) => (
+                        <div
+                          key={index}
+                          className="bg-purple-500/20 p-3 rounded-lg border border-purple-400"
+                        >
+                          <p className="text-sm">
+                            <span className="font-bold text-yellow-300">
+                              P{index + 1}:
+                            </span>{' '}
+                            {respuesta.texto}
+                            <span
+                              className={`ml-2 font-bold ${respuesta.es_correcta
+                                ? 'text-green-400'
+                                : 'text-red-400'
+                                }`}
+                            >
+                              {respuesta.es_correcta ? '✓' : '✗'}
+                            </span>
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : preguntaActual && juegoIniciado ? (
+              <>
+                {/* === NUEVO CSS: reloj centrado arriba, como en “individual” === */}
+                <div className='w-full h-full text-white flex items-center justify-center'>
+                  <div
+                    className={`rounded-3xl px-6 py-4 text-center flex flex-col items-center justify-center shadow-2xl  w-60 h-48  border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20 ${tiempoRestante <= 5 && tiempoRestante > 0
+                      ? ' border-red-500/80 animate-pulse'
+                      : ' border-blue-400/30'
+                      }`}
+                  >
+                    <p className='text-4xl font-bold text-gray-800 mb-2'>⏱️</p>
+                    <p
+                      className={`text-5xl font-black ${tiempoRestante > 5 ? 'text-white' : 'text-red-600'
+                        }`}
+                    >
+                      {tiempoRestante}
+                    </p>
+                    <p className={`text-3xl font-bold mt-2 text-white`}>{t('seconds')}</p>
+                  </div>
+                </div>
+
+                {/* titulo de la categoria */}
+                {/* <div className='bg-gradient-to-r from-orange-500 to-pink-500 rounded-full px-8 py-3 mt-8 text-2xl font-black shadow-lg'>
+                                {String(config?.categoria || '').toUpperCase()}
+                            </div> */}
+
+                {/* NUEVA CATEGORÍA MEJORADA: con icono, gradiente animado y efectos de brillo */}
+                <div className='relative group mt-8 '>
+                  {/* Efecto de resplandor de fondo */}
+                  <div className='absolute inset-0 bg-gradient-to-r from-orange-400 via-pink-400 to-orange-400 rounded-full blur-xl opacity-50 group-hover:opacity-70 transition-opacity duration-300 animate-pulse'></div>
+                  <div className='relative bg-gradient-to-r from-orange-500 via-pink-500 to-orange-500 rounded-full px-10 py-4 text-2xl font-black shadow-2xl border-2 border-yellow-300/50 hover:scale-105 transition-transform duration-300'>
+                    <span className='text-3xl mr-3'>
+                      {/* {categoryIcons[categoria.toLowerCase()] || '🎯'} */}
+                      {categoryIcons[String(config?.categoria || '').toUpperCase()] || '🎯'}
+                    </span>
+                    {categoryTranslations[config?.categoria]?.toUpperCase()}
+                    <span className='absolute -top-1 -right-1 text-yellow-300 text-xl animate-pulse'>
+                      ✨
+                    </span>
+                    <span
+                      className='absolute -bottom-1 -left-1 text-cyan-300 text-xl animate-pulse'
+                      style={{ animationDelay: '0.5s' }}
+                    >
+                      ⭐
+                    </span>
+                  </div>
+                </div>
+
+                {/* === NUEVO CSS: layout en 5 columnas (jugador izq, centro, jugador der) === */}
+                <div className='grid grid-cols-3 gap-6 h-fit pt-10'>
+                  {/* izquierda - Jugador 1 - creador */}
+                  <div className='col-span-1 flex flex-col items-center justify-start'>
+                    {/* bg-gradient-to-b from-black/40 to-blue-800/10 rounded-2xl p-6 shadow-xl border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20 */}
+                    <div className='bg-gradient-to-b from-black/40 to-blue-800/10 rounded-2xl p-6 shadow-xl border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20 w-52'>
+                      <div className='flex flex-col items-center'>
+                        {creador ? (
+                          <>
+                            {creador?.foto_perfil &&
+                              creador?.foto_perfil !== `${API_URL}/uploads/default.png` &&
+                              creador?.foto_perfil !== `/uploads/default.png` ? (
+                              <img
+                                src={resolveFotoAjena(creador?.foto_perfil)}
+                                alt='Creador'
+                                className='w-24 h-24 rounded-full object-cover border-4 border-blue-800/10 bg-gradient-to-br group-hover:scale-105 transition-transform duration-300 shadow-lg mb-4'
+                              />
+                            ) : (
+                              <div className='w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-5xl mb-4 shadow-lg'>
+                                👤
+                              </div>
+                            )}
+                            <span className='bg-blue-800 px-4 py-2 rounded-full text-sm font-bold text-center text-white'>
+                              {creador?.nombre || 'Creador'}
+                            </span>
+                            <span className='text-xs mt-2 opacity-70'>{t('creator')}</span>
+                          </>
+                        ) : (
+                          <div className='w-24 h-24 rounded-full bg-white/20' />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  {/* Mesaje: Siguiente Pregunta... */}
+                  {mostrarEspera ? (
+                    <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-8 w-full max-w-2xl shadow-2xl text-center'>
+                      <div className='flex flex-col items-center justify-center gap-4'>
+                        <div className='flex justify-center gap-2'>
+                          <div className='w-3 h-3 bg-yellow-300 rounded-full animate-bounce' />
+                          <div
+                            className='w-3 h-3 bg-yellow-300 rounded-full animate-bounce'
+                            style={{ animationDelay: '0.2s' }}
+                          />
+                          <div
+                            className='w-3 h-3 bg-yellow-300 rounded-full animate-bounce'
+                            style={{ animationDelay: '0.4s' }}
+                          />
+                        </div>
+                        <p className='text-2xl font-bold text-yellow-300 animate-pulse'>
+                          {t('nextQuestion')}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-8 w-full max-w-2xl shadow-2xl'>
+                      <div className='mb-6'>
+                        <span className='text-sm font-bold text-yellow-300'>
+                          {t('question')} {contador + 1}/10
+                        </span>
+                      </div>
+
+                      <p className='text-2xl font-bold text-white mb-8 leading-relaxed'>
+                        {idioma === 'en' ? preguntaActual.enunciado_en : preguntaActual.enunciado}
+                      </p>
+
+                      <div className='space-y-4'>
+                        {preguntaActual.Opciones.map((opcion, index) => {
+                          let colorClase =
+                            'bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600';
+
+                          if (respuestaSeleccionada === opcion) {
+                            colorClase = respuestaCorrecta
+                              ? 'bg-gradient-to-r from-green-500 to-emerald-500 scale-105'
+                              : 'bg-gradient-to-r from-red-500 to-pink-500 scale-105';
+                          }
+
+                          return (
+                            <button
+                              key={index}
+                              className={`w-full rounded-xl py-4 px-6 cursor-pointer transition-all font-bold text-lg text-white shadow-lg border-2 border-transparent hover:border-yellow-300 disabled:opacity-50 ${colorClase}`}
+                              onClick={() => handleGuardarRespuesta(opcion)}
+                              disabled={!!respuestaSeleccionada || cronometroPausado || tiempoRestante <= 0}
+                            >
+                              {idioma === 'en' ? opcion.texto_en : opcion.texto}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* derecha - Jugador 2 - invitado */}
+                  <div className='col-span-1 flex flex-col items-center justify-start gap-4'>
+                    <div className='bg-gradient-to-b from-black/40 to-blue-800/10 rounded-2xl p-6 shadow-xl border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20 w-52'>
+                      <div className='flex flex-col items-center'>
+                        {invitado ? (
+                          <>
+                            {invitado.foto_perfil &&
+                              invitado.foto_perfil !== `/uploads/default.png` &&
+                              invitado?.foto_perfil !== `/uploads/default.png` ? (
+                              <img
+                                src={resolveFotoAjena(invitado.foto_perfil)}
+                                alt='Invitado'
+                                className='w-24 h-24 rounded-full object-cover border-4 border-blue-800/10 shadow-lg mb-4 group-hover:scale-105 transition-transform duration-300'
+                              />
+                            ) : (
+                              <div className='w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-5xl mb-4 shadow-lg'>
+                                👤
+                              </div>
+                            )}
+                            <span className='bg-blue-600 px-4 py-2 rounded-full text-sm font-bold text-center text-yellow-300'>
+                              {invitado?.nombre || 'Invitado'}
+                            </span>
+                            <span className='text-xs mt-2 opacity-70'>{t('guess')}</span>
+                          </>
+                        ) : (
+                          <div className='w-24 h-24 rounded-full bg-white/20' />
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </>
-          ) : (
-            <p className='text-xl text-gray-300'>No hay preguntas disponibles.</p>
-          )}
-        </div>
-      )}
+              </>
+            ) : (
+              <p className="text-xl text-gray-300 mt-10 text-center">
+                No hay preguntas disponibles.
+              </p>
+            )}
+          </div>
+        )}
+      </div>
     </div>
+
   );
+
 }

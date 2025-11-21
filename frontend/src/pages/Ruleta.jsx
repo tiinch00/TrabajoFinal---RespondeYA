@@ -7,6 +7,7 @@ import axios from 'axios';
 import confetti from 'canvas-confetti';
 import { motion } from 'framer-motion';
 import premioRueda from '/sounds/premioRueda.mp3';
+import { useAuth } from '../context/auth-context.jsx';
 import useSound from 'use-sound';
 import { useTranslation } from 'react-i18next';
 
@@ -27,6 +28,7 @@ export default function Ruleta() {
   const [puntos, setPuntos] = useState(0);
   const [remainingMs, setRemainingMs] = useState(0);
   const [jugador, setJugador] = useState(null);
+  const { user, updateUser } = useAuth();
 
   const lanzarConfetti = () => {
     confetti({
@@ -36,13 +38,6 @@ export default function Ruleta() {
       colors: ['#FFD700', '#FFA500', '#FF6347', '#32CD32', '#00BFFF'],
     });
   };
-  const [user] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('user') || 'null');
-    } catch {
-      return null;
-    }
-  });
   useEffect(() => {
     if (premio && premio.includes('Has ganado' || 'You won')) {
       playPremio();
@@ -150,16 +145,29 @@ export default function Ruleta() {
     return () => clearInterval(id);
   }, [spinKey, jugador?.ruleta_started_at]);
 
-  const guardarPuntaje = async (jugador_id, puntosGanados) => {
+  const guardarPuntaje = async (jugador_id, nuevoPuntajeTotal) => {
     try {
-      await axios.put(`${API_URL}/jugadores/update/${jugador_id}`, {
-        puntaje: puntosGanados,
-        ruleta_started_at: jugador.ruleta_started_at, // body de la request
-      });
+      const { data } = await axios.put(
+        `${API_URL}/jugadores/update/${jugador_id}`,
+        {
+          puntaje: nuevoPuntajeTotal,
+          ruleta_started_at: toMysqlLocal(), // guardás la fecha actual
+        }
+      );
+
+      // si la API devuelve el jugador actualizado
+      const puntajeFinal =
+        data?.puntaje != null ? data.puntaje : nuevoPuntajeTotal;
+
+      // 🚀 actualizás el user del contexto (y localStorage)
+      updateUser({ puntaje: puntajeFinal });
+      // opcional: también sincronizás el jugador local
+      setJugador(prev => (prev ? { ...prev, puntaje: puntajeFinal } : prev));
     } catch (err) {
       console.log('PUT /jugadores error:', err.response?.data?.error || err.message);
     }
   };
+
 
   const lanzar = () => {
     if (tiradas === 0) return;
@@ -176,7 +184,7 @@ export default function Ruleta() {
 
     if (audioRef.current) {
       audioRef.current.currentTime = 0;
-      audioRef.current.play().catch(() => {});
+      audioRef.current.play().catch(() => { });
     }
 
     barraRef.current?.classList.toggle('parate');
@@ -212,7 +220,13 @@ export default function Ruleta() {
 
     setPremio(t(`won${puntosGanados}`));
     setPuntos(puntosGanados);
-    guardarPuntaje(jugador_id, puntosGanados);
+
+    // ✅ puntaje actual del user (por las dudas lo fuerzo a número)
+    const puntajeActual = Number(user?.puntaje || 0);
+    const nuevoPuntajeTotal = puntajeActual + puntosGanados;
+
+    // guarda en backend + actualiza contexto
+    guardarPuntaje(jugador_id, nuevoPuntajeTotal);
 
     // reproducir sonido al ganar
     playPremio();
@@ -222,6 +236,7 @@ export default function Ruleta() {
       audioRef.current.currentTime = 0;
     }
   };
+
 
   useEffect(() => {
     if (puntos > 0 && tiradas === 0) {
@@ -234,7 +249,8 @@ export default function Ruleta() {
   }, [puntos, tiradas]);
 
   return (
-    <div className='flex flex-col items-center mt-5 min-h-screen'>
+    <div className='relative min-h-screen flex flex-col items-center pt-4 pb-10 px-3 sm:px-4'>
+      {/* Canvas full screen */}
       <canvas
         ref={canvasRef}
         style={{
@@ -247,77 +263,109 @@ export default function Ruleta() {
           zIndex: 50,
         }}
       />
-      <Link
-        to='/'
-        className='inline-flex items-center text-yellow-600 hover:text-yellow-800 mb-3 transition-colors'
-      >
-        <svg className='w-5 h-5 mr-2' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-          <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M15 19l-7-7 7-7' />
-        </svg>
-        {t('back')}
-      </Link>
-      <div className='tiradas'>
-        <img src='./assets/ticket.png' alt='ticket' />
-        {tiradas === 1 ? (
-          <p className='text-2xl text-white'>
-            1 ticket {t('able')} — <b>{formatHMS(0)}</b>
-          </p>
-        ) : (
-          <p className='text-2xl text-white text-center'>
-            0 tickets — {t('backIn')} <b>{formatHMS(remainingMs)}</b>
-          </p>
-        )}
-      </div>
 
-      <div className='plafon'>
-        <div className='central'>
-          <img src='/assets/puntero.png' alt='puntero' />
+      {/* Contenido centrado con ancho máximo */}
+      <div className='w-full max-w-xl flex flex-col items-center gap-4 z-50'>
+        <div className='flex justify-center'>
+          {/* Volver */}
+          <Link
+            to='/'
+            className='inline-flex items-center text-yellow-600 hover:text-yellow-800 transition-colors self-start'
+          >
+            <svg className='w-5 h-5 mr-2' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+              <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M15 19l-7-7 7-7' />
+            </svg>
+            {t('back')}
+          </Link>
         </div>
 
-        <div
-          className='ruleta'
-          style={{
-            backgroundImage: `url('/assets/ruleta.png')`,
-            transform: `rotate(${rotation}deg)`,
-            transition: 'transform 3s cubic-bezier(0.2,0.8,0.7,0.99)',
-          }}
-          onTransitionEnd={final}
-        ></div>
+        {/* Puntos */}
+        <div className='w-full bg-black/40 rounded-xl py-2 px-3 flex justify-center'>
+          <p className='text-gray-300 text-sm sm:text-base md:text-lg text-center'>
+            {t('points')}: {Number(user.puntaje).toLocaleString('es-AR')}
+          </p>
+        </div>
 
-        <motion.div
-          className='text-5xl font-bold text-center my-6'
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: [0, 1.2, 1], opacity: 1 }}
-          transition={{ duration: 0.8, ease: 'easeOut' }}
-        >
-          <span className='bg-gradient-to-r from-yellow-400 via-orange-400 to-yellow-500 text-transparent bg-clip-text drop-shadow-[0_0_15px_rgba(255,215,0,0.8)] animate-pulse'>
-            {tiradas > 0 ? t('clickHereSpin') : premio}
-          </span>
-        </motion.div>
+        {/* Tiradas */}
+        <div className='w-full flex flex-col items-center gap-2 text-center'>
+          {tiradas === 1 ? (
+            <p className='text-lg sm:text-xl text-white'>
+              1 intento {t('able')} — <b>{formatHMS(0)}</b>
+            </p>
+          ) : (
+            <p className='text-lg sm:text-xl text-white'>
+              0 intento {t('backIn')} <b>{formatHMS(remainingMs)}</b>
+            </p>
+          )}
+        </div>
 
-        {tiradas > 0 && (
-          <div className='barra1'>
-            <div className='mi_barra' ref={barraRef}></div>
+        {/* Ruleta + botón */}
+        <div className='w-full flex flex-col items-center mt-2'>
+          {/* Plafón / ruleta */}
+          {/* Contenedor ruleta + puntero */}
+          <div className='relative w-full max-w-xs sm:max-w-sm md:max-w-md aspect-square mx-auto'>
+
+            {/* Puntero ABSOLUTO */}
+            <img
+              src='/assets/puntero.png'
+              alt='puntero'
+              className='absolute -top-0 sm:-top-1 left-1/2 -translate-x-1/2 w-8 sm:w-10 md:w-12 h-fit z-20'
+            />
+
+            {/* Ruleta */}
+            <div
+              className='w-full h-full bg-contain bg-no-repeat bg-center'
+              style={{
+                backgroundImage: `url('/assets/ruleta.png')`,
+                transform: `rotate(${rotation}deg)`,
+                transition: 'transform 3s cubic-bezier(0.2,0.8,0.7,0.99)',
+              }}
+              onTransitionEnd={final}
+            />
           </div>
-        )}
 
-        <motion.button
-          type='button'
-          className={`lanzar text-2xl font-semibold rounded-full px-10 py-3 mt-6 shadow-lg transition-all duration-300  cursor-pointer ${
-            tiradas !== 0
-              ? 'bg-gradient-to-r from-indigo-500 to-purple-600 hover:scale-105 hover:shadow-[0_0_15px_rgba(147,51,234,0.6)]'
-              : 'bg-gray-500 cursor-not-allowed text-gray-300'
-          }`}
-          whileTap={tiradas !== 0 ? { scale: 0.9 } : {}}
-          onClick={lanzar}
-          disabled={tiradas === 0}
-          title={tiradas === 0 ? `Vuelve en ${formatHMS(remainingMs)}` : ''}
-        >
-          🎡 {t('spin')}
-        </motion.button>
+          {/* Texto premio / click */}
+          <motion.div
+            className='text-2xl sm:text-3xl md:text-4xl font-bold text-center my-2'
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: [0, 1.2, 1], opacity: 1 }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
+          >
+            <span className='bg-gradient-to-r from-yellow-400 via-orange-400 to-yellow-500 text-transparent bg-clip-text drop-shadow-[0_0_15px_rgba(255,215,0,0.8)] animate-pulse'>
+              {tiradas > 0 ? t('clickHereSpin') : premio}
+            </span>
+          </motion.div>
+
+          {/* Barra de carga */}
+          {tiradas > 0 && (
+            <div className='w-full max-w-md h-3 bg-black/60 rounded-full overflow-hidden mt-2'>
+              <div
+                ref={barraRef}
+                className='h-full bg-gradient-to-r from-indigo-500 to-purple-600 transition-all duration-300'
+              />
+            </div>
+          )}
+
+          {/* Botón lanzar */}
+          <motion.button
+            type='button'
+            className={`w-full sm:w-auto text-lg sm:text-2xl font-semibold rounded-full px-8 sm:px-10 py-3 mt-6 shadow-lg transition-all duration-300 cursor-pointer
+          ${tiradas !== 0
+                ? 'bg-gradient-to-r from-indigo-500 to-purple-600 hover:scale-105 hover:shadow-[0_0_15px_rgba(147,51,234,0.6)] text-white'
+                : 'bg-gray-500 cursor-not-allowed text-gray-300'
+              }`}
+            whileTap={tiradas !== 0 ? { scale: 0.9 } : {}}
+            onClick={lanzar}
+            disabled={tiradas === 0}
+            title={tiradas === 0 ? `Vuelve en ${formatHMS(remainingMs)}` : ''}
+          >
+            🎡 {t('spin')}
+          </motion.button>
+        </div>
       </div>
 
       <audio ref={audioRef} src='/sounds/giraLaRueda.mp3' preload='auto' />
     </div>
+
   );
 }
