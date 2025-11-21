@@ -280,7 +280,7 @@ const Tienda = () => {
         transition={{ duration: 0.8 }}
       >
         ✨ {t('store')} ✨
-      </motion.h1>      
+      </motion.h1>
 
       {/* Puntos */}
       <div className='flex flex-col items-center justify-center mt-6'>
@@ -466,27 +466,38 @@ const Tienda = () => {
                   </div>
                 ) : jugador.puntaje >= avatares[selected].precio_puntos ? (
                   confirmar ? (
-                    <div className='mt-4'>
-                      <p className='text-xl sm:text-2xl text-center mb-3'>
-                        ¿Estás seguro de comprar este avatar?
-                      </p>
-                      <div className='flex justify-center gap-4 my-4 text-base sm:text-xl'>
-                        <button
-                          className='cursor-pointer w-24 rounded bg-red-600 hover:bg-red-700 px-3 py-2'
-                          onClick={() => setConfirmar(false)}
+                    <AnimatePresence>
+                      <div className='flex flex-col items-center justify-center'>
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 10 }}
+                          className='mt-3 w-full max-w-xs sm:max-w-sm
+                                bg-black/40 text-white rounded-2xl px-4 py-4 
+                                  shadow-2xl text-sm sm:text-base'
                         >
-                          {t('cancel')}
-                        </button>
+                          <p className='text-xl sm:text-2xl text-center mb-3'>
+                            ¿Estás seguro de comprar este avatar?
+                          </p>
+                          <div className='flex justify-center gap-4 my-4 text-base sm:text-xl'>
+                            <button
+                              className='cursor-pointer w-24 rounded bg-red-600 hover:bg-red-700 px-3 py-2'
+                              onClick={() => setConfirmar(false)}
+                            >
+                              {t('cancel')}
+                            </button>
 
-                        <button
-                          className='cursor-pointer w-24 rounded bg-green-600 hover:bg-green-700 px-3 py-2'
-                          onClick={() => handleSubmit(avatares[selected].id)}
-                          disabled={selected == null || !avatares[selected]}
-                        >
-                          {t('acepted')}
-                        </button>
+                            <button
+                              className='cursor-pointer w-24 rounded bg-green-600 hover:bg-green-700 px-3 py-2'
+                              onClick={() => handleSubmit(avatares[selected].id)}
+                              disabled={selected == null || !avatares[selected]}
+                            >
+                              {t('acepted')}
+                            </button>
+                          </div>
+                        </motion.div>
                       </div>
-                    </div>
+                    </AnimatePresence>
                   ) : (
                     <div className='flex-col items-center justify-center text-center mt-4'>
                       <button

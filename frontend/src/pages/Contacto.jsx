@@ -79,108 +79,131 @@ const Contacto = () => {
   };
 
   return (
-    <div className='min-h-screen'>
-      <section className='bg-gradient-to-r from-purple-700 to-indigo-800 text-white py-12 px-6 text-center rounded-2xl'>
-        <h1 className='text-4xl font-bold mb-4 drop-shadow'>{t('who')}</h1>
-        <p className='max-w-3xl mx-auto text-lg leading-relaxed'>
-          <Trans i18nKey='descriptionWho'>
+    <div className="min-h-screen w-full text-white flex flex-col gap-10 py-8 px-3 sm:px-4 lg:px-6">
+      {/* SECCIÓN QUIÉNES SOMOS */}
+      <section className="w-full max-w-5xl mx-auto bg-gradient-to-r from-purple-700 to-indigo-800 text-white py-8 sm:py-10 lg:py-12 px-4 sm:px-8 text-center rounded-2xl shadow-xl">
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 drop-shadow">
+          {t('who')}
+        </h1>
+
+        <p className="max-w-3xl mx-auto text-base sm:text-lg lg:text-xl leading-relaxed">
+          <Trans i18nKey="descriptionWho">
             <></>
             <b />
             <></>
             <b />
             <></>
-            <span className='italic' />
+            <span className="italic" />
           </Trans>
         </p>
 
-        <div className='mt-10 grid gap-8 md:grid-cols-2 max-w-4xl mx-auto'>
-          <div className='flex flex-col items-center bg-white/10 p-6 rounded-2xl shadow-lg'>
+        {/* Cards de Martín y Fran */}
+        <div className="mt-8 sm:mt-10 grid gap-6 sm:gap-8 sm:grid-cols-2 max-w-4xl mx-auto">
+          <div className="flex flex-col items-center bg-white/10 p-5 sm:p-6 rounded-2xl shadow-lg">
             <img
-              src='/Martin.png'
-              className='w-40 h-40 rounded-full object-cover mb-4 border-4 border-white'
-              alt='Martin'
+              src="/Martin.png"
+              className="w-28 h-28 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-full object-cover mb-4 border-4 border-white"
+              alt="Martin"
             />
-            <h2 className='text-xl font-bold'>Martin Paredes</h2>
-            <p className='text-sm text-gray-200'>@Tiinch00</p>
+            <h2 className="text-lg sm:text-xl font-bold">Martin Paredes</h2>
+            <p className="text-xs sm:text-sm text-gray-200">@Tiinch00</p>
           </div>
 
-          <div className='flex flex-col items-center bg-white/10 p-6 rounded-2xl shadow-lg'>
+          <div className="flex flex-col items-center bg-white/10 p-5 sm:p-6 rounded-2xl shadow-lg">
             <img
-              src='/Francisco.png'
-              className='w-40 h-40 rounded-full object-cover mb-4 border-4 border-white'
-              alt='Francisco'
+              src="/Francisco.png"
+              className="w-28 h-28 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-full object-cover mb-4 border-4 border-white"
+              alt="Francisco"
             />
-            <h2 className='text-xl font-bold'>Francisco Pandolfi</h2>
-            <p className='text-sm text-gray-200'>@Fran</p>
+            <h2 className="text-lg sm:text-xl font-bold">Francisco Pandolfi</h2>
+            <p className="text-xs sm:text-sm text-gray-200">@Fran</p>
           </div>
         </div>
       </section>
 
-      <div className='w-full  flex items-center justify-center text-black m-5 p-5'>
-        <div className='w-full max-w-md rounded-2xl shadow-lg flex flex-col p-5 bg-gradient-to-r from-purple-700 to-indigo-800 text-white py-4 px-6'>
-          <form onSubmit={handleOnSubmit}>
-            <h2 className='text-2xl text-white font-bold text-center'>{t('contactUs')}</h2>
+      {/* FORMULARIO DE CONTACTO */}
+      <div className="w-full flex justify-center px-1 sm:px-4 pb-8">
+        <div className="w-full max-w-lg rounded-2xl shadow-lg bg-gradient-to-r from-purple-700 to-indigo-800 text-white py-5 sm:py-6 px-4 sm:px-6">
+          <form onSubmit={handleOnSubmit} className="space-y-4">
+            <h2 className="text-xl sm:text-2xl font-bold text-center mb-2">
+              {t('contactUs')}
+            </h2>
 
-            <div className='flex flex-col'>
-              <label htmlFor='nombreUsuario' className='mb-1 font-medium'>
+            {/* Nombre */}
+            <div className="flex flex-col text-left">
+              <label htmlFor="nombreUsuario" className="mb-1 font-medium">
                 {t('formName')}
               </label>
               <input
-                type='text'
-                name='nombreUsuario'
+                type="text"
+                name="nombreUsuario"
                 value={user ? user.name : form.nombreUsuario}
                 onChange={handleChange}
                 placeholder={t('placeHolderUser')}
-                className='p-2 rounded-lg bg-white/40 placeholder-white focus:outline-none focus:ring-2 focus:ring-purple-400'
+                className="p-2 rounded-lg bg-white/40 placeholder-white focus:outline-none focus:ring-2 focus:ring-purple-400 text-black"
                 required
               />
             </div>
-            <div className='flex flex-col'>
-              <label htmlFor='email' className='mb-1 font-medium'>
+
+            {/* Email */}
+            <div className="flex flex-col text-left">
+              <label htmlFor="email" className="mb-1 font-medium">
                 {t('formEmail')}
               </label>
               <input
-                type='email'
-                name='email'
+                type="email"
+                name="email"
                 value={user ? user.email : form.email}
                 onChange={handleChange}
                 placeholder={t('placeHolderEmail')}
-                className='p-2 rounded-lg  bg-white/40 placeholder-white focus:outline-none focus:ring-2 focus:ring-purple-400'
+                className="p-2 rounded-lg bg-white/40 placeholder-white focus:outline-none focus:ring-2 focus:ring-purple-400 text-black"
                 required
               />
             </div>
-            <div className='flex flex-col'>
-              <label htmlFor='descripcion' className='mb-1 font-medium'>
+
+            {/* Mensaje */}
+            <div className="flex flex-col text-left">
+              <label htmlFor="descripcion" className="mb-1 font-medium">
                 {t('formMessage')}
               </label>
               <textarea
-                name='descripcion'
-                id='descripcion'
+                name="descripcion"
+                id="descripcion"
                 value={form.descripcion}
                 onChange={handleChange}
-                rows='4'
+                rows="4"
                 placeholder={t('placeHolderMessage')}
-                className='p-1 rounded-lg bg-white/40 resize-none focus:outline-none text-black focus:ring-2 focus:ring-purple-400'
+                className="p-2 rounded-lg bg-white/40 resize-none focus:outline-none text-black focus:ring-2 focus:ring-purple-400"
                 required
               ></textarea>
             </div>
 
+            {/* Botón */}
             <button
-              type='submit'
-              className='w-full py-2 rounded-lg bg-green-500 cursor-pointer hover:bg-green-600 text-white font-semibold transition duration-300 mt-4'
+              type="submit"
+              className="w-full py-2 rounded-lg bg-green-500 cursor-pointer hover:bg-green-600 text-white font-semibold transition duration-300 mt-2"
             >
               {t('sendEmail')}
             </button>
-            <div>
-              {alerta.nombreUsuario && <p className='text-red-600 mt-1'>{alerta.nombre}</p>}
-              {alerta.email && <p className='text-red-600 mt-1'>{alerta.email}</p>}
-              {alerta.emailValido && <p className='text-red-600 mt-1'>{alerta.emailValido}</p>}
-              {alerta.descripcion && <p className='text-red-600 mt-1'>{alerta.descripcion}</p>}
+
+            {/* Mensajes de error / estado */}
+            <div className="mt-2 space-y-1 text-sm">
+              {alerta.nombreUsuario && (
+                <p className="text-red-400">{alerta.nombreUsuario}</p>
+              )}
+              {alerta.email && <p className="text-red-400">{alerta.email}</p>}
+              {alerta.emailValido && (
+                <p className="text-red-400">{alerta.emailValido}</p>
+              )}
+              {alerta.descripcion && (
+                <p className="text-red-400">{alerta.descripcion}</p>
+              )}
               {status && (
                 <p
-                  className={`${
-                    status.startsWith('✅' || '⏳') ? 'text-green-500 font-bold' : 'text-red-600'
-                  } mt-1`}
+                  className={`${status.startsWith('✅') || status.startsWith('⏳')
+                      ? 'text-emerald-300 font-bold'
+                      : 'text-red-300'
+                    }`}
                 >
                   {status}
                 </p>
@@ -191,6 +214,7 @@ const Contacto = () => {
       </div>
     </div>
   );
+
 };
 
 export default Contacto;
