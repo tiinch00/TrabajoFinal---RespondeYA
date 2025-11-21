@@ -1919,11 +1919,11 @@ const Perfil = () => {
         {t('error')}: {error}
       </p>
     );
-  if (loadingPerfil) return <p className='text-white'>{t('loadingPerfil')}</p>;
+  if (loadingPerfil) return <p className='relative z-10 w-full flex flex-col items-center justify-start px-4 sm:px-6 md:px-8 pb-6 text-white'>{t('loadingPerfil')}</p>;
   if (!perfil) return <p className='text-red-600'>{t('noPerfil')}.</p>;
 
   return (
-    <div className='w-full max-w-5xl mx-auto px-2 sm:px-4 mb-6 mt-8 sm:mt-12 lg:mt-16'>
+    <div className='relative min-h-screen flex flex-col items-center px-2 sm:px-4 mb-6 mt-8 sm:mt-12 lg:mt-16'>
       {/* ====================== PERFIL ====================== */}
       <div className='flex flex-col items-center h-fit w-full'>
         <motion.div
@@ -2243,14 +2243,13 @@ const Perfil = () => {
                 )}
               </AnimatePresence>
 
+
               {/* MODAL lista de avatares (desde menú editar) */}
               <AnimatePresence>
                 {selectedAvatar && (
                   <motion.div
                     key='modal-avatares'
-                    className='fixed inset-0 z-[70] bg-black/50 backdrop-blur-sm
-                 flex items-start justify-center
-                 pt-[88px] sm:pt-[96px] lg:pt-[104px]'
+                    className='fixed inset-0 z-[70] bg-black/50 backdrop-blur-sm flex items-start justify-center pt-16 sm:pt-20'
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
@@ -2260,15 +2259,63 @@ const Perfil = () => {
                       initial={{ opacity: 0, y: 10, scale: 0.98 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.98 }}
-                      className='relative w-[95vw] max-w-4xl max-h-[80vh] bg-indigo-900 text-white
-                   rounded-2xl shadow-2xl p-6 flex flex-col'
+                      className='relative w-[95vw] max-w-4xl max-h-[80vh] bg-indigo-900 text-white rounded-2xl shadow-2xl p-6 flex flex-col'
                     >
-                      {/* ...todo lo de adentro igual... */}
+                      <button
+                        type='button'
+                        aria-label='Cerrar'
+                        className='absolute top-3 right-3 rounded-full w-9 h-9 
+                               grid place-items-center hover:bg-black/10 active:scale-95 
+                               cursor-pointer text-2xl'
+                        onClick={() => {
+                          setSelectedAvatar(false);
+                          setAvatarIdSeleccionado(null);
+                        }}
+                      >
+                        ✕
+                      </button>
+
+                      <h2 className='text-xl font-semibold mb-1'>Mis avatares</h2>
+                      <p className='text-sm text-indigo-100 mb-4'>
+                        Elegí un avatar para usar como foto de perfil.
+                      </p>
+
+                      <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 overflow-y-auto pr-1'>
+                        {inventarioAvataresDos().map((item) => {
+                          const isSelected = Number(avatarIdSeleccionado) === Number(item.id);
+                          return (
+                            <motion.button
+                              key={item.id}
+                              type='button'
+                              whileTap={{ scale: 0.97 }}
+                              className={`border rounded-2xl p-3 bg-white/10 hover:bg-white/20 cursor-pointer
+                                      flex flex-col items-center gap-2
+                                      ${isSelected ? 'ring-2 ring-fuchsia-400 border-fuchsia-400' : ''}`}
+                              onClick={() => {
+                                setAvatarIdSeleccionado(item.id);
+                                setAvatarConfirm({
+                                  open: true,
+                                  avatar: item,
+                                });
+                                setSelectedAvatar(false);
+                              }}
+                            >
+                              <img
+                                src={item.preview_url}
+                                alt={`Avatar ${item.nombre}`}
+                                className='w-24 h-24 rounded-full object-cover'
+                              />
+                              <span className='font-semibold text-center text-sm'>
+                                {item.nombre}
+                              </span>
+                            </motion.button>
+                          );
+                        })}
+                      </div>
                     </motion.div>
                   </motion.div>
                 )}
               </AnimatePresence>
-
             </div>
           </motion.div>
         )}
@@ -2325,20 +2372,103 @@ const Perfil = () => {
           <>
             {/* lista de avatares del jugador: CON AVATARES */}
             {showAvatarsList && (
-              <div
-                className='fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm
-               flex items-start justify-center
-               pt-[88px] sm:pt-[96px] lg:pt-[104px]'
-              >
+              <div className='fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-start justify-center pt-24 sm:pt-28'>
                 <motion.div
                   onClick={(e) => e.stopPropagation()}
                   initial={{ opacity: 0, y: 10, scale: 0.98 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 0 }}
-                  className='relative w-[95vw] max-w-3xl max-h-[80vh] rounded-2xl
-                 bg-indigo-900 text-white p-6 shadow-2xl flex flex-col'
+                  className='relative w-[95vw] max-w-3xl max-h-[80vh] rounded-2xl bg-indigo-900 text-white p-6 shadow-2xl flex flex-col'
                 >
-                  {/* ...todo lo de adentro igual... */}
+                  {/* Cerrar modal completo */}
+                  <button
+                    type='button'
+                    aria-label='Cerrar'
+                    className='absolute top-2 right-2 rounded-full w-9 h-9 
+                           grid place-items-center hover:bg-black/5 active:scale-95 
+                           cursor-pointer text-2xl'
+                    onClick={() => {
+                      setShowAvatarsList(false);
+                      setAvatarDetalle(null);
+                    }}
+                  >
+                    ✕
+                  </button>
+
+                  {/* SI NO hay avatarDetalle → LISTA */}
+                  {!avatarDetalle && (
+                    <>
+                      <h2 className='w-full text-lg font-semibold mb-2'>{t('avatarsList')}</h2>
+                      <hr />
+
+                      <ul
+                        className='mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 
+                               gap-4 max-h-[60vh] overflow-y-auto pr-1'
+                      >
+                        {inventarioAvataresDos().map((item) => (
+                          <motion.li
+                            key={item.id}
+                            whileTap={{ scale: 0.97 }}
+                            className='border rounded-2xl p-3 bg-white/10 hover:bg-white/20 
+                                   cursor-pointer flex flex-col items-center gap-2'
+                            onClick={() => {
+                              setAvatarDetalle(item);
+                            }}
+                          >
+                            <img
+                              src={item.preview_url}
+                              alt={`Imagen del avatar ${item.nombre}`}
+                              className='w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover'
+                            />
+                            <span className='font-semibold text-center text-sm'>{item.nombre}</span>
+                            {item.division && (
+                              <span className='text-xs text-indigo-100'>
+                                {modeTranslationsAvatar[item.division]}
+                              </span>
+                            )}
+                          </motion.li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
+
+                  {/* SI HAY avatarDetalle → DETALLE */}
+                  {avatarDetalle && (
+                    <div className='mt-2 flex flex-col items-center text-center'>
+                      <h2 className='text-xl font-semibold mb-3 break-words'>
+                        {avatarDetalle.nombre}
+                      </h2>
+                      <img
+                        src={avatarDetalle.preview_url}
+                        alt={`Avatar ${avatarDetalle.nombre}`}
+                        className='w-40 h-40 sm:w-48 sm:h-48 rounded-full object-cover border-4 border-fuchsia-400 shadow-xl mb-4'
+                      />
+
+                      {avatarDetalle.division && (
+                        <p className='mb-2 text-sm text-indigo-100'>
+                          {t('formDivition')}:{' '}
+                          <span className='font-semibold'>
+                            {modeTranslationsAvatar[avatarDetalle.division]}
+                          </span>
+                        </p>
+                      )}
+
+                      {avatarDetalle.descripcion && (
+                        <p className='mb-4 text-sm text-indigo-100 text-center max-w-md'>
+                          {avatarDetalle.descripcion}
+                        </p>
+                      )}
+
+                      <button
+                        type='button'
+                        className='mt-2 px-4 py-2 rounded-md bg-slate-600 hover:bg-slate-500 
+                               text-white text-sm cursor-pointer'
+                        onClick={() => setAvatarDetalle(null)}
+                      >
+                        {t('backToTheList')}
+                      </button>
+                    </div>
+                  )}
                 </motion.div>
               </div>
             )}
