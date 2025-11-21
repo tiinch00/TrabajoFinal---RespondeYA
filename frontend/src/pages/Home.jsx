@@ -21,7 +21,7 @@ const Home = () => {
             onClick={() => setMostrarJugarOptions(!mostrarJugarOptions)}
             whileHover={{ scale: 1.15 }}
             whileTap={{ scale: 0.95 }}
-            className='relative bg-gradient-to-br from-yellow-100 via-orange-300 to-orange-400 h-12 sm:h-14 md:h-16 lg:h-16 lg:w-82 rounded-full cursor-pointer shadow-2xl hover:shadow-orange-300/50 transition-all duration-300 border-2 sm:border-3 md:border-4 border-yellow-300'
+            className='relative bg-gradient-to-br from-yellow-100 via-orange-300 to-orange-400 w-full h-12 sm:h-14 md:h-16 lg:h-16 lg:w-82 rounded-full cursor-pointer shadow-2xl hover:shadow-orange-300/50 transition-all duration-300 border-2 sm:border-3 md:border-4 border-yellow-300'
           >
             <div className='flex items-center justify-center gap-2 sm:gap-3'>
               <Play className='w-5 h-5 sm:w-6 sm:h-6 fill-white stroke-white' />
