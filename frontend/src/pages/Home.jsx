@@ -1,10 +1,11 @@
-import { Link } from 'react-router-dom';
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Dice5, Trophy, ChevronDown, User, Users, Volume2, VolumeX } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ChevronDown, Dice5, Play, Trophy, User, Users, Volume2, VolumeX } from 'lucide-react';
+
 import ChatGlobal from './ChatGlobal';
-import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import { useMusic } from '../context/MusicContext.jsx';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const Home = () => {
   const [mostrarJugarOptions, setMostrarJugarOptions] = useState(false);
@@ -123,11 +124,16 @@ const Home = () => {
         )}
       </motion.button>
 
+      {/* BOTÓN DEL CHAT */}
       <motion.button
         onClick={() => setChatAbierto(!chatAbierto)}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
-        className='fixed bottom-25 right-2 bg-gradient-to-br from-blue-500 to-blue-700 hover:from-blue-400 hover:to-blue-600 text-white p-3 sm:p-4 cursor-pointer rounded-full shadow-2xl transition z-10 border-2 border-blue-400'
+        className='fixed bottom-6 right-4
+             sm:bottom-6 sm:right-6
+             bg-gradient-to-br from-blue-500 to-blue-700 hover:from-blue-400 hover:to-blue-600
+             text-white p-3 sm:p-4 cursor-pointer rounded-full shadow-2xl transition
+             z-[60] border-2 border-blue-400'
       >
         <svg
           className='w-5 h-5 sm:w-6 sm:h-6'
@@ -144,17 +150,27 @@ const Home = () => {
         </svg>
       </motion.button>
 
+      {/* PANEL DEL CHAT */}
       <AnimatePresence>
         {chatAbierto && (
           <motion.div
             key='chat-global'
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
+            initial={{ opacity: 0, x: '100%' }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: '100%' }}
             transition={{ type: 'spring', stiffness: 200, damping: 25 }}
-            className='fixed  sm:p-2 sm:top-50 sm:w-50  lg:top-65 lg:w-81 lg:p-2  right-1 bg-white shadow-2xl z-40 flex flex-col rounded-2xl'
+            className='fixed
+                rounded-lg
+                 bottom-32 right-3          {/* antes bottom-20 */}
+                 sm:bottom-24 sm:right-6    {/* antes sm:bottom-16 */}
+                 w-[90vw] max-w-sm
+                 sm:w-76 lg:w-96
+                 max-h-[80vh] 
+                 z-[55]'
           >
-            <ChatGlobal />
+            <div className='h-full max-h-[56vh] bg-white shadow-2xl rounded-2xl overflow-hidden flex flex-col'>
+              <ChatGlobal />
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

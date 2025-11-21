@@ -297,9 +297,9 @@ const Perfil = () => {
   const filteredNewFriends = !normalizedNewFriendQuery
     ? [] // input vacío: no mostramos nada
     : candidateUsersBase.filter((u) => {
-        const nameNorm = normalize(u.name ?? '');
-        return nameNorm.includes(normalizedNewFriendQuery);
-      });
+      const nameNorm = normalize(u.name ?? '');
+      return nameNorm.includes(normalizedNewFriendQuery);
+    });
 
   // paginado “buscar nuevo amigo”
   const totalNewFriends = filteredNewFriends.length;
@@ -1067,8 +1067,8 @@ const Perfil = () => {
       const arr = Array.isArray(data)
         ? data
         : Array.isArray(data?.sala_jugadores)
-        ? data.sala_jugadores
-        : [];
+          ? data.sala_jugadores
+          : [];
       setArraySalaJugadores(arr);
     } catch (e) {
       console.error('GET /sala_jugadores', e.response?.data?.error || e.message);
@@ -1743,8 +1743,8 @@ const Perfil = () => {
   // Jugadores que participaron en esa sala
   const jugadoresSalaActual = Array.isArray(arrayUsuariosJugadores)
     ? arrayUsuariosJugadores.filter(
-        (sj) => salaIdActual != null && Number(sj.sala_id) === Number(salaIdActual)
-      )
+      (sj) => salaIdActual != null && Number(sj.sala_id) === Number(salaIdActual)
+    )
     : [];
 
   // Contrincantes = todos menos el jugador logueado
@@ -1758,18 +1758,18 @@ const Perfil = () => {
   // Relación (si existe) entre YO y el contrincante
   const relacionConContrincante = contrincante
     ? amigos.find((a) => {
-        const miJid = Number(jugador_id);
-        const otroJid = Number(contrincante?.jugador?.id);
+      const miJid = Number(jugador_id);
+      const otroJid = Number(contrincante?.jugador?.id);
 
-        const jidA = Number(a.jugador_id);
-        const jidB = Number(a.amigo_id);
+      const jidA = Number(a.jugador_id);
+      const jidB = Number(a.amigo_id);
 
-        // ¿La relación es entre yo y el contrincante, en cualquier orden?
-        const esMismaPareja =
-          (jidA === miJid && jidB === otroJid) || (jidA === otroJid && jidB === miJid);
+      // ¿La relación es entre yo y el contrincante, en cualquier orden?
+      const esMismaPareja =
+        (jidA === miJid && jidB === otroJid) || (jidA === otroJid && jidB === miJid);
 
-        return esMismaPareja;
-      })
+      return esMismaPareja;
+    })
     : null;
 
   const esAmigo = !!relacionConContrincante && !!relacionConContrincante.aceptado_en;
@@ -1855,8 +1855,8 @@ const Perfil = () => {
               miJid === jidA
                 ? jidB // yo soy jugador_id → amigo es el otro
                 : miJid === jidB
-                ? jidA // yo soy amigo_id → jugador_id es el otro
-                : jidB; // fallback por las dudas
+                  ? jidA // yo soy amigo_id → jugador_id es el otro
+                  : jidB; // fallback por las dudas
 
             const jugador = await getJugador(otroJugadorId).catch((err) => {
               console.error('Error en getJugador(otroJugadorId):', otroJugadorId, err);
@@ -1923,11 +1923,14 @@ const Perfil = () => {
   if (!perfil) return <p className='text-red-600'>{t('noPerfil')}.</p>;
 
   return (
-    <div className='w-[70%] mb-6 mt-20'>
-      {/* perfil */}
+    <div className='w-full max-w-5xl mx-auto px-2 sm:px-4 mb-6 mt-8 sm:mt-12 lg:mt-16'>
+      {/* ====================== PERFIL ====================== */}
       <div className='flex flex-col items-center h-fit w-full'>
         <motion.div
-          className='h-32 w-32 bg-gray-200/90 hover:bg-gray-300/90 rounded-full cursor-pointer  text-black text-6xl text-center flex items-center justify-center'
+          className='h-24 w-24 sm:h-28 sm:w-28 md:h-32 md:w-32 
+                 bg-gray-200/90 hover:bg-gray-300/90 rounded-full cursor-pointer  
+                 text-black text-4xl sm:text-5xl md:text-6xl text-center 
+                 flex items-center justify-center'
           whileTap={{ scale: 1.2 }}
           onClick={() => setSelectedPerfil(true)}
           role='button'
@@ -1937,14 +1940,14 @@ const Perfil = () => {
             <p>👤</p>
           ) : (
             <img
-              src={resolveFotoAjena(fotoUrl)} // 👈 AHORA USA fotoUrl
+              src={resolveFotoAjena(fotoUrl)}
               alt='Foto de perfil'
-              className='w-32 h-32 rounded-full object-cover bg-white/20'
+              className='w-full h-full rounded-full object-cover bg-white/20'
             />
           )}
         </motion.div>
 
-        {/* agranda la foto de perfil - poder editar */}
+        {/* ============ MODAL FOTO PERFIL ============ */}
         {selectedPerfil && (
           <motion.div
             onClick={(e) => {
@@ -1953,43 +1956,65 @@ const Perfil = () => {
             initial={{ opacity: 0, y: 10, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10 }}
-            className='fixed inset-0 z-40 
-              bg-black/5 backdrop-blur-sm 
-                flex items-center justify-center mt-22'
+            className='fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm 
+               flex items-start justify-center pt-[88px] sm:pt-[96px]'
           >
-            <div className='relative inline-block'>
+            <div className='relative w-[90vw] max-w-sm sm:max-w-md md:max-w-lg 
+                    rounded-2xl p-4 sm:p-6 flex flex-col items-center'>
+              {/* cerrar */}
               <button
                 type='button'
                 aria-label='Cerrar'
-                className='absolute top-0 left-[260px] rounded-full w-9 h-9 
-                              grid place-items-center text-red-600 hover:text-red-500 active:scale-95 
-                              cursor-pointer text-4xl'
+                className='absolute top-2 right-2 rounded-full w-9 h-9 
+                       grid place-items-center text-red-600 hover:text-red-500 active:scale-95 
+                       cursor-pointer text-2xl'
                 onClick={() => setSelectedPerfil(false)}
               >
                 ✕
               </button>
-              {!fotoUrl ? (
-                <p className='text-[190px] bg-gray-200/90 rounded-full text-center'>👤</p>
-              ) : (
-                <img
-                  src={fotoUrl}
-                  alt='Foto de perfil'
-                  className='w-68 h-68 rounded-full object-cover bg-white/20'
-                />
-              )}
+
+              {/* avatar grande */}
+              <div className='relative flex flex-col items-center'>
+                {!fotoUrl ? (
+                  <div className='w-[180px] h-[180px] sm:w-[220px] sm:h-[220px] 
+                              bg-gray-200/90 rounded-full flex items-center justify-center'>
+                    <span className='text-[80px] sm:text-[120px]'>👤</span>
+                  </div>
+                ) : (
+                  <img
+                    src={fotoUrl}
+                    alt='Foto de perfil'
+                    className='w-[180px] h-[180px] sm:w-[220px] sm:h-[220px] 
+                           rounded-full object-cover bg-white/20'
+                  />
+                )}
+
+                {/* botón editar sobre la foto */}
+                {!selectedPefilEditar && !avatarConfirm.open && (
+                  <motion.button
+                    type='button'
+                    whileTap={{ scale: 0.9 }}
+                    whileHover={{ scale: 1.05 }}
+                    className='absolute bottom-2 right-2
+                           rounded-full px-3 py-1.5 bg-black/80 text-white text-xs sm:text-sm
+                           cursor-pointer'
+                    aria-pressed={selectedPefilEditar}
+                    onClick={() => setSelectedPefilEditar(true)}
+                  >
+                    Editar
+                  </motion.button>
+                )}
+              </div>
+
+              {/* MENÚ EDITAR */}
               {selectedPefilEditar && !avatarConfirm.open && (
                 <>
-                  {/* si showDeleteBar es true, oculto el ul */}
                   {!showDeleteBar && (
-                    <div
-                      className='absolute left-8 top-56                       
-                    bg-white text-black rounded-2xl px-3 py-3'
-                    >
-                      <ul>
+                    <div className='mt-4 w-full max-w-xs sm:max-w-sm bg-white text-black rounded-2xl px-3 py-3'>
+                      <ul className='space-y-2 text-sm sm:text-base'>
                         {/* Elegir de la biblioteca */}
-                        <li className='flex flex-row gap-2'>
+                        <li className='flex flex-row gap-2 items-center justify-between'>
                           <div>
-                            {/* Input file oculto */}
                             <input
                               id='file-picker'
                               ref={fileInputRef}
@@ -1999,7 +2024,6 @@ const Perfil = () => {
                               onChange={onPickFile}
                             />
 
-                            {/* Botón visible */}
                             <label
                               htmlFor='file-picker'
                               className='rounded-md text-black hover:text-gray-600 cursor-pointer'
@@ -2009,7 +2033,7 @@ const Perfil = () => {
 
                             {/* Modal de recorte */}
                             {cropModalOpen && (
-                              <div className='fixed inset-0 z-50 bg-black/60 flex items-center justify-center'>
+                              <div className='fixed inset-0 z-[70] bg-black/60 flex items-start justify-center pt-16 sm:pt-20'>
                                 <div className='bg-white rounded-2xl p-4 w-[90vw] max-w-xl'>
                                   <div className='relative w-full h-[60vh] max-h-[70vh] bg-black/5 rounded'>
                                     {tempImageUrl && (
@@ -2017,8 +2041,8 @@ const Perfil = () => {
                                         image={tempImageUrl}
                                         crop={crop}
                                         zoom={zoom}
-                                        aspect={1} // cuadrado (ideal para avatar)
-                                        cropShape='round' // círculo visual (opcional)
+                                        aspect={1}
+                                        cropShape='round'
                                         showGrid={false}
                                         onCropChange={setCrop}
                                         onZoomChange={setZoom}
@@ -2027,8 +2051,7 @@ const Perfil = () => {
                                     )}
                                   </div>
 
-                                  {/* Controles */}
-                                  <div className='mt-4 flex items-center justify-between'>
+                                  <div className='mt-4 flex items-center justify-between gap-3'>
                                     <input
                                       type='range'
                                       min={1}
@@ -2050,8 +2073,8 @@ const Perfil = () => {
                                         type='button'
                                         className='px-3 py-1.5 rounded bg-violet-600 hover:bg-violet-800 text-white cursor-pointer'
                                         onClick={async () => {
-                                          await aplicarRecorte(); // 1) genera el preview y cierra el crop modal
-                                          setSelectedPefilEditar(false); // 2) cierra el menú de editar
+                                          await aplicarRecorte();
+                                          setSelectedPefilEditar(false);
                                         }}
                                       >
                                         Aplicar recorte
@@ -2062,10 +2085,12 @@ const Perfil = () => {
                               </div>
                             )}
                           </div>
+
                           <button
                             type='button'
                             aria-label='Cerrar'
-                            className='text-end rounded-full w-3 h-6 hover:text-red/5 cursor-pointer text-md text-red-600 hover:text-red-500'
+                            className='text-end rounded-full w-6 h-6 flex items-center justify-center
+                                   hover:text-red-500 cursor-pointer text-md text-red-600'
                             onClick={() => setSelectedPefilEditar(false)}
                           >
                             ✕
@@ -2082,14 +2107,14 @@ const Perfil = () => {
                           Elegir un avatar
                         </li>
 
-                        {/* eliminar foto de perfil y bd */}
+                        {/* Eliminar foto */}
                         {fotoUrl && (
-                          <li className='cursor-pointer hover:text-red-700 text-red-500'>
+                          <li className='cursor-pointer text-red-500 hover:text-red-700'>
                             <button
                               type='button'
                               onClick={() => setShowDeleteBar(true)}
                               disabled={eliminando}
-                              className=' cursor-pointer hover:text-red-500 text-red-600 disabled:opacity-50'
+                              className='cursor-pointer hover:text-red-500 text-red-600 disabled:opacity-50'
                             >
                               {eliminando ? 'Eliminando...' : 'Eliminar foto'}
                             </button>
@@ -2099,7 +2124,7 @@ const Perfil = () => {
                     </div>
                   )}
 
-                  {/* acá vamos a meter la barrita de confirmación de borrado */}
+                  {/* Confirmar borrado */}
                   <AnimatePresence>
                     {showDeleteBar && (
                       <motion.div
@@ -2107,11 +2132,11 @@ const Perfil = () => {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 10 }}
-                        className='absolute left-34 w-72 top-68 mt-1 -translate-x-1/2
-                      bg-black/80 text-white rounded-2xl px-4 py-4 shadow-2xl'
+                        className='mt-3 w-full max-w-xs sm:max-w-sm
+                               bg-black/80 text-white rounded-2xl px-4 py-4 shadow-2xl text-sm sm:text-base'
                       >
                         <div className='flex justify-center'>
-                          <span className='text-md mr-2 text-center w-full'>
+                          <span className='mr-2 text-center w-full'>
                             ¿Seguro que querés eliminar tu foto de perfil?
                           </span>
                         </div>
@@ -2140,23 +2165,7 @@ const Perfil = () => {
                 </>
               )}
 
-              {/* BOTÓN EDITAR: solo si NO hay confirmación de avatar */}
-              {!selectedPefilEditar && !avatarConfirm.open && (
-                <motion.button
-                  type='button'
-                  whileTap={{ scale: 0.9 }}
-                  whileHover={{ scale: 1.05 }}
-                  className='absolute left-46 top-60 -translate-y-1/2 ml-4
-                rounded-full px-2 py-2 bg-black text-white 
-                cursor-pointer text-sm'
-                  aria-pressed={selectedPefilEditar}
-                  onClick={() => setSelectedPefilEditar(true)}
-                >
-                  Editar
-                </motion.button>
-              )}
-
-              {/* barra de confirmación de avatar */}
+              {/* Confirmar avatar */}
               <AnimatePresence>
                 {avatarConfirm.open && avatarConfirm.avatar && (
                   <motion.div
@@ -2164,8 +2173,8 @@ const Perfil = () => {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 10 }}
-                    className='absolute left-1/2 w-72 top-full mt-1 -translate-x-1/2
-      bg-black/80 text-white rounded-2xl px-4 py-4 shadow-2xl'
+                    className='mt-3 w-full max-w-xs sm:max-w-sm
+                           bg-black/80 text-white rounded-2xl px-4 py-4 shadow-2xl text-sm sm:text-base'
                   >
                     <div className='flex justify-center'>
                       <span className='text-md text-center text-slate-200 mt-1'>
@@ -2195,7 +2204,7 @@ const Perfil = () => {
                 )}
               </AnimatePresence>
 
-              {/* 🔹 mini-modal de guardar/cancelar debajo de la foto */}
+              {/* Guardar foto recortada */}
               <AnimatePresence>
                 {preview && !cropModalOpen && (
                   <motion.div
@@ -2203,11 +2212,11 @@ const Perfil = () => {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 10 }}
-                    className='absolute left-1/2 w-72 top-full mt-1 -translate-x-1/2
-                    bg-black/80 text-white rounded-2xl px-4 py-4 shadow-2xl'
+                    className='mt-3 w-full max-w-xs sm:max-w-sm
+                           bg-black/80 text-white rounded-2xl px-4 py-4 shadow-2xl text-sm sm:text-base'
                   >
                     <div className='flex justify-center'>
-                      <span className='text-md mr-2 text-center w-full'>
+                      <span className='mr-2 text-center w-full'>
                         ¿Quieres guardar esta foto?
                       </span>
                     </div>
@@ -2234,12 +2243,14 @@ const Perfil = () => {
                 )}
               </AnimatePresence>
 
-              {/* MODAL: listado de avatares */}
+              {/* MODAL lista de avatares (desde menú editar) */}
               <AnimatePresence>
                 {selectedAvatar && (
                   <motion.div
                     key='modal-avatares'
-                    className='fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center'
+                    className='fixed inset-0 z-[70] bg-black/50 backdrop-blur-sm
+                 flex items-start justify-center
+                 pt-[88px] sm:pt-[96px] lg:pt-[104px]'
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
@@ -2249,234 +2260,99 @@ const Perfil = () => {
                       initial={{ opacity: 0, y: 10, scale: 0.98 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.98 }}
-                      className='relative w-[95vw] max-w-4xl max-h-[80vh] bg-indigo-900 text-white rounded-2xl shadow-2xl p-6 flex flex-col'
+                      className='relative w-[95vw] max-w-4xl max-h-[80vh] bg-indigo-900 text-white
+                   rounded-2xl shadow-2xl p-6 flex flex-col'
                     >
-                      <button
-                        type='button'
-                        aria-label='Cerrar'
-                        className='absolute top-3 right-3 rounded-full w-9 h-9 
-                          grid place-items-center hover:bg-black/10 active:scale-95 
-                          cursor-pointer text-2xl'
-                        onClick={() => {
-                          setSelectedAvatar(false);
-                          setAvatarIdSeleccionado(null);
-                        }}
-                      >
-                        ✕
-                      </button>
-
-                      <h2 className='text-xl font-semibold mb-1'>Mis avatares</h2>
-                      <p className='text-sm text-indigo-100 mb-4'>
-                        Elegí un avatar para usar como foto de perfil.
-                      </p>
-
-                      <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 overflow-y-auto pr-1'>
-                        {inventarioAvataresDos().map((item) => {
-                          const isSelected = Number(avatarIdSeleccionado) === Number(item.id);
-                          return (
-                            <motion.button
-                              key={item.id}
-                              type='button'
-                              whileTap={{ scale: 0.97 }}
-                              className={`border rounded-2xl p-3 bg-white/10 hover:bg-white/20 cursor-pointer
-                                flex flex-col items-center gap-2
-                              ${isSelected ? 'ring-2 ring-fuchsia-400 border-fuchsia-400' : ''}`}
-                              onClick={() => {
-                                setAvatarIdSeleccionado(item.id);
-                                // guardo qué avatar se quiere aplicar
-                                setAvatarConfirm({
-                                  open: true,
-                                  avatar: item,
-                                });
-
-                                // cierro el modal de la lista de avatares
-                                setSelectedAvatar(false);
-
-                                // opcional: cierro el menú de edición si querés
-                                //setSelectedPefilEditar(false);
-                              }}
-                            >
-                              <img
-                                src={item.preview_url}
-                                alt={`Avatar ${item.nombre}`}
-                                className='w-24 h-24 rounded-full object-cover'
-                              />
-                              <span className='font-semibold text-center text-sm'>
-                                {item.nombre}
-                              </span>
-                            </motion.button>
-                          );
-                        })}
-                      </div>
+                      {/* ...todo lo de adentro igual... */}
                     </motion.div>
                   </motion.div>
                 )}
               </AnimatePresence>
+
             </div>
           </motion.div>
         )}
-        <p className='mt-2 text-4xl text-white'>{perfil.name}</p>
-        <p className='text-gray-400 text-xl mt-4'>
+
+        {/* nombre + puntos */}
+        <p className='mt-2 text-2xl sm:text-3xl md:text-4xl text-white text-center break-words'>
+          {perfil.name}
+        </p>
+        <p className='text-gray-400 text-base sm:text-lg md:text-xl mt-2 sm:mt-4'>
           {t('points')}: {user.puntaje}
         </p>
       </div>
 
-      {/* ====================================================================================== */}
-
+      {/* ============================= botón de avatares ========================================================= */}
       {/* botón "mis avatares" */}
       <div className='flex flex-col items-center mt-6 h-fit w-full'>
         <motion.button
-          className='bg-fuchsia-500 hover:bg-pink-500/90 text-white rounded-xl w-32 h-8 mb-4 cursor-pointer'
+          className='bg-fuchsia-500 hover:bg-pink-500/90 text-white rounded-xl px-4 py-2 mb-4 cursor-pointer text-sm sm:text-base'
           whileTap={{ scale: 1.2 }}
           onClick={() => {
-            setShowAvatarsList(true); // ahora usa showAvatarsList
+            setShowAvatarsList(true);
           }}
           type='button'
         >
           {t('myavatars')}
         </motion.button>
 
-        {/* lista de avatares del jugador */}
+        {/* lista de avatares del jugador: SIN AVATARES */}
         {inventarioAvataresDos().length === 0 && showAvatarsList ? (
-          <div className='fixed h-full inset-0 z-50 bg-black/50 backdrop-blur-sm'>
+          <div className='fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-start justify-center pt-24 sm:pt-28'>
             <motion.div
               onClick={(e) => e.stopPropagation()}
               initial={{ opacity: 0, y: 10, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 10 }}
-              className='absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
-                  w-full max-w-8/12 h-fit rounded-2xl bg-indigo-900 text-white p-6 shadow-2xl'
+              className='relative w-[90vw] max-w-md rounded-2xl bg-indigo-900 text-white p-6 shadow-2xl flex flex-col'
             >
               <button
                 type='button'
                 aria-label='Cerrar'
                 className='absolute top-2 right-2 rounded-full w-9 h-9 
-                    grid place-items-center hover:bg-black/5 active:scale-95 
-                    cursor-pointer text-2xl'
+                       grid place-items-center hover:bg-black/5 active:scale-95 
+                       cursor-pointer text-2xl'
                 onClick={() => setShowAvatarsList(false)}
               >
                 ✕
               </button>
-              <h2 className='w-48 p-2'>{t('avatarsList')}</h2>
+              <h2 className='text-lg sm:text-xl font-semibold mb-2'>{t('avatarsList')}</h2>
               <hr />
-              <p className='mt-3 text-center'>{t('noHaveAvatars')}</p>
+              <p className='mt-3 text-center text-sm sm:text-base'>{t('noHaveAvatars')}</p>
             </motion.div>
           </div>
         ) : (
           <>
+            {/* lista de avatares del jugador: CON AVATARES */}
             {showAvatarsList && (
-              <div className='fixed h-full inset-0 z-50 bg-black/50 backdrop-blur-sm'>
+              <div
+                className='fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm
+               flex items-start justify-center
+               pt-[88px] sm:pt-[96px] lg:pt-[104px]'
+              >
                 <motion.div
                   onClick={(e) => e.stopPropagation()}
                   initial={{ opacity: 0, y: 10, scale: 0.98 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  className='absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
-          w-full max-w-3xl h-fit rounded-2xl bg-indigo-900 text-white p-6 shadow-2xl'
+                  exit={{ opacity: 0, y: 0 }}
+                  className='relative w-[95vw] max-w-3xl max-h-[80vh] rounded-2xl
+                 bg-indigo-900 text-white p-6 shadow-2xl flex flex-col'
                 >
-                  {/* Cerrar modal completo */}
-                  <button
-                    type='button'
-                    aria-label='Cerrar'
-                    className='absolute top-2 right-2 rounded-full w-9 h-9 
-            grid place-items-center hover:bg-black/5 active:scale-95 
-            cursor-pointer text-2xl'
-                    onClick={() => {
-                      setShowAvatarsList(false);
-                      setAvatarDetalle(null); // por las dudas, limpiamos
-                    }}
-                  >
-                    ✕
-                  </button>
-
-                  {/* SI NO hay avatarDetalle → se muestra la LISTA en grid */}
-                  {!avatarDetalle && (
-                    <>
-                      <h2 className='w-full text-lg font-semibold mb-2'>{t('avatarsList')}</h2>
-                      <hr />
-
-                      <ul
-                        className='mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 
-                gap-4 max-h-[60vh] overflow-y-auto pr-1'
-                      >
-                        {inventarioAvataresDos().map((item) => (
-                          <motion.li
-                            key={item.id}
-                            whileTap={{ scale: 0.97 }}
-                            className='border rounded-2xl p-3 bg-white/10 hover:bg-white/20 
-                    cursor-pointer flex flex-col items-center gap-2'
-                            onClick={() => {
-                              // SOLO mostramos el detalle, NO cambiamos foto de perfil
-                              setAvatarDetalle(item);
-                            }}
-                          >
-                            <img
-                              src={item.preview_url}
-                              alt={`Imagen del avatar ${item.nombre}`}
-                              className='w-24 h-24 rounded-full object-cover'
-                            />
-                            <span className='font-semibold text-center text-sm'>{item.nombre}</span>
-                            {item.division && (
-                              <span className='text-xs text-indigo-100'>
-                                {modeTranslationsAvatar[item.division]}
-                              </span>
-                            )}
-                          </motion.li>
-                        ))}
-                      </ul>
-                    </>
-                  )}
-
-                  {/* SI HAY avatarDetalle → se muestra el DETALLE del avatar */}
-                  {avatarDetalle && (
-                    <div className='mt-2 flex flex-col items-center'>
-                      <h2 className='text-xl font-semibold mb-3'>{avatarDetalle.nombre}</h2>
-                      <img
-                        src={avatarDetalle.preview_url}
-                        alt={`Avatar ${avatarDetalle.nombre}`}
-                        className='w-48 h-48 rounded-full object-cover border-4 border-fuchsia-400 shadow-xl mb-4'
-                      />
-
-                      {avatarDetalle.division && (
-                        <p className='mb-2 text-sm text-indigo-100'>
-                          {t('formDivition')}:{' '}
-                          <span className='font-semibold'>
-                            {modeTranslationsAvatar[avatarDetalle.division]}
-                          </span>
-                        </p>
-                      )}
-
-                      {/* Podés mostrar más datos si tu objeto los trae */}
-                      {avatarDetalle.descripcion && (
-                        <p className='mb-4 text-sm text-indigo-100 text-center max-w-md'>
-                          {avatarDetalle.descripcion}
-                        </p>
-                      )}
-
-                      <button
-                        type='button'
-                        className='mt-2 px-4 py-2 rounded-md bg-slate-600 hover:bg-slate-500 
-                text-white text-sm cursor-pointer'
-                        onClick={() => setAvatarDetalle(null)} // vuelve al grid
-                      >
-                        {t('backToTheList')}
-                      </button>
-                    </div>
-                  )}
+                  {/* ...todo lo de adentro igual... */}
                 </motion.div>
               </div>
             )}
+
           </>
         )}
       </div>
 
       {/* =============================== Mi Perfil ======================================================= */}
-
       {/* Mi Perfil */}
-      <div className='mt-4 space-y-4'>
+      <div className='mt-4 space-y-4 w-full max-w-2xl mx-auto'>
         <h2 className='text-xl text-white font-semibold'>{t('personalData')}</h2>
         {!editMode ? (
-          <div className='space-y-2 bg-white/10 text-white p-4 text-xl rounded-xl'>
+          <div className='space-y-2 bg-white/10 text-white p-4 text-base sm:text-lg rounded-xl'>
             <p>
               <b>{t('formName')}:</b> {perfil.name}
             </p>
@@ -2490,7 +2366,7 @@ const Perfil = () => {
               <b>{t('pass')}:</b> ••••••
             </p>
             <button
-              className='px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'
+              className='px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 cursor-pointer text-sm sm:text-base'
               onClick={() => {
                 setEditMode(true);
                 setForm({
@@ -2507,7 +2383,10 @@ const Perfil = () => {
             </button>
           </div>
         ) : (
-          <form onSubmit={handleSave} className='space-y-3 bg-white/10 text-white p-4 rounded-xl'>
+          <form
+            onSubmit={handleSave}
+            className='space-y-3 bg-white/10 text-white p-4 rounded-xl text-sm sm:text-base'
+          >
             <div>
               <label className='block text-sm mb-1'>{t('name')}</label>
               <input
@@ -2591,7 +2470,7 @@ const Perfil = () => {
               )}
             </div>
 
-            <div className='flex gap-2'>
+            <div className='flex gap-2 flex-wrap'>
               <button
                 type='submit'
                 disabled={saving}
@@ -2607,6 +2486,7 @@ const Perfil = () => {
                   setForm({
                     name: perfil.name || '',
                     email: perfil.email || '',
+                    pais: perfil.pais || '',
                     password: '',
                     confirmPassword: '',
                   });
@@ -2623,35 +2503,37 @@ const Perfil = () => {
       {/* ================= estadisticas ===================================================================== */}
 
       {selectedEstadisticasResultadosDePartidas ? (
-        <div>
-          {/* Estadísticas */}
-          <div className='flex flex-row gap-2 mt-4'>
-            <button>
-              <h2 className='text-xl font-semibold mb-3 mt-3 text-fuchsia-500/95 p-1'>
+        <div className='w-full mt-6'>
+          {/* Tabs Estadísticas */}
+          <div className='flex flex-wrap items-center gap-2 justify-center sm:justify-start'>
+            <button type='button'>
+              <h2 className='text-lg sm:text-xl font-semibold mb-1 sm:mb-3 text-fuchsia-500/95 p-1'>
                 {t('machtResults')}
               </h2>
             </button>
-            <h2 className='text-xl text-white flex items-center justify-center p-1'>|</h2>
+            <h2 className='text-lg sm:text-xl text-white flex items-center justify-center p-1'>|</h2>
             <button
               type='button'
               onClick={() => {
                 setSelectedEstadisticasResultadosDePartidas(false);
               }}
             >
-              <h2 className='text-xl text-white font-semibold mb-3 mt-3 cursor-pointer hover:text-fuchsia-500/95  p-1'>
+              <h2 className='text-lg sm:text-xl text-white font-semibold mb-1 sm:mb-3 cursor-pointer hover:text-fuchsia-500/95 p-1'>
                 {t('stadisticGrafict')}
               </h2>
             </button>
           </div>
 
           {estadisticas.length === 0 ? (
-            <p className='indent-2 text-white'>{t('noResultsMatches')}</p>
+            <p className='mt-2 indent-2 text-white text-sm sm:text-base'>
+              {t('noResultsMatches')}
+            </p>
           ) : (
-            <div>
+            <div className='mt-3'>
               {/* buscador de estadísticas */}
-              <div className='relative inline-block mb-4'>
+              <div className='relative w-full max-w-md mb-4'>
                 <input
-                  className='bg-white/95 w-96 indent-2 border rounded-xl px-1 py-2 text-black placeholder-black/70 hover:bg-white'
+                  className='bg-white/95 w-full indent-2 border rounded-xl px-2 py-2 text-black text-sm sm:text-base placeholder-black/70 hover:bg-white'
                   placeholder={t('findAMatch')}
                   value={search}
                   onChange={onChangeSearch}
@@ -2673,8 +2555,8 @@ const Perfil = () => {
                   type='button'
                   onClick={handleSearch}
                   className='absolute h-full top-0 right-0 flex items-center rounded-r-xl 
-                bg-slate-800 hover:bg-slate-700 px-2 border border-transparent text-sm transition-all 
-                  shadow-sm hover:shadow text-white cursor-pointer'
+                       bg-slate-800 hover:bg-slate-700 px-2 border border-transparent text-xs sm:text-sm transition-all 
+                       shadow-sm hover:shadow text-white cursor-pointer'
                 >
                   {/* ícono lupa */}
                   <svg
@@ -2694,15 +2576,15 @@ const Perfil = () => {
 
               {/* listado / mensaje */}
               {(listaFiltrada?.length ?? 0) === 0 && hasQuery ? (
-                <div className='p-3 rounded-xl bg-white/10 text-white'>
-                  {'No encontramos resultados' ?? t('noResults')}: <b> "{search}"</b>
+                <div className='p-3 rounded-xl bg-white/10 text-white text-sm sm:text-base'>
+                  {'No encontramos resultados' ?? t('noResults')}: <b>"{search}"</b>
                 </div>
               ) : (
-                <ul className=''>
+                <ul className='space-y-2'>
                   {(visible ?? []).map((e, index) => {
                     const globalIndex = startIndex + index;
 
-                    // 🔹 elegimos etiqueta y color según estado
+                    // etiqueta / color
                     let etiqueta;
                     let claseColor;
 
@@ -2723,33 +2605,35 @@ const Perfil = () => {
                     return (
                       <motion.li
                         key={e.id}
-                        className='border rounded-xl p-4 bg-white/10 hover:bg-white/20 
-        flex space-x-4 mb-2 cursor-pointer'
-                        whileTap={{ scale: 1.05 }}
+                        className='border rounded-xl p-3 sm:p-4 bg-white/10 hover:bg-white/20 
+                               flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-2 sm:space-y-0 cursor-pointer'
+                        whileTap={{ scale: 1.03 }}
                         onClick={() => {
                           setSelectedEstadisticas(globalIndex);
                           setPartidaIdSeleccionada(e.partida_id);
                           setModalEstadisticaAbierto(true);
                         }}
                       >
-                        <div className='flex flex-row gap-5'>
-                          <p className={claseColor}>{etiqueta}</p>
-                          <p className='text-white'>
+                        <p className={`${claseColor} text-sm sm:text-base`}>{etiqueta}</p>
+
+                        <div className='flex flex-col sm:flex-row flex-wrap gap-1 sm:gap-4 text-xs sm:text-sm text-white'>
+                          <p>
                             {t('date')}: {formatDateDMYLocal(e?.ended_at) ?? '-'}
                           </p>
-                          <p className='text-white'>
+                          <p>
                             {t('dateHs')}: {formatTimeHMLocal(e?.ended_at) ?? '-'}
                           </p>
-                          <p className='text-white'>
+                          <p>
                             {t('mode')}: {modeTranslations[e?.modo] ?? '-'}
                           </p>
-                          <p className='text-white'>
+                          <p>
                             {t('category')}: {categoryTranslations[e?.categoria] ?? '-'}
                           </p>
-                          <p className='text-white'>
-                            {t('dificultyquestion')}: {difficultyTranslations[e?.dificultad] ?? '-'}
+                          <p>
+                            {t('dificultyquestion')}:{' '}
+                            {difficultyTranslations[e?.dificultad] ?? '-'}
                           </p>
-                          <p className='text-white'>
+                          <p>
                             {t('dificultytime')}:{' '}
                             {timeDifficultyTranslations[e?.dificultad_tiempo] ?? '-'}
                           </p>
@@ -2760,10 +2644,10 @@ const Perfil = () => {
                 </ul>
               )}
 
-              {/* Paginado: aparece solo si hay más de 5 */}
+              {/* Paginado */}
               {total > PAGE_SIZE && (
-                <div className='mt-3 flex items-center justify-between gap-2'>
-                  <span className='text-white/80 text-sm'>
+                <div className='mt-3 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs sm:text-sm'>
+                  <span className='text-white/80'>
                     {t('showing')} {startIndex + 1}–{endIndex} {t('of')} {total}
                   </span>
 
@@ -2772,9 +2656,8 @@ const Perfil = () => {
                       type='button'
                       onClick={goPrev}
                       disabled={currentPage === 1}
-                      className={`px-3 py-1 rounded-lg bg-white/10 text-white disabled:opacity-50  hover:bg-white/20 ${
-                        currentPage === 1 ? 'cursor-not-allowed' : 'cursor-pointer'
-                      }`}
+                      className={`px-2 py-1 rounded-lg bg-white/10 text-white disabled:opacity-50 hover:bg-white/20 ${currentPage === 1 ? 'cursor-not-allowed' : 'cursor-pointer'
+                        }`}
                     >
                       ‹
                     </button>
@@ -2784,11 +2667,10 @@ const Perfil = () => {
                         key={p}
                         type='button'
                         onClick={() => goTo(p)}
-                        className={`px-3 py-1 rounded-lg ${
-                          p === currentPage
-                            ? 'bg-slate-800 cursor-not-allowed text-white'
-                            : 'bg-white/10 text-white cursor-pointer hover:bg-white/20'
-                        }`}
+                        className={`px-2 py-1 rounded-lg ${p === currentPage
+                          ? 'bg-slate-800 cursor-not-allowed text-white'
+                          : 'bg-white/10 text-white cursor-pointer hover:bg-white/20'
+                          }`}
                       >
                         {p}
                       </button>
@@ -2798,9 +2680,8 @@ const Perfil = () => {
                       type='button'
                       onClick={goNext}
                       disabled={currentPage === totalPages}
-                      className={`px-3 py-1 rounded-lg bg-white/10 text-white disabled:opacity-50 hover:bg-white/20 ${
-                        currentPage === totalPages ? 'cursor-not-allowed' : 'cursor-pointer'
-                      }`}
+                      className={`px-2 py-1 rounded-lg bg-white/10 text-white disabled:opacity-50 hover:bg-white/20 ${currentPage === totalPages ? 'cursor-not-allowed' : 'cursor-pointer'
+                        }`}
                     >
                       ›
                     </button>
@@ -2810,31 +2691,32 @@ const Perfil = () => {
             </div>
           )}
 
-          {/* div overlay absoluto en toda la pantalla) */}
+          {/* Modal detalle de partida */}
           {selectedEstadisticas !== null && partidaSeleccionada && (
-            <div className='fixed inset-0 z-50 bg-black/50 backdrop-blur-sm mt-22 '>
-              {/* fonde desenfocado */}
+            <div
+              className='fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm 
+  overflow-y-auto flex justify-center pt-12 sm:pt-16 pb-12'
+            >
               <motion.div
-                onClick={(e) => e.stopPropagation()} // evita que el click burbujee al overlay
+                onClick={(e) => e.stopPropagation()}
                 initial={{ opacity: 0, y: 10, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 10 }}
-                className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
-                  w-[95vw] max-w-5xl max-h-[800px] h-[720px] rounded-2xl
-                  bg-gradient-to-b from-violet-900 via-purple-700 to-purple-900
-                text-white shadow-2xl p-3 
-                  flex flex-col overflow-hidden'
+                className='w-[92vw] sm:w-[90vw] md:w-[80vw] lg:w-[70vw] xl:w-[60vw]
+  max-w-[1200px]
+  rounded-2xl bg-gradient-to-b from-violet-900 via-purple-700 to-purple-900
+  text-white shadow-2xl p-3 sm:p-4
+  flex flex-col mx-fit'
               >
                 {/* seccion de resumen */}
                 {selectedEstResumen && (
                   <>
-                    {/* 1) header (no scroll) */}
+                    {/* header */}
                     <div className='flex items-center gap-2 mb-2'>
-                      {/* Tabs / encabezados */}
-                      <div className='flex flex-row gap-2 mb-2 w-fit text-2xl'>
+                      <div className='flex flex-wrap gap-2 mb-2 w-fit text-lg sm:text-2xl'>
                         <button
                           type='button'
-                          className='rounded text-fuchsia-500 [text-shadow:_0_4px_8px_#000000] w-48 p-2'
+                          className='rounded text-fuchsia-500 [text-shadow:_0_4px_8px_#000000] px-2 py-1 sm:w-48 text-left'
                         >
                           {t('resume')}
                         </button>
@@ -2847,7 +2729,7 @@ const Perfil = () => {
                             setSelectedEstRespuestas(true);
                             setSelectedEstResumen(false);
                           }}
-                          className='w-48 p-2 cursor-pointer hover:text-fuchsia-500 hover:drop-shadow-[0_4px_8px_#000000]'
+                          className='px-2 py-1 sm:w-48 text-left cursor-pointer hover:text-fuchsia-500 hover:drop-shadow-[0_4px_8px_#000000]'
                         >
                           {t('answer')}
                         </button>
@@ -2860,19 +2742,18 @@ const Perfil = () => {
                             setSelectedEstGraficaDeRespuestas(true);
                             setSelectedEstResumen(false);
                           }}
-                          className='p-2 cursor-pointer hover:text-fuchsia-500 hover:drop-shadow-[0_4px_8px_#000000]'
+                          className='px-2 py-1 text-left cursor-pointer hover:text-fuchsia-500 hover:drop-shadow-[0_4px_8px_#000000]'
                         >
                           {t('answerGrafics')}
                         </button>
                       </div>
 
-                      {/* Encabezado: Botón cerrar */}
+                      {/* cerrar */}
                       <button
                         type='button'
                         aria-label='Cerrar'
-                        className='ml-auto rounded-full w-9 h-9 grid place-items-center text-2xl cursor-pointer
-                        hover:text-fuchsia-500 hover:drop-shadow-[0_4px_8px_#000000]
-                        '
+                        className='ml-auto rounded-full w-8 h-8 sm:w-9 sm:h-9 grid place-items-center text-xl sm:text-2xl cursor-pointer
+                               hover:text-fuchsia-500 hover:drop-shadow-[0_4px_8px_#000000]'
                         onClick={() => {
                           setSelectedEstadisticas(null);
                           setPartidaIdSeleccionada(null);
@@ -2887,22 +2768,20 @@ const Perfil = () => {
                       </button>
                     </div>
 
-                    {/* Informacion detallada */}
+                    {/* info detallada */}
                     <div
                       className='bg-gradient-to-b from-purple-800 via-purple-700 to-purple-800
-                      rounded-xl p-4 mt-1 text-xl flex-1 min-h-0 text-[28px]'
+                             rounded-xl p-3 sm:p-4 mt-1 text-base sm:text-xl flex-1 min-h-0 overflow-y-auto'
                     >
                       <p className='p-1'>
                         <strong>{t('position')}:</strong>{' '}
-                        {
-                          partidaSeleccionada.modo === 'individual'
-                            ? t('practice')
-                            : partidaSeleccionada.empate
+                        {partidaSeleccionada.modo === 'individual'
+                          ? t('practice')
+                          : partidaSeleccionada.empate
                             ? t('draw')
                             : partidaSeleccionada.posicion > 0
-                            ? t('won') // ganaste
-                            : t('youLoss') // perdiste
-                        }
+                              ? t('won')
+                              : t('youLoss')}
                       </p>
                       <p className='p-1'>
                         <strong>{t('scoreGeneral')}:</strong> {partidaSeleccionada.puntaje_total}
@@ -2917,10 +2796,12 @@ const Perfil = () => {
                         {formatTimeHMLocal(partidaSeleccionada?.ended_at) ?? '—'}
                       </p>
                       <p className='p-1'>
-                        <strong>{t('rightAnswer')}:</strong> {partidaSeleccionada.total_correctas}
+                        <strong>{t('rightAnswer')}:</strong>{' '}
+                        {partidaSeleccionada.total_correctas}
                       </p>
                       <p className='p-1'>
-                        <strong>{t('wrongAnswer')}:</strong> {partidaSeleccionada.total_incorrectas}
+                        <strong>{t('wrongAnswer')}:</strong>{' '}
+                        {partidaSeleccionada.total_incorrectas}
                       </p>
                       <p className='p-1'>
                         <strong>{t('questionDificulty')}:</strong>{' '}
@@ -2934,96 +2815,90 @@ const Perfil = () => {
                         <strong>{t('matchTime')}:</strong>{' '}
                         {fmtMsDetallado(partidaSeleccionada.tiempo_total_ms)}
                       </p>
-                    </div>
 
-                    {/* Sección Contrincante */}
-                    {objetoPartidaCompleto?.partida?.[0]?.modo === 'multijugador' &&
-                      contrincante && (
-                        <div className='mt-4 pt-3 border-t border-purple-600/60 text-[22px]'>
-                          <h3 className='font-semibold mb-3'>Contrincante</h3>
+                      {/* contrincante */}
+                      {objetoPartidaCompleto?.partida?.[0]?.modo === 'multijugador' &&
+                        contrincante && (
+                          <div className='mt-4 pt-3 border-t border-purple-600/60 text-base sm:text-lg'>
+                            <h3 className='font-semibold mb-3'>Contrincante</h3>
 
-                          <div className='flex items-center gap-4'>
-                            {/* Foto del contrincante */}
-                            <div className='w-16 h-16 rounded-full overflow-hidden bg-black/30 flex items-center justify-center'>
-                              {(() => {
-                                const fotoContrincante = contrincante.usuario?.foto_perfil
-                                  ? resolveFotoAjena(contrincante.usuario.foto_perfil)
-                                  : null;
+                            <div className='flex flex-col sm:flex-row items-center gap-4'>
+                              <div className='w-16 h-16 rounded-full overflow-hidden bg-black/30 flex items-center justify-center'>
+                                {(() => {
+                                  const fotoContrincante = contrincante.usuario?.foto_perfil
+                                    ? resolveFotoAjena(contrincante.usuario.foto_perfil)
+                                    : null;
 
-                                return fotoContrincante ? (
-                                  <img
-                                    src={resolveFotoAjena(fotoContrincante)}
-                                    alt={contrincante.usuario?.name ?? 'Contrincante'}
-                                    className='w-16 h-16 object-cover'
-                                  />
-                                ) : (
-                                  <span className='text-2xl'>👤</span>
-                                );
-                              })()}
-                            </div>
+                                  return fotoContrincante ? (
+                                    <img
+                                      src={resolveFotoAjena(fotoContrincante)}
+                                      alt={contrincante.usuario?.name ?? 'Contrincante'}
+                                      className='w-16 h-16 object-cover'
+                                    />
+                                  ) : (
+                                    <span className='text-2xl'>👤</span>
+                                  );
+                                })()}
+                              </div>
 
-                            {/* Nombre y correo */}
-                            <div className='flex flex-col'>
-                              <span className='font-semibold'>
-                                {contrincante.usuario?.name ?? '—'}
-                              </span>
-                              <span className='text-sm text-purple-200'>
-                                {contrincante.usuario?.email ?? '—'}
-                              </span>
-
-                              {friendMessage && (
-                                <span className='mt-1 text-xs text-purple-200'>
-                                  {friendMessage}
+                              <div className='flex flex-col text-sm sm:text-base'>
+                                <span className='font-semibold'>
+                                  {contrincante.usuario?.name ?? '—'}
                                 </span>
-                              )}
-                            </div>
+                                <span className='text-purple-200'>
+                                  {contrincante.usuario?.email ?? '—'}
+                                </span>
 
-                            {/* Botón Agregar amigo */}
-                            <button
-                              type='button'
-                              disabled={
-                                esAmigo ||
-                                pendienteConContrincante ||
-                                addingFriendId === contrincante.jugador?.id
-                              }
-                              onClick={() => handleAgregarAmigo(contrincante)}
-                              className={`ml-auto px-4 py-2 rounded-xl text-sm cursor-pointer
-                        ${
-                          esAmigo
-                            ? 'bg-green-700/70 text-white cursor-default'
-                            : pendienteConContrincante
-                            ? 'bg-yellow-600/80 text-white cursor-default'
-                            : 'bg-pink-600 hover:bg-pink-700 text-white disabled:opacity-60'
-                        }`}
-                            >
-                              {esAmigo
-                                ? 'Amigos'
-                                : pendienteConContrincante
-                                ? 'Pendiente'
-                                : addingFriendId === contrincante.jugador?.id
-                                ? 'Agregando...'
-                                : 'Agregar amigo'}
-                            </button>
+                                {friendMessage && (
+                                  <span className='mt-1 text-xs text-purple-200'>
+                                    {friendMessage}
+                                  </span>
+                                )}
+                              </div>
+
+                              <button
+                                type='button'
+                                disabled={
+                                  esAmigo ||
+                                  pendienteConContrincante ||
+                                  addingFriendId === contrincante.jugador?.id
+                                }
+                                onClick={() => handleAgregarAmigo(contrincante)}
+                                className={`mt-2 sm:mt-0 sm:ml-auto px-4 py-2 rounded-xl text-xs sm:text-sm cursor-pointer
+                                        ${esAmigo
+                                    ? 'bg-green-700/70 text-white cursor-default'
+                                    : pendienteConContrincante
+                                      ? 'bg-yellow-600/80 text-white cursor-default'
+                                      : 'bg-pink-600 hover:bg-pink-700 text-white disabled:opacity-60'
+                                  }`}
+                              >
+                                {esAmigo
+                                  ? 'Amigos'
+                                  : pendienteConContrincante
+                                    ? 'Pendiente'
+                                    : addingFriendId === contrincante.jugador?.id
+                                      ? 'Agregando...'
+                                      : 'Agregar amigo'}
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
+                    </div>
                   </>
                 )}
 
                 {/* seccion de respuestas */}
                 {selectedEstRespuestas && (
                   <>
-                    {/* 1) header (no scroll) */}
                     <div className='flex items-center gap-2 mb-2'>
-                      {/* Tabs / encabezado */}
-                      <div className='flex flex-row gap-2 mb-2 w-fit text-2xl'>
+                      <div className='flex flex-wrap gap-2 mb-2 w-fit text-lg sm:text-2xl'>
                         <button
                           type='button'
                           onClick={() => {
                             setSelectedEstResumen(true);
                             setSelectedEstRespuestas(false);
                           }}
-                          className='w-48 p-2 cursor-pointer hover:text-fuchsia-500 hover:drop-shadow-[0_4px_8px_#000000]'
+                          className='px-2 py-1 sm:w-48 text-left cursor-pointer hover:text-fuchsia-500 hover:drop-shadow-[0_4px_8px_#000000]'
                         >
                           {t('resume')}
                         </button>
@@ -3032,7 +2907,7 @@ const Perfil = () => {
 
                         <button
                           type='button'
-                          className='rounded w-48 p-2 text-fuchsia-500 [text-shadow:_0_4px_8px_#000000]'
+                          className='rounded px-2 py-1 sm:w-48 text-left text-fuchsia-500 [text-shadow:_0_4px_8px_#000000]'
                         >
                           {t('answer')}
                         </button>
@@ -3045,18 +2920,17 @@ const Perfil = () => {
                             setSelectedEstGraficaDeRespuestas(true);
                             setSelectedEstRespuestas(false);
                           }}
-                          className='p-2 cursor-pointer hover:text-fuchsia-500 hover:drop-shadow-[0_4px_8px_#000000]'
+                          className='px-2 py-1 text-left cursor-pointer hover:text-fuchsia-500 hover:drop-shadow-[0_4px_8px_#000000]'
                         >
                           {t('answerGrafics')}
                         </button>
                       </div>
 
-                      {/* Botón cerrar */}
                       <button
                         type='button'
                         aria-label='Cerrar'
-                        className='ml-auto rounded-full w-9 h-9 grid place-items-center text-2xl cursor-pointer
-                        hover:text-fuchsia-500 hover:drop-shadow-[0_4px_8px_#000000]'
+                        className='ml-auto rounded-full w-8 h-8 sm:w-9 sm:h-9 grid place-items-center text-xl sm:text-2xl cursor-pointer
+                               hover:text-fuchsia-500 hover:drop-shadow-[0_4px_8px_#000000]'
                         onClick={() => {
                           setSelectedEstadisticas(null);
                           setPartidaIdSeleccionada(null);
@@ -3071,16 +2945,14 @@ const Perfil = () => {
                       </button>
                     </div>
 
-                    {/* 2) wrapper (contenedor) que da altura al contenido */}
                     <div className='flex-1 min-h-0'>
-                      {/* 3) área scrollable */}
                       <div
                         ref={listRef}
                         className='h-full overflow-y-auto overscroll-contain touch-pan-y pr-2
-                      bg-gradient-to-b from-purple-800 via-purple-700 to-purple-800
-                      rounded-xl'
+                               bg-gradient-to-b from-purple-800 via-purple-700 to-purple-800
+                               rounded-xl'
                       >
-                        <div className='flex flex-row gap-2 mb-2 sticky top-0 p-2 bg-purple-800'>
+                        <div className='flex flex-row flex-wrap gap-2 mb-2 sticky top-0 p-2 bg-purple-800 text-sm sm:text-base'>
                           <button
                             onClick={() =>
                               setOpenPreguntaIds(
@@ -3091,30 +2963,30 @@ const Perfil = () => {
                                 )
                               )
                             }
-                            className='hover:text-rose-600 rounded p-2 cursor-pointer text-[20px]'
+                            className='hover:text-rose-400 rounded p-1 cursor-pointer'
                           >
                             {t('openAnswer')}
                           </button>
 
                           <button
                             onClick={() => setOpenPreguntaIds(new Set())}
-                            className='hover:text-rose-600 rounded p-2 cursor-pointer text-[20px]'
+                            className='hover:text-rose-400 rounded p-1 cursor-pointer'
                           >
                             {t('closeAnswer')}
                           </button>
                         </div>
 
                         {objetoPartidaCompleto?.preguntasDeLaPartida?.length ? (
-                          <ul className='p-2'>
+                          <ul className='p-2 space-y-2'>
                             {(objetoPartidaCompleto?.preguntasDeLaPartida ?? []).map((e, index) => (
                               <motion.li
                                 key={Number(e.pregunta_id ?? e.id)}
-                                className='border rounded-xl p-3 odd:bg-black/5 even:bg-black/30 flex flex-col mb-2'
+                                className='border rounded-xl p-3 odd:bg-black/5 even:bg-black/30 flex flex-col'
                                 whileTap={{ scale: 1.01 }}
                               >
                                 <button
                                   type='button'
-                                  className='text-left w-full cursor-pointer hover:bg-black/30 rounded p-0.5 text-[20px]'
+                                  className='text-left w-full cursor-pointer hover:bg-black/30 rounded p-0.5 text-base sm:text-lg'
                                   onClick={() => togglePregunta(Number(e.pregunta_id ?? e.id))}
                                 >
                                   <span className='shrink-0 inline-flex items-center justify-center w-7 h-7 font-semibold'>
@@ -3129,66 +3001,71 @@ const Perfil = () => {
                                 </button>
 
                                 {openPreguntaIds.has(Number(e.pregunta_id ?? e.id)) && (
-                                  <div className='mt-2'>
-                                    {(objetoPartidaCompleto?.opcionesDeRespuestas ?? [])
-                                      .filter(
-                                        (o) =>
-                                          Number(o.pregunta_id) === Number(e.pregunta_id ?? e.id)
-                                      )
-                                      .map((o) => (
-                                        <span
-                                          key={o.id}
-                                          className={[
-                                            'block mb-1 indent-2 rounded text-[22px] border',
-                                            (() => {
+                                  <>
+                                    <div className='mt-2'>
+                                      {(objetoPartidaCompleto?.opcionesDeRespuestas ?? [])
+                                        .filter(
+                                          (o) =>
+                                            Number(o.pregunta_id) ===
+                                            Number(e.pregunta_id ?? e.id)
+                                        )
+                                        .map((o) => (
+                                          <span
+                                            key={o.id}
+                                            className={[
+                                              'block mb-1 indent-2 rounded text-base sm:text-lg border',
+                                              (() => {
+                                                const qId = Number(e.pregunta_id ?? e.id);
+                                                const chosenId = elegidaPorPregunta.get(qId);
+                                                const userCorrect = !!correctaPorPregunta.get(qId);
+                                                const isChosen = chosenId === Number(o.id);
+                                                const isOptionCorrect = !!o.es_correcta;
+
+                                                if (isChosen) {
+                                                  return userCorrect
+                                                    ? 'bg-green-600/30 border-green-500'
+                                                    : 'bg-red-600/30 border-red-500';
+                                                }
+                                                if (isOptionCorrect) {
+                                                  return 'bg-yellow-600/35 border-yellow-500';
+                                                }
+                                                return 'bg-gray-800/30 hover:bg-gray-800/50 border-transparent';
+                                              })(),
+                                            ].join(' ')}
+                                          >
+                                            {(() => {
                                               const qId = Number(e.pregunta_id ?? e.id);
                                               const chosenId = elegidaPorPregunta.get(qId);
                                               const userCorrect = !!correctaPorPregunta.get(qId);
                                               const isChosen = chosenId === Number(o.id);
                                               const isOptionCorrect = !!o.es_correcta;
 
-                                              if (isChosen) {
-                                                return userCorrect
-                                                  ? 'bg-green-600/30 border-green-500'
-                                                  : 'bg-red-600/30 border-red-500';
-                                              }
-                                              if (isOptionCorrect) {
-                                                return 'bg-yellow-600/35 border-yellow-500';
-                                              }
-                                              return 'bg-gray-800/30 hover:bg-gray-800/50 border-transparent';
-                                            })(),
-                                          ].join(' ')}
-                                        >
-                                          {(() => {
-                                            const qId = Number(e.pregunta_id ?? e.id);
-                                            const chosenId = elegidaPorPregunta.get(qId);
-                                            const userCorrect = !!correctaPorPregunta.get(qId);
-                                            const isChosen = chosenId === Number(o.id);
-                                            const isOptionCorrect = !!o.es_correcta;
+                                              if (isChosen) return userCorrect ? '✅ ' : '❌ ';
+                                              if (isOptionCorrect) return '🥲 ';
+                                              return '';
+                                            })()}
+                                            {idioma === 'en' ? o.texto_en : o.texto}
+                                          </span>
+                                        ))}
+                                    </div>
 
-                                            if (isChosen) return userCorrect ? '✅ ' : '❌ ';
-                                            if (isOptionCorrect) return '🥲 ';
-                                            return '';
-                                          })()}
-                                          {idioma === 'en' ? o.texto_en : o.texto}
-                                        </span>
-                                      ))}
-                                  </div>
-                                )}
-                                {/* tiempo de respuesta (al abrir) */}
-                                {openPreguntaIds.has(Number(e.pregunta_id ?? e.id)) && (
-                                  <div className='mt-1 text-sm opacity-80'>
-                                    {t('answerTime')}:{' '}
-                                    <b>
-                                      {fmtMs(tiempoPorPregunta.get(Number(e.pregunta_id ?? e.id)))}
-                                    </b>
-                                  </div>
+                                    <div className='mt-1 text-xs sm:text-sm opacity-80'>
+                                      {t('answerTime')}:{' '}
+                                      <b>
+                                        {fmtMs(
+                                          tiempoPorPregunta.get(
+                                            Number(e.pregunta_id ?? e.id)
+                                          )
+                                        )}
+                                      </b>
+                                    </div>
+                                  </>
                                 )}
                               </motion.li>
                             ))}
                           </ul>
                         ) : (
-                          <span>{t('answerList')}</span>
+                          <span className='p-2 text-sm sm:text-base'>{t('answerList')}</span>
                         )}
                       </div>
                     </div>
@@ -3198,17 +3075,15 @@ const Perfil = () => {
                 {/* seccion de grafica de respuestas */}
                 {selectedEstGraficaDeRespuestas && (
                   <>
-                    {/* 1) header (no scroll) */}
-                    <div className='flex items-center gap-2'>
-                      {/* Tabs / encabezado */}
-                      <div className='flex flex-row gap-2 mb-2 w-fit text-2xl'>
+                    <div className='flex items-center gap-2 mb-2'>
+                      <div className='flex flex-wrap gap-2 mb-2 w-fit text-lg sm:text-2xl'>
                         <button
                           type='button'
                           onClick={() => {
                             setSelectedEstResumen(true);
                             setSelectedEstGraficaDeRespuestas(false);
                           }}
-                          className='w-48 p-2 cursor-pointer hover:text-fuchsia-500 hover:drop-shadow-[0_4px_8px_#000000]'
+                          className='px-2 py-1 sm:w-48 text-left cursor-pointer hover:text-fuchsia-500 hover:drop-shadow-[0_4px_8px_#000000]'
                         >
                           {t('resume')}
                         </button>
@@ -3221,7 +3096,7 @@ const Perfil = () => {
                             setSelectedEstRespuestas(true);
                             setSelectedEstGraficaDeRespuestas(false);
                           }}
-                          className='w-48 p-2 cursor-pointer hover:text-fuchsia-500 hover:drop-shadow-[0_4px_8px_#000000]'
+                          className='px-2 py-1 sm:w-48 text-left cursor-pointer hover:text-fuchsia-500 hover:drop-shadow-[0_4px_8px_#000000]'
                         >
                           {t('answer')}
                         </button>
@@ -3234,13 +3109,12 @@ const Perfil = () => {
                             setSelectedEstGraficaDeRespuestas(true);
                             setSelectedEstRespuestas(false);
                           }}
-                          className='text-fuchsia-500 rounded p-2 [text-shadow:_0_4px_8px_#000000]'
+                          className='text-fuchsia-500 rounded px-2 py-1 [text-shadow:_0_4px_8px_#000000]'
                         >
                           {t('answerGrafics')}
                         </button>
                       </div>
 
-                      {/* Botón cerrar */}
                       <button
                         type='button'
                         aria-label='Cerrar'
@@ -3253,26 +3127,25 @@ const Perfil = () => {
                           setOpenPreguntaIds(new Set());
                           setModalEstadisticaAbierto(null);
                         }}
-                        className='ml-auto rounded-full w-9 h-9 grid place-items-center text-2xl cursor-pointer hover:text-fuchsia-500 hover:drop-shadow-[0_4px_8px_#000000]'
+                        className='ml-auto rounded-full w-8 h-8 sm:w-9 sm:h-9 grid place-items-center text-xl sm:text-2xl cursor-pointer hover:text-fuchsia-500 hover:drop-shadow-[0_4px_8px_#000000]'
                       >
                         ✕
                       </button>
                     </div>
 
-                    {/* grafica lineal de respuestas */}
-                    <div className='text-xl rounded p-1.5 mt-1 flex-1 min-h-0'>
-                      {objetoPartidaCompleto.partida[0].modo == 'individual' ? (
+                    <div className='text-sm sm:text-xl rounded p-1.5 mt-1 flex-1 min-h-0 overflow-y-auto'>
+                      {objetoPartidaCompleto.partida[0].modo === 'individual' ? (
                         <div className='bg-gradient-to-b from-purple-800 via-purple-700 to-purple-800 rounded-xl'>
                           <ChartVerticalLabels
                             arregloCompleto={objetoPartidaCompleto}
-                            className=' mt-1 p-1'
+                            className='mt-1 p-1'
                           />
                         </div>
                       ) : (
-                        <div>
+                        <div className='bg-gradient-to-b from-purple-800 via-purple-700 to-purple-800 rounded-xl mt-2 sm:mt-4'>
                           <ChartMultilineLabels
                             arregloCompleto={objetoPartidaCompleto}
-                            className=' bg-gradient-to-b from-purple-800 via-purple-700 to-purple-800 rounded-xl mt-4'
+                            className='mt-1 p-1'
                           />
                         </div>
                       )}
@@ -3281,54 +3154,59 @@ const Perfil = () => {
                 )}
               </motion.div>
             </div>
-          )}
-        </div>
+          )
+          }
+        </div >
       ) : (
-        <div>
-          {/* Estadísticas */}
-          <div className='flex flex-row gap-2 mt-4'>
+        <div className='w-full mt-6'>
+          {/* Tabs Estadísticas generales */}
+          <div className='flex flex-wrap items-center gap-2 justify-center sm:justify-start'>
             <button
               type='button'
               onClick={() => {
                 setSelectedEstadisticasResultadosDePartidas(true);
               }}
             >
-              <h2 className='text-xl text-white font-semibold mb-3 mt-3 cursor-pointer hover:text-fuchsia-500/95 p-1'>
+              <h2 className='text-lg sm:text-xl text-white font-semibold mb-1 sm:mb-3 cursor-pointer hover:text-fuchsia-500/95 p-1'>
                 {t('matchResults')}
               </h2>
             </button>
-            <h2 className='text-xl text-white flex items-center justify-center p-1'>|</h2>
-            <button>
-              <h2 className='text-xl font-semibold text-fuchsia-500/95 mb-3 mt-3 p-1'>
+            <h2 className='text-lg sm:text-xl text-white flex items-center justify-center p-1'>|</h2>
+            <button type='button'>
+              <h2 className='text-lg sm:text-xl font-semibold text-fuchsia-500/95 mb-1 sm:mb-3 p-1'>
                 {t('graficStadistic')}
               </h2>
             </button>
           </div>
+
           {estadisticas.length !== 0 ? (
-            <>
+            <div className='mt-4'>
               <QCChartStable
                 arregloCompleto={{ listaObjetosPartidaInformacion, categorias }}
-                className='bg-gradient-to-b from-purple-800 via-purple-700 to-purple-800  mt-4 rounded p-4 pl-1'
+                className='bg-gradient-to-b from-purple-800 via-purple-700 to-purple-800 rounded p-3 sm:p-4 pl-1'
               />
-            </>
+            </div>
           ) : (
-            <>
-              <p className='indent-2 text-white'>{t('noGraficStadistic')}</p>
-            </>
+            <p className='mt-2 indent-2 text-white text-sm sm:text-base'>
+              {t('noGraficStadistic')}
+            </p>
           )}
         </div>
       )}
 
       {/* ============================= Solicitudes de amistad ================================================= */}
-
-      <div className='mb-6 mt-8 bg-white/10 rounded-xl p-1'>
-        <h2 className='text-xl text-white font-semibold mb-3 mt-2 indent-2'>{t('friendADD')}</h2>
+      <div className='mb-6 mt-8 bg-white/10 rounded-xl p-3 sm:p-4 w-full'>
+        <h2 className='text-lg sm:text-xl text-white font-semibold mb-3 mt-1 sm:mt-2 indent-1 sm:indent-2'>
+          {t('friendADD')}
+        </h2>
 
         {friendRequestsDetails.length === 0 ? (
-          <p className='indent-2 text-white mb-4'>{t('noRequest')}</p>
+          <p className='indent-1 sm:indent-2 text-white mb-2 sm:mb-4 text-sm sm:text-base'>
+            {t('noRequest')}
+          </p>
         ) : (
           <>
-            <div className='mb-2 p-0.5 space-y-2'>
+            <div className='mb-2 space-y-2'>
               {visibleFriendRequests.map(({ solicitud, usuario }) => {
                 const fotoOtro = usuario?.foto_perfil
                   ? resolveFotoAjena(usuario.foto_perfil)
@@ -3337,11 +3215,11 @@ const Perfil = () => {
                 return (
                   <div
                     key={solicitud.id}
-                    className='border rounded-xl p-4 bg-white/10 hover:bg-white/20 
-                    mb-2 flex items-center justify-between gap-4'
+                    className='border rounded-xl p-3 sm:p-4 bg-white/10 hover:bg-white/20 
+                           mb-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4'
                   >
                     <div className='flex items-center gap-3'>
-                      <div className='w-12 h-12 rounded-full overflow-hidden bg-black/30 flex items-center justify-center'>
+                      <div className='w-12 h-12 rounded-full overflow-hidden bg-black/30 flex items-center justify-center flex-shrink-0'>
                         {fotoOtro ? (
                           <img
                             src={resolveFotoAjena(fotoOtro)}
@@ -3352,22 +3230,24 @@ const Perfil = () => {
                           <span className='text-2xl'>👤</span>
                         )}
                       </div>
-                      <div className='flex flex-col'>
-                        <span className='font-semibold'>{usuario?.name ?? '—'}</span>
-                        <span className='text-sm text-purple-200'>{usuario?.email ?? '—'}</span>
+                      <div className='flex flex-col text-sm sm:text-base'>
+                        <span className='font-semibold text-white'>{usuario?.name ?? '—'}</span>
+                        <span className='text-xs sm:text-sm text-purple-200'>
+                          {usuario?.email ?? '—'}
+                        </span>
                         <span className='text-xs text-purple-200'>
                           Puntaje: {usuario?.puntaje ?? '—'} · País: {usuario?.pais ?? '—'}
                         </span>
                       </div>
                     </div>
 
-                    <div className='flex gap-2'>
+                    <div className='flex flex-col sm:flex-row gap-2 w-full sm:w-auto sm:justify-end'>
                       <button
                         type='button'
                         onClick={() => handleAceptarSolicitud(solicitud.id)}
                         disabled={processingRequestId === solicitud.id}
                         className='px-3 py-1.5 rounded bg-green-600 hover:bg-green-700 
-                        text-white text-sm cursor-pointer disabled:opacity-60'
+                               text-white text-sm cursor-pointer disabled:opacity-60'
                       >
                         {processingRequestId === solicitud.id ? 'Aceptando...' : 'Aceptar'}
                       </button>
@@ -3376,7 +3256,7 @@ const Perfil = () => {
                         onClick={() => handleRechazarSolicitud(solicitud.id)}
                         disabled={processingRequestId === solicitud.id}
                         className='px-3 py-1.5 rounded bg-gray-600 hover:bg-gray-700 
-                        text-white text-sm cursor-pointer disabled:opacity-60'
+                               text-white text-sm cursor-pointer disabled:opacity-60'
                       >
                         {processingRequestId === solicitud.id ? 'Cancelando...' : 'Cancelar'}
                       </button>
@@ -3387,24 +3267,23 @@ const Perfil = () => {
             </div>
 
             {totalRequestsPages > 1 && (
-              <div className='flex items-center justify-end gap-2 px-2 pb-2 text-sm text-white'>
+              <div className='flex flex-col sm:flex-row items-center justify-between sm:justify-end gap-2 px-1 sm:px-2 pb-2 text-xs sm:text-sm text-white'>
                 <button
                   type='button'
                   onClick={() => setRequestsPage((p) => Math.max(1, p - 1))}
                   disabled={requestsPage === 1}
-                  className='px-2 py-1 rounded bg-white/10 disabled:opacity-40'
+                  className='px-2 py-1 rounded bg-white/10 disabled:opacity-40 cursor-pointer'
                 >
                   « {t('preview')}
                 </button>
                 <span>
-                  {t('page')}
-                  {requestsPage} {t('of')} {totalRequestsPages}
+                  {t('page')} {requestsPage} {t('of')} {totalRequestsPages}
                 </span>
                 <button
                   type='button'
                   onClick={() => setRequestsPage((p) => Math.min(totalRequestsPages, p + 1))}
                   disabled={requestsPage === totalRequestsPages}
-                  className='px-2 py-1 rounded bg-white/10 disabled:opacity-40'
+                  className='px-2 py-1 rounded bg-white/10 disabled:opacity-40 cursor-pointer'
                 >
                   {t('next')} »
                 </button>
@@ -3415,18 +3294,16 @@ const Perfil = () => {
       </div>
 
       {/* ============================= Mis Amigos ================================================= */}
-
-      <div className='mb-6 mt-4 bg-white/10 rounded-xl p-1'>
+      <div className='mb-6 mt-4 bg-white/10 rounded-xl p-3 sm:p-4 w-full'>
         {/* Tabs encabezado */}
-        <div className='flex items-center gap-4 px-2 pt-2 border-b border-white/10'>
+        <div className='flex flex-wrap items-center gap-3 sm:gap-4 px-1 sm:px-2 pt-1 sm:pt-2 border-b border-white/10'>
           <button
             type='button'
             onClick={() => setActiveFriendsTab('friends')}
-            className={`text-lg font-semibold pb-2 border-b-2 transition-colors cursor-pointer ${
-              activeFriendsTab === 'friends'
-                ? 'text-white border-purple-400'
-                : 'text-white/60 border-transparent hover:text-white'
-            }`}
+            className={`text-base sm:text-lg font-semibold pb-2 border-b-2 transition-colors cursor-pointer ${activeFriendsTab === 'friends'
+              ? 'text-white border-purple-400'
+              : 'text-white/60 border-transparent hover:text-white'
+              }`}
           >
             {t('friends')}
           </button>
@@ -3434,17 +3311,16 @@ const Perfil = () => {
           <button
             type='button'
             onClick={() => setActiveFriendsTab('search')}
-            className={`text-lg font-semibold pb-2 border-b-2 transition-colors cursor-pointer ${
-              activeFriendsTab === 'search'
-                ? 'text-white border-purple-400'
-                : 'text-white/60 border-transparent hover:text-white'
-            }`}
+            className={`text-base sm:text-lg font-semibold pb-2 border-b-2 transition-colors cursor-pointer ${activeFriendsTab === 'search'
+              ? 'text-white border-purple-400'
+              : 'text-white/60 border-transparent hover:text-white'
+              }`}
           >
             {t('searchNewFriend')}
           </button>
         </div>
 
-        <div>
+        <div className='mt-2'>
           <AnimatePresence>
             {eliminado && (
               <motion.p
@@ -3452,46 +3328,47 @@ const Perfil = () => {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0, transition: { duration: 0.25 } }}
                 exit={{ opacity: 0, y: 8, transition: { duration: 0.8 } }}
-                className='bg-green-600 text-white mb-4 px-4 py-2 rounded shadow-lg z-[100]'
+                className='bg-green-600 text-white mb-4 px-4 py-2 rounded shadow-lg z-[100] text-sm sm:text-base'
               >
                 {t('friendDeleted')}
               </motion.p>
             )}
           </AnimatePresence>
+
           {/* === TAB 1: MIS AMIGOS === */}
           {activeFriendsTab === 'friends' && (
             <>
               {filteredFriendsDetails ? (
                 <>
-                  <div className='px-2 mb-2'>
+                  <div className='px-1 sm:px-2 mb-2'>
                     <input
                       type='text'
                       value={friendsSearch}
                       onChange={(e) => setFriendsSearch(e.target.value)}
                       placeholder={t('findFriend')}
                       className='w-full px-3 py-1.5 rounded-lg bg-black/30 text-white text-sm 
-                  border border-white/20 focus:outline-none focus:ring-1 focus:ring-purple-400'
+                             border border-white/20 focus:outline-none focus:ring-1 focus:ring-purple-400'
                     />
                   </div>
 
                   {visibleFriends.length === 0 ? (
-                    <p className='indent-2 text-white mb-4'>{t('noHaveFriendList')}</p>
+                    <p className='indent-2 text-white mb-3 sm:mb-4 text-sm sm:text-base'>
+                      {t('noHaveFriendList')}
+                    </p>
                   ) : (
-                    <div className='mb-2 p-0.5 space-y-2'>
+                    <div className='mb-2 space-y-2 p-0.5'>
                       {visibleFriends.map(({ amigo, jugador, usuario }) => (
                         <div
                           key={amigo.id}
-                          className='border rounded-xl p-4 bg-white/10 hover:bg-white/20 
-                        mb-2 flex items-center justify-between gap-4 cursor-pointer'
+                          className='border rounded-xl p-3 sm:p-4 bg-white/10 hover:bg-white/20 
+                                 mb-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 cursor-pointer'
                           onClick={() =>
                             setSelectedPerson({
                               name: usuario?.name ?? '—',
                               email: usuario?.email ?? '—',
                               pais: usuario?.pais ?? '—',
                               puntaje: jugador?.puntaje ?? usuario?.puntaje ?? '—',
-                              foto: usuario?.foto_perfil
-                                ? resolveFotoAjena(usuario.foto_perfil)
-                                : null,
+                              foto: usuario?.foto_perfil ? resolveFotoAjena(usuario.foto_perfil) : null,
                             })
                           }
                         >
@@ -3513,11 +3390,11 @@ const Perfil = () => {
                                 );
                               })()}
                             </div>
-                            <div className='flex flex-col'>
+                            <div className='flex flex-col text-sm sm:text-base'>
                               <span className='font-semibold text-white'>
                                 {usuario?.name ?? '—'}
                               </span>
-                              <span className='text-sm text-purple-200'>
+                              <span className='text-xs sm:text-sm text-purple-200'>
                                 {usuario?.email ?? '—'}
                               </span>
                               <span className='text-xs text-purple-200'>
@@ -3531,9 +3408,9 @@ const Perfil = () => {
 
                           <motion.button
                             type='button'
-                            className='bg-red-500 hover:bg-red-600 rounded w-32 cursor-pointer 
-                          justify-self-end text-white py-1.5'
-                            whileTap={{ scale: 1.1 }}
+                            className='bg-red-500 hover:bg-red-600 rounded w-full sm:w-32 cursor-pointer 
+                                   justify-self-end text-white py-1.5 text-sm mt-1 sm:mt-0'
+                            whileTap={{ scale: 1.05 }}
                             onClick={(e) => {
                               e.stopPropagation();
                               setConfirmDelete({
@@ -3551,12 +3428,12 @@ const Perfil = () => {
                   )}
 
                   {totalFriendsPages > 1 && (
-                    <div className='flex items-center justify-end gap-2 px-2 pb-2 text-sm text-white'>
+                    <div className='flex flex-col sm:flex-row items-center justify-between sm:justify-end gap-2 px-1 sm:px-2 pb-2 text-xs sm:text-sm text-white'>
                       <button
                         type='button'
                         onClick={() => setFriendsPage((p) => Math.max(1, p - 1))}
                         disabled={friendsPage === 1}
-                        className='px-2 py-1 rounded bg-white/10 disabled:opacity-40'
+                        className='px-2 py-1 rounded bg-white/10 disabled:opacity-40 cursor-pointer'
                       >
                         « {t('preview')}
                       </button>
@@ -3567,7 +3444,7 @@ const Perfil = () => {
                         type='button'
                         onClick={() => setFriendsPage((p) => Math.min(totalFriendsPages, p + 1))}
                         disabled={friendsPage === totalFriendsPages}
-                        className='px-2 py-1 rounded bg-white/10 disabled:opacity-40'
+                        className='px-2 py-1 rounded bg-white/10 disabled:opacity-40 cursor-pointer'
                       >
                         {t('next')} »
                       </button>
@@ -3575,7 +3452,7 @@ const Perfil = () => {
                   )}
                 </>
               ) : (
-                <p className='indent-2 text-white mb-4'>
+                <p className='indent-2 text-white mb-4 text-sm sm:text-base'>
                   {filteredFriendsDetails.length === 0 && t('noHaveFriendList')}
                 </p>
               )}
@@ -3586,44 +3463,40 @@ const Perfil = () => {
           {activeFriendsTab === 'search' && (
             <>
               {/* Input de búsqueda de nuevos amigos */}
-              <div className='px-2 mb-2'>
+              <div className='px-1 sm:px-2 mb-2'>
                 <input
                   type='text'
                   value={newFriendSearch}
                   onChange={(e) => setNewFriendSearch(e.target.value)}
                   placeholder={t('findFriend')}
                   className='w-full px-3 py-1.5 rounded-lg bg-black/30 text-white text-sm 
-              border border-white/20 focus:outline-none focus:ring-1 focus:ring-purple-400'
+                         border border-white/20 focus:outline-none focus:ring-1 focus:ring-purple-400'
                 />
               </div>
 
               <div className='mb-2 p-0.5 space-y-2'>
                 {visibleNewFriends.length === 0 ? (
-                  <p className='indent-2 text-white mb-4'>
+                  <p className='indent-2 text-white mb-3 sm:mb-4 text-sm sm:text-base'>
                     {newFriendSearch.trim() ? t('noUsersFound') : t('writeName')}
                   </p>
                 ) : (
                   visibleNewFriends.map((usuario) => {
-                    const relacion = getRelacionConUsuario(usuario); // 'amigo' | 'pendiente' | 'ninguna'
-
+                    const relacion = getRelacionConUsuario(usuario);
                     const jugadorAsociado = jugadoresPorId[Number(usuario.jugador_id)] ?? null;
-
                     const puntajeUsuario = jugadorAsociado?.puntaje ?? usuario?.puntaje ?? '—';
 
                     return (
                       <div
                         key={usuario.id}
-                        className='border rounded-xl p-4 bg-white/10 hover:bg-white/20 
-                        mb-2 flex items-center justify-between gap-4 cursor-pointer'
+                        className='border rounded-xl p-3 sm:p-4 bg-white/10 hover:bg-white/20 
+                               mb-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 cursor-pointer'
                         onClick={() =>
                           setSelectedPerson({
                             name: usuario?.name ?? '—',
                             email: usuario?.email ?? '—',
                             pais: usuario?.pais ?? '—',
                             puntaje: puntajeUsuario,
-                            foto: usuario?.foto_perfil
-                              ? resolveFotoAjena(usuario.foto_perfil)
-                              : null,
+                            foto: usuario?.foto_perfil ? resolveFotoAjena(usuario.foto_perfil) : null,
                           })
                         }
                       >
@@ -3645,9 +3518,11 @@ const Perfil = () => {
                               );
                             })()}
                           </div>
-                          <div className='flex flex-col'>
+                          <div className='flex flex-col text-sm sm:text-base'>
                             <span className='font-semibold text-white'>{usuario?.name ?? '—'}</span>
-                            <span className='text-sm text-purple-200'>{usuario?.email ?? '—'}</span>
+                            <span className='text-xs sm:text-sm text-purple-200'>
+                              {usuario?.email ?? '—'}
+                            </span>
                             <span className='text-xs text-purple-200'>
                               {t('countryAvatar')} {usuario?.pais ?? '—'}
                             </span>
@@ -3658,11 +3533,11 @@ const Perfil = () => {
                         </div>
 
                         {/* Estado de relación / botón */}
-                        <div className='flex items-center'>
+                        <div className='flex items-center self-stretch sm:self-auto justify-end'>
                           {relacion === 'amigo' && (
                             <span
-                              className='text-lg font-semibold px-3 py-1 rounded-full 
-                          bg-fuchsia-900/70 text-fuchsia-200'
+                              className='text-xs sm:text-sm font-semibold px-3 py-1 rounded-full 
+                                   bg-fuchsia-900/70 text-fuchsia-200'
                             >
                               {t('friend')}
                             </span>
@@ -3671,7 +3546,7 @@ const Perfil = () => {
                           {relacion === 'pendiente' && (
                             <span
                               className='text-xs font-semibold px-3 py-1 rounded-full 
-                          bg-yellow-500/20 text-yellow-300'
+                                   bg-yellow-500/20 text-yellow-300'
                             >
                               {t('pending')}
                             </span>
@@ -3680,8 +3555,8 @@ const Perfil = () => {
                           {relacion === 'ninguna' && (
                             <button
                               type='button'
-                              className='bg-green-600 hover:bg-green-700 rounded w-36 cursor-pointer 
-                              justify-self-end text-white py-1.5 text-sm disabled:opacity-60'
+                              className='bg-green-600 hover:bg-green-700 rounded w-full sm:w-36 cursor-pointer 
+                                     justify-self-end text-white py-1.5 text-sm disabled:opacity-60 mt-1 sm:mt-0'
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleAgregarAmigoDesdeUsuario(usuario);
@@ -3701,7 +3576,7 @@ const Perfil = () => {
               </div>
 
               {totalNewFriendsPages > 1 && (
-                <div className='flex items-center justify-end gap-2 px-2 pb-2 text-sm text-white'>
+                <div className='flex flex-col sm:flex-row items-center justify-between sm:justify-end gap-2 px-1 sm:px-2 pb-2 text-xs sm:text-sm text-white'>
                   <button
                     type='button'
                     onClick={() => setNewFriendsPage((p) => Math.max(1, p - 1))}
@@ -3727,11 +3602,12 @@ const Perfil = () => {
           )}
         </div>
 
+        {/* ===================== Modales (detalles & borrar amigo) ===================== */}
         <AnimatePresence>
           {selectedPerson && (
             <motion.div
               key='modal-persona'
-              className='fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center'
+              className='fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-start justify-center pt-20 sm:pt-24'
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -3740,14 +3616,14 @@ const Perfil = () => {
                 initial={{ scale: 0.9, opacity: 0, y: 10 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.9, opacity: 0, y: 10 }}
-                className='bg-slate-900/95 border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl'
+                className='bg-slate-900/95 border border-white/10 rounded-2xl p-5 sm:p-6 w-[95vw] max-w-md shadow-2xl'
               >
-                <h3 className='text-xl font-semibold text-white mb-4'>
+                <h3 className='text-lg sm:text-xl font-semibold text-white mb-4'>
                   {t('playerDetail') ?? 'Detalle del jugador'}
                 </h3>
 
-                <div className='flex items-center gap-4 mb-4'>
-                  <div className='w-40 h-40 rounded-full overflow-hidden bg-black/40 flex items-center justify-center'>
+                <div className='flex flex-col sm:flex-row items-center gap-4 mb-4'>
+                  <div className='w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden bg-black/40 flex items-center justify-center'>
                     {selectedPerson.foto ? (
                       <img
                         src={resolveFotoAjena(selectedPerson.foto)}
@@ -3755,11 +3631,11 @@ const Perfil = () => {
                         className='w-full h-full object-cover'
                       />
                     ) : (
-                      <span className='text-6xl'>👤</span>
+                      <span className='text-5xl sm:text-6xl'>👤</span>
                     )}
                   </div>
 
-                  <div className='flex flex-col text-lg text-slate-100'>
+                  <div className='flex flex-col text-sm sm:text-lg text-slate-100'>
                     <p>
                       <span className='font-semibold'>{t('name')}:</span> {selectedPerson.name}
                     </p>
@@ -3771,15 +3647,15 @@ const Perfil = () => {
                       <span className='font-semibold'>{t('points')}:</span>{' '}
                       {selectedPerson.puntaje ?? '—'}
                     </p>
-                    <p>
+                    <p className='break-all'>
                       <span className='font-semibold'>{t('email')}:</span> {selectedPerson.email}
                     </p>
                   </div>
                 </div>
-                <div className='mt-6 flex justify-end'>
+                <div className='mt-4 sm:mt-6 flex justify-end'>
                   <button
                     type='button'
-                    className='px-4 py-2 rounded-lg bg-slate-600 text-white hover:bg-slate-500 cursor-pointer'
+                    className='px-4 py-2 rounded-lg bg-slate-600 text-white hover:bg-slate-500 cursor-pointer text-sm sm:text-base'
                     onClick={() => setSelectedPerson(null)}
                   >
                     {t('close')}
@@ -3794,20 +3670,21 @@ const Perfil = () => {
           {confirmDelete.open && (
             <motion.div
               key='confirm-delete-friend'
-              className='fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center'
+              className='fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-start justify-center pt-20 sm:pt-24'
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
-              {/* Caja del modal */}
               <motion.div
                 initial={{ scale: 0.9, opacity: 0, y: 10 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.9, opacity: 0, y: 10 }}
-                className='bg-slate-900/95 border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl'
+                className='bg-slate-900/95 border border-white/10 rounded-2xl p-5 sm:p-6 w-[95vw] max-w-md shadow-2xl'
               >
-                <h3 className='text-xl font-semibold text-white mb-2'>{t('deleteFriend')}</h3>
-                <p className='text-sm text-slate-100 mb-4'>
+                <h3 className='text-lg sm:text-xl font-semibold text-white mb-2'>
+                  {t('deleteFriend')}
+                </h3>
+                <p className='text-xs sm:text-sm text-slate-100 mb-4'>
                   <Trans
                     i18nKey='deleteFriendConfirm'
                     values={{ name: confirmDelete.nombre }}
@@ -3818,7 +3695,7 @@ const Perfil = () => {
                 <div className='flex justify-end gap-3'>
                   <button
                     type='button'
-                    className='px-4 py-2 rounded-lg bg-slate-600 text-white hover:bg-slate-500 cursor-pointer'
+                    className='px-4 py-2 rounded-lg bg-slate-600 text-white hover:bg-slate-500 cursor-pointer text-sm sm:text-base'
                     onClick={() =>
                       setConfirmDelete({
                         open: false,
@@ -3832,7 +3709,7 @@ const Perfil = () => {
 
                   <button
                     type='button'
-                    className='px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-60 cursor-pointer'
+                    className='px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-60 cursor-pointer text-sm sm:text-base'
                     disabled={confirmDeleting}
                     onClick={async () => {
                       try {
@@ -3856,7 +3733,8 @@ const Perfil = () => {
           )}
         </AnimatePresence>
       </div>
-    </div>
+    </div >
+
   );
 };
 

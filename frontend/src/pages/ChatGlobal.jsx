@@ -23,7 +23,7 @@ const getStoredUserName = () => {
 
 const getStoredUserPhoto = () => {
   const u = getStoredUser();
-  return u?.foto_perfil || null; // acá viene la ruta cruda: '/uploads/...' o '/assets/...'
+  return u?.foto_perfil || null; // ruta cruda
 };
 
 export default function ChatGlobal() {
@@ -36,8 +36,8 @@ export default function ChatGlobal() {
 
   const [username] = useState(getStoredUserName);
   const [userPhoto] = useState(() => {
-    const raw = getStoredUserPhoto();    // ej: '/uploads/fotos_perfil/abc.jpg'
-    return raw ? resolveFotoAjena(raw) : null; // lo pasamos por el helper
+    const raw = getStoredUserPhoto(); // ej: '/uploads/...'
+    return raw ? resolveFotoAjena(raw) : null;
   });
 
   const listRef = useRef(null);
@@ -56,7 +56,6 @@ export default function ChatGlobal() {
     socketRef.current = s;
 
     const onMessage = (msg) => {
-      // console.log("📨 recibido en cliente:", msg);
       pushIfNew(msg);
     };
 
@@ -76,24 +75,24 @@ export default function ChatGlobal() {
     if (!s || !s.connected || !text.trim()) return;
 
     const clientId =
-      crypto?.randomUUID?.() || Date.now().toString(36) + Math.random().toString(36).slice(2);
+      crypto?.randomUUID?.() ||
+      Date.now().toString(36) + Math.random().toString(36).slice(2);
 
     const payload = {
       clientId,
       username: username || 'anonymous',
       text: text.trim(),
       createdAt: new Date().toISOString(),
-      foto_perfil: userPhoto || null, // 👈 ahora también la tuya
+      foto_perfil: userPhoto || null, // la mandamos para que el OTRO vea tu foto
     };
 
-    // lo metemos en el estado local
+    // estado local
     pushIfNew({ ...payload, id: clientId });
 
-    // lo mandamos al server
+    // al server
     s.emit('chat:message', payload);
     setText('');
   };
-
 
   // Auto-scroll
   useEffect(() => {
@@ -112,25 +111,28 @@ export default function ChatGlobal() {
 
   return (
     <div>
-      <div className='flex flex-col lg:h-110 lg:w-76 sm:w-45 sm:h-60 mx-auto border rounded-lg bg-white text-black'>
+      <div className='flex flex-col lg:h-110 lg:w-80 sm:w-76 sm:h-60 mx-auto border rounded-lg bg-white text-black'>
         {/* título */}
         <div className='px-2 py-2 border-b flex items-center justify-between h-12'>
           <div className='font-semibold text-md'>{t('comunityChat')}</div>
 
-          <div className='w-8 h-8 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center'>
-            {userPhoto ? (
-              <img
-                src={userPhoto}
-                alt={username || 'Yo'}
-                className='w-8 h-8 object-cover'
-              />
-            ) : (
-              <span className='text-lg'>👤</span>
-            )}
+          {/* avatar + nombre del jugador logueado */}
+          <div className='flex items-center gap-2'>
+            <div className='w-8 h-8 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center'>
+              {userPhoto ? (
+                <img
+                  src={userPhoto}
+                  alt={username || 'Yo'}
+                  className='w-8 h-8 object-cover'
+                />
+              ) : (
+                <span className='text-lg'>👤</span>
+              )}
+            </div>
+            <span className='px-1 py-1 rounded bg-gray-200 text-sm'>
+              {username || 'anonymous'}
+            </span>
           </div>
-          <span className='px-1 py-1 rounded bg-gray-200'>
-            {username || 'anonymous'}
-          </span>
         </div>
 
         {/* mensajes */}
@@ -143,42 +145,33 @@ export default function ChatGlobal() {
             const when = m.createdAt ? new Date(m.createdAt) : new Date();
             const mine = isMine(m.username, username);
 
-            // foto del otro
-            const fotoOtro = !mine && m.foto_perfil ? resolveFotoAjena(m.foto_perfil) : null;
-
-            // tu propia foto en tus mensajes
-            const fotoMia = mine
-              ? (m.foto_perfil ? resolveFotoAjena(m.foto_perfil) : userPhoto)
-              : null;
+            // foto del otro – solo para mensajes que NO son míos
+            const fotoOtro =
+              !mine && m.foto_perfil ? resolveFotoAjena(m.foto_perfil) : null;
 
             return (
-              <div key={m.id || i} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
+              <div
+                key={m.id || i}
+                className={`flex ${mine ? 'justify-end' : 'justify-start'}`}
+              >
                 <div
                   className={`flex items-start gap-2 max-w-[85%] ${mine ? 'flex-row-reverse' : ''
                     }`}
                 >
-                  {/* Avatar */}
-                  <div className='w-8 h-8 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center flex-shrink-0'>
-                    {mine ? (
-                      fotoMia ? (
+                  {/* Avatar SOLO para los mensajes del otro (lado izquierdo) */}
+                  {!mine && (
+                    <div className='w-8 h-8 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center flex-shrink-0'>
+                      {fotoOtro ? (
                         <img
-                          src={fotoMia}
-                          alt={m.username || 'Yo'}
+                          src={fotoOtro}
+                          alt={m.username || 'Jugador'}
                           className='w-8 h-8 object-cover'
                         />
                       ) : (
                         <span className='text-lg'>👤</span>
-                      )
-                    ) : fotoOtro ? (
-                      <img
-                        src={fotoOtro}
-                        alt={m.username || 'Jugador'}
-                        className='w-8 h-8 object-cover'
-                      />
-                    ) : (
-                      <span className='text-lg'>👤</span>
-                    )}
-                  </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Burbuja */}
                   <div
@@ -203,7 +196,10 @@ export default function ChatGlobal() {
                         mine ? 'text-white/80' : 'text-gray-600',
                       ].join(' ')}
                     >
-                      {when.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {when.toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
                     </div>
                   </div>
                 </div>
