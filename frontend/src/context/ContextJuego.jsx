@@ -81,7 +81,7 @@ export const GameProvider = ({ children }) => {
           tiempo: tiempo.toLowerCase(),
           dificultad: dificultad.toLowerCase(),
           timestamp: Date.now(),
-          user_id: user.id,
+          user_id: user?.id,
           jugador_id: user.jugador_id,
         };
 

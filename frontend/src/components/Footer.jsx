@@ -8,7 +8,11 @@ export const Footer = () => {
       <div className='max-w-7xl mx-auto px-4 sm:px-6 md:px-8'>
         <div className='grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 items-center'>
           <div className='flex justify-center items-center'>
-            <Link to='/' className='flex items-center group'>
+            <Link
+              to='/'
+              className='flex items-center group'
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            >
               <div className='text-3xl sm:text-4xl md:text-5xl font-black tracking-tight'>
                 <span className='bg-gradient-to-r from-purple-400 via-pink-400 to-purple-500 text-transparent bg-clip-text hover:from-purple-300 hover:via-pink-300 hover:to-purple-400 transition-all duration-300'>
                   Dev

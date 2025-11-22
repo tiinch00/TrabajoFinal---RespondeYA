@@ -280,5 +280,8 @@
   "playerDetail": "Player details",
   "noUsersFound": "No users were found matching the search.",
   "writeName": "Enter a name to find new friends",
-  "noHaveFriendList": "No friends were found with that name..."
+  "noHaveFriendList": "No friends were found with that name...",
+  "registering": "Registering...",
+  "logging": "Logging in…",
+  "getReady": "Get Ready!"
 }

@@ -304,7 +304,7 @@ const Register = () => {
             {isLoading ? (
               <>
                 <div className='w-4 h-4 md:w-5 md:h-5 border-2 border-white border-t-transparent rounded-full animate-spin' />
-                {t('registering')}...
+                {t('registering')}
               </>
             ) : (
               <>{t('register')}</>

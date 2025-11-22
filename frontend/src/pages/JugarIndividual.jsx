@@ -18,8 +18,21 @@ import musicaPreguntasDefault from '/sounds/musicaPreguntasDefault.mp3';
 import { resolveFotoAjena } from '../utils/resolveFotoAjena.js';
 import useSound from 'use-sound';
 import { useTranslation } from 'react-i18next';
+import { useMusic } from '../context/MusicContext.jsx';
 
 const JugarIndividual = () => {
+  const { audioRef } = useMusic();
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.play().catch(() => {});
+      }
+    };
+  }, [audioRef]);
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006';
   const navigate = useNavigate();
   const musicStartedRef = useRef(false);
@@ -666,15 +679,17 @@ const JugarIndividual = () => {
 
         {/* Timer - Mobile */}
         <div
-          className={`rounded-2xl px-4 py-3 text-center w-full shadow-2xl border-2 transition-all duration-300 ${tiempoRestante <= 5 && tiempoRestante > 0
+          className={`rounded-2xl px-4 py-3 text-center w-full shadow-2xl border-2 transition-all duration-300 ${
+            tiempoRestante <= 5 && tiempoRestante > 0
               ? 'border-red-500/80 animate-pulse'
               : 'border-blue-400/30'
-            }`}
+          }`}
         >
           <p className='text-2xl sm:text-3xl font-bold text-gray-200 mb-1'>⏱️</p>
           <p
-            className={`text-4xl sm:text-5xl font-black ${tiempoRestante > 5 ? 'text-white' : 'text-red-600'
-              }`}
+            className={`text-4xl sm:text-5xl font-black ${
+              tiempoRestante > 5 ? 'text-white' : 'text-red-600'
+            }`}
           >
             {tiempoRestante}
           </p>
@@ -761,8 +776,9 @@ const JugarIndividual = () => {
                       <span className='font-bold text-yellow-300'>P{index + 1}:</span>{' '}
                       {respuesta.texto}
                       <span
-                        className={`ml-2 font-bold ${respuesta.es_correcta ? 'text-green-400' : 'text-red-400'
-                          }`}
+                        className={`ml-2 font-bold ${
+                          respuesta.es_correcta ? 'text-green-400' : 'text-red-400'
+                        }`}
                       >
                         {respuesta.es_correcta ? '✓' : '✗'}
                       </span>
@@ -916,8 +932,9 @@ const JugarIndividual = () => {
                       <span className='font-bold text-yellow-300'>P{index + 1}:</span>{' '}
                       {respuesta.texto}
                       <span
-                        className={`ml-2 font-bold ${respuesta.es_correcta ? 'text-green-400' : 'text-red-400'
-                          }`}
+                        className={`ml-2 font-bold ${
+                          respuesta.es_correcta ? 'text-green-400' : 'text-red-400'
+                        }`}
                       >
                         {respuesta.es_correcta ? '✓' : '✗'}
                       </span>
@@ -931,15 +948,17 @@ const JugarIndividual = () => {
 
         <div className='col-span-1 flex flex-col items-center justify-start'>
           <div
-            className={`rounded-3xl px-6 py-4 text-center flex flex-col items-center justify-center shadow-2xl w-60 h-48 border-2 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20 ${tiempoRestante <= 5 && tiempoRestante > 0
+            className={`rounded-3xl px-6 py-4 text-center flex flex-col items-center justify-center shadow-2xl w-60 h-48 border-2 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20 ${
+              tiempoRestante <= 5 && tiempoRestante > 0
                 ? 'border-red-500/80 animate-pulse'
                 : 'border-blue-400/30 hover:border-cyan-400/50'
-              }`}
+            }`}
           >
             <p className='text-4xl font-bold text-gray-800 mb-2'>⏱️</p>
             <p
-              className={`text-6xl font-black ${tiempoRestante > 5 ? 'text-white' : 'text-red-600'
-                }`}
+              className={`text-6xl font-black ${
+                tiempoRestante > 5 ? 'text-white' : 'text-red-600'
+              }`}
             >
               {tiempoRestante}
             </p>

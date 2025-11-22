@@ -22,6 +22,7 @@ import { useAuth } from '../context/auth-context.jsx';
 import { useGame } from '../context/ContextJuego.jsx';
 import useSound from 'use-sound';
 import { useTranslation } from 'react-i18next';
+import { useMusic } from '../context/MusicContext.jsx';
 
 function formatearTimestampParaMySQL(timestampEnMilisegundos) {
   const MS_3HS = 3 * 60 * 60 * 1000;
@@ -155,6 +156,19 @@ export default function JugarMultijugador() {
 
   const translatedCategory = categoryTranslations[rawCategory] || rawCategory;
 
+  const { audioRef } = useMusic();
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.play().catch(() => {});
+      }
+    };
+  }, [audioRef]);
+
   // Mapeo de iconos por categoría
   const categoryIcons = {
     cine: '🎬',
@@ -209,7 +223,6 @@ export default function JugarMultijugador() {
     stopFiveSeconds,
   ]);
 
-
   // === NEW: identificar al usuario actual (desde localStorage) ===
   const currentUserId = (() => {
     try {
@@ -234,11 +247,10 @@ export default function JugarMultijugador() {
       if (ls?.categoria && ls?.dificultad && ls?.tiempo) {
         setConfig(ls);
       }
-    } catch { }
+    } catch {}
   }, [config, location.state]);
 
   //console.log("config: ", config);
-
 
   // 2) Función pura que devuelve [ganador, perdedor] como objetos
   function getGanadorYPerdedor(creador, invitado, statsCreador, statsInvitado) {
@@ -439,7 +451,7 @@ export default function JugarMultijugador() {
     let ultimaCfg = null;
     try {
       ultimaCfg = JSON.parse(localStorage.getItem('ultima_config_multijugador') || 'null');
-    } catch { }
+    } catch {}
 
     // 1) Tomo el partida_id de la config efectiva que vas a enviar
     const cfgEfectiva = ultimaCfg || config;
@@ -562,7 +574,6 @@ export default function JugarMultijugador() {
     playingConocimiento,
   ]);
 
-
   // 4) Cronómetro por pregunta
   useEffect(() => {
     if (!preguntaActual || !juegoIniciado || juegoTerminado || cronometroPausado) {
@@ -661,7 +672,6 @@ export default function JugarMultijugador() {
     }, 3000);
   };
 
-
   // 6) Stop música al terminar
   useEffect(() => {
     if (juegoTerminado) {
@@ -693,8 +703,8 @@ export default function JugarMultijugador() {
       creador?.userId === myId
         ? invitado?.userId
         : invitado?.userId === myId
-          ? creador?.userId
-          : null;
+        ? creador?.userId
+        : null;
 
     //console.log('▶︎ Respuestas del jugador actual:', respuestas);
 
@@ -836,73 +846,68 @@ export default function JugarMultijugador() {
     };
 
     // 👉 primero le aviso al server "yo terminé"
-    socketRef.current.emit(
-      'jugador_termino',
-      { salaId, jugador_id: jugadorActualId },
-      (resp) => {
-        if (!resp?.ok) {
-          console.log('Error en jugador_termino:', resp?.error);
-          return;
-        }
+    socketRef.current.emit('jugador_termino', { salaId, jugador_id: jugadorActualId }, (resp) => {
+      if (!resp?.ok) {
+        console.log('Error en jugador_termino:', resp?.error);
+        return;
+      }
 
-        // si NO soy el último -> solo muestro "esperando" y no calculo nada
-        if (!resp.esUltimo) {
-          setEsperandoResultado(true);
-          return;
-        }
+      // si NO soy el último -> solo muestro "esperando" y no calculo nada
+      if (!resp.esUltimo) {
+        setEsperandoResultado(true);
+        return;
+      }
 
-        // 👇 SOY EL ÚLTIMO → recién acá proceso todo y guardo en BD
-        if (finPartidaProcesadaRef.current) return;
-        finPartidaProcesadaRef.current = true;
-        setEsperandoResultado(false);
+      // 👇 SOY EL ÚLTIMO → recién acá proceso todo y guardo en BD
+      if (finPartidaProcesadaRef.current) return;
+      finPartidaProcesadaRef.current = true;
+      setEsperandoResultado(false);
 
+      const respuestasCreador = buildRespuestasPara(creador);
+      const respuestasInvitado = buildRespuestasPara(invitado);
+
+      const statsCreador = buildStats(respuestasCreador);
+      const statsInvitado = buildStats(respuestasInvitado);
+
+      (async () => {
+        // ⚠️ ya no usamos finalizarPartida para setear ganador/perdedor
         const respuestasCreador = buildRespuestasPara(creador);
         const respuestasInvitado = buildRespuestasPara(invitado);
 
         const statsCreador = buildStats(respuestasCreador);
         const statsInvitado = buildStats(respuestasInvitado);
 
-        (async () => {
-          // ⚠️ ya no usamos finalizarPartida para setear ganador/perdedor
-          const respuestasCreador = buildRespuestasPara(creador);
-          const respuestasInvitado = buildRespuestasPara(invitado);
+        const payload = {
+          salaId,
+          partida_id: Number(config.partida_id),
+          dificultad: String(config?.dificultad || ''),
+          tiempo: String(config?.tiempo || ''),
+          respuestas: [...respuestasCreador, ...respuestasInvitado],
+          resumen: {
+            jugadores: [
+              {
+                jugador_id: Number(creador.jugador_id),
+                ...statsCreador,
+                // el server recalcula y le suma bonus, no pasa nada
+              },
+              {
+                jugador_id: Number(invitado.jugador_id),
+                ...statsInvitado,
+              },
+            ],
+            // el server también puede recalcular ganador_jugador_id si hace falta
+            ganador_jugador_id: null,
+            ended_at: formatearTimestampParaMySQL(Date.now()),
+          },
+        };
 
-          const statsCreador = buildStats(respuestasCreador);
-          const statsInvitado = buildStats(respuestasInvitado);
+        setPartidaCompleta(payload);
 
-          const payload = {
-            salaId,
-            partida_id: Number(config.partida_id),
-            dificultad: String(config?.dificultad || ''),
-            tiempo: String(config?.tiempo || ''),
-            respuestas: [...respuestasCreador, ...respuestasInvitado],
-            resumen: {
-              jugadores: [
-                {
-                  jugador_id: Number(creador.jugador_id),
-                  ...statsCreador,
-                  // el server recalcula y le suma bonus, no pasa nada
-                },
-                {
-                  jugador_id: Number(invitado.jugador_id),
-                  ...statsInvitado,
-                },
-              ],
-              // el server también puede recalcular ganador_jugador_id si hace falta
-              ganador_jugador_id: null,
-              ended_at: formatearTimestampParaMySQL(Date.now()),
-            },
-          };
-
-          setPartidaCompleta(payload);
-
-          socketRef.current.emit('guardar_respuestas', payload, (ack) => {
-            console.log('guardar_respuestas → ack:', ack);
-          });
-        })();
-
-      }
-    );
+        socketRef.current.emit('guardar_respuestas', payload, (ack) => {
+          console.log('guardar_respuestas → ack:', ack);
+        });
+      })();
+    });
   }, [
     juegoTerminado,
     config?.partida_id,
@@ -934,15 +939,9 @@ export default function JugarMultijugador() {
 
       if (ganadorId != null) {
         // hay ganador
-        const g =
-          jugadoresResumen.find(
-            (j) => Number(j.jugador_id) === Number(ganadorId)
-          ) || null;
+        const g = jugadoresResumen.find((j) => Number(j.jugador_id) === Number(ganadorId)) || null;
 
-        const p =
-          jugadoresResumen.find(
-            (j) => Number(j.jugador_id) !== Number(ganadorId)
-          ) || null;
+        const p = jugadoresResumen.find((j) => Number(j.jugador_id) !== Number(ganadorId)) || null;
 
         setGanador(g);
         setPerdedor(p);
@@ -966,7 +965,10 @@ export default function JugarMultijugador() {
           // Esto actualiza el contexto y localStorage (igual que en Ruleta)
           updateUser({ puntaje: nuevoPuntaje });
         } catch (err) {
-          console.log('Error al sincronizar puntaje del jugador:', err.response?.data?.error || err.message);
+          console.log(
+            'Error al sincronizar puntaje del jugador:',
+            err.response?.data?.error || err.message
+          );
         }
       }
     };
@@ -977,8 +979,6 @@ export default function JugarMultijugador() {
       s.off('sala:fin_partida', onFinPartida);
     };
   }, [API_URL, jugadorActualId, updateUser]);
-
-
 
   // crear instancia una vez que el canvas existe
   useEffect(() => {
@@ -1020,11 +1020,9 @@ export default function JugarMultijugador() {
     }
   }, [juegoTerminado, partidaCompleta]);
 
-
-
   // ============================================================= html =====================================================================
   return (
-    <div className="w-full h-full text-white pt-5 mb-10">
+    <div className='w-full min-h-screen text-white pt-5 mb-10'>
       {/* Canvas SIEMPRE montado */}
       <canvas
         ref={canvasRef}
@@ -1040,81 +1038,78 @@ export default function JugarMultijugador() {
       />
 
       {/* Contenedor central con ancho máximo */}
-      <div className="w-full">
+      <div className='w-full'>
         {mostrarContador && contadorInicial > 0 ? (
           // 🧮 PANTALLA DE CONTADOR
-          <div className="min-h-[70vh] flex items-center justify-center relative overflow-hidden">
-            <div className="relative z-10 text-center flex flex-col items-center gap-6 px-3">
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white drop-shadow-lg">
+          <div className='min-h-[70vh] flex items-center justify-center relative overflow-hidden'>
+            <div className='relative z-10 text-center flex flex-col items-center gap-6 px-3'>
+              <h1 className='text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white drop-shadow-lg'>
                 {t('beReady')}
               </h1>
 
-              <div className="bg-gradient-to-r from-purple-600 to-purple-700 px-4 py-3 rounded-3xl text-white text-lg sm:text-xl font-bold shadow-2xl border-2 border-purple-400/50 max-w-md w-full">
+              <div className='bg-gradient-to-r from-purple-600 to-purple-700 px-4 py-3 rounded-3xl text-white text-lg sm:text-xl font-bold shadow-2xl border-2 border-purple-400/50 max-w-md w-full'>
                 🎮 {t('category')}:{' '}
-                <span className="text-yellow-300">
-                  {translatedCategory.toUpperCase()}
-                </span>
+                <span className='text-yellow-300'>{translatedCategory.toUpperCase()}</span>
               </div>
 
-              <div className="space-y-4 bg-black/30 p-4 rounded-2xl backdrop-blur-sm border border-purple-400/50 max-w-md w-full">
-                <p className="text-white text-base sm:text-lg flex items-center justify-center gap-3">
-                  <span className="text-xl">⏱️</span>
+              <div className='space-y-4 bg-black/30 p-4 rounded-2xl backdrop-blur-sm border border-purple-400/50 max-w-md w-full'>
+                <p className='text-white text-base sm:text-lg flex items-center justify-center gap-3'>
+                  <span className='text-xl'>⏱️</span>
                   {t('timeQuestion')}:{' '}
-                  <span className="font-bold text-yellow-300">
+                  <span className='font-bold text-yellow-300'>
                     {tiempoPorPregunta(config?.tiempo)}s
                   </span>
                 </p>
-                <p className="text-white text-base sm:text-lg flex items-center justify-center gap-3">
-                  <span className="text-xl">📊</span>
+                <p className='text-white text-base sm:text-lg flex items-center justify-center gap-3'>
+                  <span className='text-xl'>📊</span>
                   {t('dificulty')}:{' '}
-                  <span className="font-bold text-orange-400 capitalize">
+                  <span className='font-bold text-orange-400 capitalize'>
                     {String(config?.dificultad || '')}
                   </span>
                 </p>
-                <p className="text-white text-base sm:text-lg flex items-center justify-center gap-3">
-                  <span className="text-xl">❓</span>
-                  {t('questionTotal')}:{' '}
-                  <span className="font-bold text-green-400">10</span>
+                <p className='text-white text-base sm:text-lg flex items-center justify-center gap-3'>
+                  <span className='text-xl'>❓</span>
+                  {t('questionTotal')}: <span className='font-bold text-green-400'>10</span>
                 </p>
               </div>
 
-              <div className="mb-2">
-                <div className="text-[120px] sm:text-[160px] md:text-[200px] font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-400 to-yellow-300 animate-pulse drop-shadow-[0_0_60px_rgba(250,204,21,1)] leading-none">
+              <div className='mb-2'>
+                <div className='text-[120px] sm:text-[160px] md:text-[200px] font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-400 to-yellow-300 animate-pulse drop-shadow-[0_0_60px_rgba(250,204,21,1)] leading-none'>
                   {contadorInicial}
                 </div>
               </div>
 
-              <div className="text-white text-xl sm:text-2xl font-bold animate-bounce">
+              <div className='text-white text-xl sm:text-2xl font-bold animate-bounce'>
                 {t('gameStartAt')}
               </div>
             </div>
           </div>
         ) : (
           // 🎮 PANTALLA PRINCIPAL (preguntas / podio / resumen)
-          <div className="flex flex-col items-center justify-start">
+          <div className='flex flex-col items-center justify-start'>
             {loading ? (
-              <div className="text-center space-y-4 mt-10">
-                <p className="text-white text-2xl font-bold">{t('loadingQuestions')}</p>
-                {alerta && <p className="text-white/80">{alerta}</p>}
+              <div className='text-center space-y-4 mt-10'>
+                <p className='text-white text-2xl font-bold'>{t('loadingQuestions')}</p>
+                {alerta && <p className='text-white/80'>{alerta}</p>}
               </div>
             ) : alerta ? (
               <>
-                <div className="w-full flex justify-center mb-3">
+                <div className='w-full flex justify-center mb-3'>
                   <Link
-                    to="/"
-                    className="inline-flex items-center text-yellow-600 hover:text-yellow-800 transition-colors"
+                    to='/'
+                    className='inline-flex items-center text-yellow-600 hover:text-yellow-800 transition-colors'
                   >
                     <svg
-                      className="w-5 h-5 mr-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                      className='w-5 h-5 mr-2'
+                      fill='none'
+                      stroke='currentColor'
+                      viewBox='0 0 24 24'
                     >
                       <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
                         strokeWidth={2}
-                        d="M15 19l-7-7 7-7"
+                        d='M15 19l-7-7 7-7'
                       />
                     </svg>
                     {t('back')}
@@ -1122,13 +1117,13 @@ export default function JugarMultijugador() {
                 </div>
 
                 {/* muestra "juego terminado" */}
-                <div className="bg-red-500/20 border-2 border-red-500 text-red-200 p-4 sm:p-6 mt-2 rounded-2xl text-lg sm:text-xl font-bold text-center w-full max-w-xl mx-auto">
+                <div className='bg-red-500/20 border-2 border-red-500 text-red-200 p-4 sm:p-6 mt-2 rounded-2xl text-lg sm:text-xl font-bold text-center w-full max-w-xl mx-auto'>
                   {alerta}
                 </div>
 
                 {esperandoResultado && !partidaCompleta && (
-                  <div className="bg-black/50 rounded-2xl p-6 sm:p-8 mt-8 w-full max-w-2xl text-center mx-auto">
-                    <p className="text-lg sm:text-xl font-bold text-yellow-300">
+                  <div className='bg-black/50 rounded-2xl p-6 sm:p-8 mt-8 w-full max-w-2xl text-center mx-auto'>
+                    <p className='text-lg sm:text-xl font-bold text-yellow-300'>
                       {'Esperando a que el otro jugador termine...' || t('waitingOpponent')}
                     </p>
                   </div>
@@ -1137,41 +1132,41 @@ export default function JugarMultijugador() {
                 {/* PODIO: HAY GANADOR */}
                 {!esperandoResultado && partidaCompleta?.resumen?.ganador_jugador_id != null ? (
                   <>
-                    <div className="flex flex-row md:flex-row items-center justify-center gap-0.5 mt-10 w-full">
+                    <div className='flex flex-row md:flex-row items-center justify-center gap-0.5 mt-10 w-full'>
                       {/* Ganador */}
-                      <div className="flex flex-col items-center">
-                        <span className="mb-2 w-10 h-10 rounded-full bg-yellow-400 text-slate-900 flex items-center justify-center text-xl font-extrabold">
+                      <div className='flex flex-col items-center'>
+                        <span className='mb-2 w-10 h-10 rounded-full bg-yellow-400 text-slate-900 flex items-center justify-center text-xl font-extrabold'>
                           1
                         </span>
 
-                        <div className="w-full max-w-[13rem]">
-                          <div className="flex flex-col items-center justify-start">
-                            <div className="bg-gradient-to-b from-black/40 to-blue-800/10 p-4 sm:p-6 shadow-xl w-full rounded-2xl border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20">
-                              <div className="flex flex-col items-center">
+                        <div className='w-full max-w-[13rem]'>
+                          <div className='flex flex-col items-center justify-start'>
+                            <div className='bg-gradient-to-b from-black/40 to-blue-800/10 p-4 sm:p-6 shadow-xl w-full rounded-2xl border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20'>
+                              <div className='flex flex-col items-center'>
                                 {ganador ? (
                                   <>
                                     {ganador?.foto_perfil &&
-                                      ganador?.foto_perfil !== `${API_URL}/uploads/default.png` &&
-                                      ganador?.foto_perfil !== `/uploads/default.png` ? (
+                                    ganador?.foto_perfil !== `${API_URL}/uploads/default.png` &&
+                                    ganador?.foto_perfil !== `/uploads/default.png` ? (
                                       <img
                                         src={resolveFotoAjena(ganador?.foto_perfil)}
-                                        alt="ganador"
-                                        className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-blue-800/10 bg-gradient-to-br group-hover:scale-105 transition-transform duration-300 shadow-lg mb-4"
+                                        alt='ganador'
+                                        className='w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-blue-800/10 bg-gradient-to-br group-hover:scale-105 transition-transform duration-300 shadow-lg mb-4'
                                       />
                                     ) : (
-                                      <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-4xl sm:text-5xl mb-4 shadow-lg">
+                                      <div className='w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-4xl sm:text-5xl mb-4 shadow-lg'>
                                         👤
                                       </div>
                                     )}
-                                    <span className="bg-blue-900 px-4 py-2 rounded-full text-xs sm:text-sm font-bold text-center text-yellow-300">
+                                    <span className='bg-blue-900 px-4 py-2 rounded-full text-xs sm:text-sm font-bold text-center text-yellow-300'>
                                       {ganador?.nombre || 'ganador'}
                                     </span>
-                                    <span className="text-xs mt-2 opacity-70">
+                                    <span className='text-xs mt-2 opacity-70'>
                                       {ganador?.puntaje_total} {t('points')}
                                     </span>
                                   </>
                                 ) : (
-                                  <div className="w-20 h-20 rounded-full bg-white/20" />
+                                  <div className='w-20 h-20 rounded-full bg-white/20' />
                                 )}
                               </div>
                             </div>
@@ -1180,38 +1175,38 @@ export default function JugarMultijugador() {
                       </div>
 
                       {/* Perdedor */}
-                      <div className="flex flex-col items-center mt-6">
-                        <span className=" w-8 h-8 rounded-full bg-gray-300 text-slate-900 flex items-center justify-center text-sm font-bold">
+                      <div className='flex flex-col items-center mt-6'>
+                        <span className=' w-8 h-8 rounded-full bg-gray-300 text-slate-900 flex items-center justify-center text-sm font-bold'>
                           2
                         </span>
 
-                        <div className="w-full max-w-[11rem] mt-2 md:mt-4">
-                          <div className="flex flex-col items-center">
-                            <div className="bg-gradient-to-b from-black/40 to-blue-800/10 p-4 shadow-xl w-full rounded-2xl border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20">
-                              <div className="flex flex-col items-center">
+                        <div className='w-full max-w-[11rem] mt-2 md:mt-4'>
+                          <div className='flex flex-col items-center'>
+                            <div className='bg-gradient-to-b from-black/40 to-blue-800/10 p-4 shadow-xl w-full rounded-2xl border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20'>
+                              <div className='flex flex-col items-center'>
                                 {perdedor ? (
                                   <>
                                     {perdedor?.foto_perfil &&
-                                      perdedor?.foto_perfil !== `/uploads/default.png` ? (
+                                    perdedor?.foto_perfil !== `/uploads/default.png` ? (
                                       <img
                                         src={resolveFotoAjena(perdedor.foto_perfil)}
-                                        alt="perdedor"
-                                        className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-4 border-blue-800/10 bg-gradient-to-br group-hover:scale-105 transition-transform duration-300 shadow-lg mb-4"
+                                        alt='perdedor'
+                                        className='w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-4 border-blue-800/10 bg-gradient-to-br group-hover:scale-105 transition-transform duration-300 shadow-lg mb-4'
                                       />
                                     ) : (
-                                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-3xl sm:text-4xl mb-4 shadow-lg">
+                                      <div className='w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-3xl sm:text-4xl mb-4 shadow-lg'>
                                         👤
                                       </div>
                                     )}
-                                    <span className="bg-green-800 px-4 py-2 rounded-full text-xs sm:text-sm font-bold text-center text-yellow-300">
+                                    <span className='bg-green-800 px-4 py-2 rounded-full text-xs sm:text-sm font-bold text-center text-yellow-300'>
                                       {perdedor?.nombre || 'perdedor'}
                                     </span>
-                                    <span className="text-xs mt-2 opacity-70">
+                                    <span className='text-xs mt-2 opacity-70'>
                                       {perdedor?.puntaje_total} {t('points')}
                                     </span>
                                   </>
                                 ) : (
-                                  <div className="w-16 h-16 rounded-full bg-white/20" />
+                                  <div className='w-16 h-16 rounded-full bg-white/20' />
                                 )}
                               </div>
                             </div>
@@ -1220,8 +1215,8 @@ export default function JugarMultijugador() {
                       </div>
                     </div>
 
-                    <div className="bg-black/50 mt-5 rounded-full w-full max-w-md text-center mx-auto">
-                      <p className="text-lg sm:text-xl font-bold text-gray-200 p-3 sm:p-4">
+                    <div className='bg-black/50 mt-5 rounded-full w-full max-w-md text-center mx-auto'>
+                      <p className='text-lg sm:text-xl font-bold text-gray-200 p-3 sm:p-4'>
                         {ganador ? `${ganador?.nombre} ` + t('hasWon') : t('calculatingWinner')}
                       </p>
                     </div>
@@ -1229,34 +1224,35 @@ export default function JugarMultijugador() {
                 ) : !esperandoResultado && partidaCompleta ? (
                   <>
                     {/* PODIO EMPATE */}
-                    <div className="flex flex-row md:flex-row items-center justify-center gap-0.5 mt-10 w-full">
+                    <div className='flex flex-row md:flex-row items-center justify-center gap-0.5 mt-10 w-full'>
                       {/* Jugador 1 */}
-                      <div className="flex flex-col items-center">
-                        <div className="w-full max-w-[13rem] mt-4 md:mt-10">
-                          <div className="flex flex-col items-center justify-start">
-                            <div className="bg-gradient-to-b from-black/40 to-blue-800/10 p-4 sm:p-6 shadow-xl w-full rounded-2xl border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20">
-                              <div className="flex flex-col items-center">
+                      <div className='flex flex-col items-center'>
+                        <div className='w-full max-w-[13rem] mt-4 md:mt-10'>
+                          <div className='flex flex-col items-center justify-start'>
+                            <div className='bg-gradient-to-b from-black/40 to-blue-800/10 p-4 sm:p-6 shadow-xl w-full rounded-2xl border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20'>
+                              <div className='flex flex-col items-center'>
                                 {jugadores[0] ? (
                                   <>
                                     {jugadores[0]?.foto_perfil &&
-                                      jugadores[0]?.foto_perfil !== `${API_URL}/uploads/default.png` &&
-                                      jugadores[0]?.foto_perfil !== `/uploads/default.png` ? (
+                                    jugadores[0]?.foto_perfil !==
+                                      `${API_URL}/uploads/default.png` &&
+                                    jugadores[0]?.foto_perfil !== `/uploads/default.png` ? (
                                       <img
                                         src={resolveFotoAjena(jugadores[0]?.foto_perfil)}
-                                        alt="jugador creador"
-                                        className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-blue-800/10 bg-gradient-to-br group-hover:scale-105 transition-transform duration-300 shadow-lg mb-4"
+                                        alt='jugador creador'
+                                        className='w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-blue-800/10 bg-gradient-to-br group-hover:scale-105 transition-transform duration-300 shadow-lg mb-4'
                                       />
                                     ) : (
-                                      <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-4xl sm:text-5xl mb-4 shadow-lg">
+                                      <div className='w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-4xl sm:text-5xl mb-4 shadow-lg'>
                                         👤
                                       </div>
                                     )}
-                                    <span className="bg-blue-900 px-4 py-2 rounded-full text-xs sm:text-sm font-bold text-center text-yellow-300">
+                                    <span className='bg-blue-900 px-4 py-2 rounded-full text-xs sm:text-sm font-bold text-center text-yellow-300'>
                                       {jugadores[0]?.nombre || 'jugador creador'}
                                     </span>
                                   </>
                                 ) : (
-                                  <div className="w-20 h-20 rounded-full bg-white/20" />
+                                  <div className='w-20 h-20 rounded-full bg-white/20' />
                                 )}
                               </div>
                             </div>
@@ -1265,31 +1261,31 @@ export default function JugarMultijugador() {
                       </div>
 
                       {/* Jugador 2 */}
-                      <div className="flex flex-col items-center">
-                        <div className="w-full max-w-[13rem] mt-4 md:mt-10">
-                          <div className="flex flex-col items-center gap-4">
-                            <div className="bg-gradient-to-b from-black/40 to-blue-800/10 p-4 sm:p-6 shadow-xl border-2 w-full rounded-2xl border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20">
-                              <div className="flex flex-col items-center">
+                      <div className='flex flex-col items-center'>
+                        <div className='w-full max-w-[13rem] mt-4 md:mt-10'>
+                          <div className='flex flex-col items-center gap-4'>
+                            <div className='bg-gradient-to-b from-black/40 to-blue-800/10 p-4 sm:p-6 shadow-xl border-2 w-full rounded-2xl border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20'>
+                              <div className='flex flex-col items-center'>
                                 {jugadores[1] ? (
                                   <>
                                     {jugadores[1]?.foto_perfil &&
-                                      jugadores[1]?.foto_perfil !== `/uploads/default.png` ? (
+                                    jugadores[1]?.foto_perfil !== `/uploads/default.png` ? (
                                       <img
                                         src={resolveFotoAjena(jugadores[1].foto_perfil)}
-                                        alt="jugador invitado"
-                                        className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-blue-800/10 bg-gradient-to-br from-blue-400 to-blue-600 shadow-lg mb-4 group-hover:scale-105 transition-transform duration-300"
+                                        alt='jugador invitado'
+                                        className='w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-blue-800/10 bg-gradient-to-br from-blue-400 to-blue-600 shadow-lg mb-4 group-hover:scale-105 transition-transform duration-300'
                                       />
                                     ) : (
-                                      <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-4xl sm:text-5xl mb-4 shadow-lg">
+                                      <div className='w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-4xl sm:text-5xl mb-4 shadow-lg'>
                                         👤
                                       </div>
                                     )}
-                                    <span className="bg-green-800 px-4 py-2 rounded-full text-xs sm:text-sm font-bold text-center text-yellow-300">
+                                    <span className='bg-green-800 px-4 py-2 rounded-full text-xs sm:text-sm font-bold text-center text-yellow-300'>
                                       {jugadores[1]?.nombre || 'jugador invitado'}
                                     </span>
                                   </>
                                 ) : (
-                                  <div className="w-20 h-20 rounded-full bg-white/20" />
+                                  <div className='w-20 h-20 rounded-full bg-white/20' />
                                 )}
                               </div>
                             </div>
@@ -1298,8 +1294,8 @@ export default function JugarMultijugador() {
                       </div>
                     </div>
 
-                    <div className="bg-black/50 mt-5 rounded-full w-full max-w-md text-center mx-auto">
-                      <p className="text-lg sm:text-xl font-bold text-gray-200 p-3 sm:p-4">
+                    <div className='bg-black/50 mt-5 rounded-full w-full max-w-md text-center mx-auto'>
+                      <p className='text-lg sm:text-xl font-bold text-gray-200 p-3 sm:p-4'>
                         {t('matchDraw')}
                       </p>
                     </div>
@@ -1308,26 +1304,23 @@ export default function JugarMultijugador() {
 
                 {/*=====================  Resumen de Respuestas =====================*/}
                 {juegoTerminado && (
-                  <div className="bg-black/50 rounded-2xl p-6 sm:p-8 mt-8 w-full max-w-2xl mx-auto">
-                    <h2 className="text-xl sm:text-2xl font-bold text-yellow-300 mb-4 sm:mb-6">
+                  <div className='bg-black/50 rounded-2xl p-6 sm:p-8 mt-8 w-full max-w-2xl mx-auto'>
+                    <h2 className='text-xl sm:text-2xl font-bold text-yellow-300 mb-4 sm:mb-6'>
                       {t('resumeAnswer')}
                     </h2>
-                    <div className="space-y-3 max-h-64 overflow-y-auto">
+                    <div className='space-y-3 max-h-64 overflow-y-auto'>
                       {respuestas.map((respuesta, index) => (
                         <div
                           key={index}
-                          className="bg-purple-500/20 p-3 rounded-lg border border-purple-400"
+                          className='bg-purple-500/20 p-3 rounded-lg border border-purple-400'
                         >
-                          <p className="text-sm">
-                            <span className="font-bold text-yellow-300">
-                              P{index + 1}:
-                            </span>{' '}
+                          <p className='text-sm'>
+                            <span className='font-bold text-yellow-300'>P{index + 1}:</span>{' '}
                             {respuesta.texto}
                             <span
-                              className={`ml-2 font-bold ${respuesta.es_correcta
-                                ? 'text-green-400'
-                                : 'text-red-400'
-                                }`}
+                              className={`ml-2 font-bold ${
+                                respuesta.es_correcta ? 'text-green-400' : 'text-red-400'
+                              }`}
                             >
                               {respuesta.es_correcta ? '✓' : '✗'}
                             </span>
@@ -1343,15 +1336,17 @@ export default function JugarMultijugador() {
                 {/* === NUEVO CSS: reloj centrado arriba, como en “individual” === */}
                 <div className='w-full h-full text-white flex items-center justify-center'>
                   <div
-                    className={`rounded-3xl px-6 py-4 text-center flex flex-col items-center justify-center shadow-2xl  w-60 h-48  border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20 ${tiempoRestante <= 5 && tiempoRestante > 0
-                      ? ' border-red-500/80 animate-pulse'
-                      : ' border-blue-400/30'
-                      }`}
+                    className={`rounded-3xl px-6 py-4 text-center flex flex-col items-center justify-center shadow-2xl  w-60 h-48  border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20 ${
+                      tiempoRestante <= 5 && tiempoRestante > 0
+                        ? ' border-red-500/80 animate-pulse'
+                        : ' border-blue-400/30'
+                    }`}
                   >
                     <p className='text-4xl font-bold text-gray-800 mb-2'>⏱️</p>
                     <p
-                      className={`text-5xl font-black ${tiempoRestante > 5 ? 'text-white' : 'text-red-600'
-                        }`}
+                      className={`text-5xl font-black ${
+                        tiempoRestante > 5 ? 'text-white' : 'text-red-600'
+                      }`}
                     >
                       {tiempoRestante}
                     </p>
@@ -1396,8 +1391,8 @@ export default function JugarMultijugador() {
                         {creador ? (
                           <>
                             {creador?.foto_perfil &&
-                              creador?.foto_perfil !== `${API_URL}/uploads/default.png` &&
-                              creador?.foto_perfil !== `/uploads/default.png` ? (
+                            creador?.foto_perfil !== `${API_URL}/uploads/default.png` &&
+                            creador?.foto_perfil !== `/uploads/default.png` ? (
                               <img
                                 src={resolveFotoAjena(creador?.foto_perfil)}
                                 alt='Creador'
@@ -1421,22 +1416,23 @@ export default function JugarMultijugador() {
                   </div>
                   {/* Mesaje: Siguiente Pregunta... */}
                   {mostrarEspera ? (
-                    <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-8 w-full max-w-2xl shadow-2xl text-center'>
-                      <div className='flex flex-col items-center justify-center gap-4'>
-                        <div className='flex justify-center gap-2'>
-                          <div className='w-3 h-3 bg-yellow-300 rounded-full animate-bounce' />
+                    <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-8 w-full max-w-2xl shadow-2xl flex items-center justify-center'>
+                      <div className='text-center'>
+                        <div className='flex justify-center gap-3 mb-6'>
+                          <div className='w-4 h-4 bg-yellow-400 rounded-full animate-bounce'></div>
                           <div
-                            className='w-3 h-3 bg-yellow-300 rounded-full animate-bounce'
-                            style={{ animationDelay: '0.2s' }}
-                          />
+                            className='w-4 h-4 bg-yellow-400 rounded-full animate-bounce'
+                            style={{ animationDelay: '0.15s' }}
+                          ></div>
                           <div
-                            className='w-3 h-3 bg-yellow-300 rounded-full animate-bounce'
-                            style={{ animationDelay: '0.4s' }}
-                          />
+                            className='w-4 h-4 bg-yellow-400 rounded-full animate-buto'
+                            style={{ animationDelay: '0.3s' }}
+                          ></div>
                         </div>
-                        <p className='text-2xl font-bold text-yellow-300 animate-pulse'>
+                        <p className='text-4xl md:text-5xl font-black text-yellow-300 animate-pulse tracking-wide'>
                           {t('nextQuestion')}
                         </p>
+                        <p className='text-lg text-gray-300 mt-4 opacity-80'>{t('getReady')}</p>
                       </div>
                     </div>
                   ) : (
@@ -1467,7 +1463,9 @@ export default function JugarMultijugador() {
                               key={index}
                               className={`w-full rounded-xl py-4 px-6 cursor-pointer transition-all font-bold text-lg text-white shadow-lg border-2 border-transparent hover:border-yellow-300 disabled:opacity-50 ${colorClase}`}
                               onClick={() => handleGuardarRespuesta(opcion)}
-                              disabled={!!respuestaSeleccionada || cronometroPausado || tiempoRestante <= 0}
+                              disabled={
+                                !!respuestaSeleccionada || cronometroPausado || tiempoRestante <= 0
+                              }
                             >
                               {idioma === 'en' ? opcion.texto_en : opcion.texto}
                             </button>
@@ -1484,8 +1482,8 @@ export default function JugarMultijugador() {
                         {invitado ? (
                           <>
                             {invitado.foto_perfil &&
-                              invitado.foto_perfil !== `/uploads/default.png` &&
-                              invitado?.foto_perfil !== `/uploads/default.png` ? (
+                            invitado.foto_perfil !== `/uploads/default.png` &&
+                            invitado?.foto_perfil !== `/uploads/default.png` ? (
                               <img
                                 src={resolveFotoAjena(invitado.foto_perfil)}
                                 alt='Invitado'
@@ -1510,7 +1508,7 @@ export default function JugarMultijugador() {
                 </div>
               </>
             ) : (
-              <p className="text-xl text-gray-300 mt-10 text-center">
+              <p className='text-xl text-gray-300 mt-10 text-center'>
                 No hay preguntas disponibles.
               </p>
             )}
@@ -1518,7 +1516,5 @@ export default function JugarMultijugador() {
         )}
       </div>
     </div>
-
   );
-
 }

@@ -349,12 +349,14 @@ export default function SalaEspera() {
 
   return (
     <div className='min-h-screen w-full px-3 py-4 flex items-center justify-center'>
-      <div className='w-full max-w-4xl rounded-3xl p-4 sm:p-6 text-white 
+      <div
+        className='w-full max-w-4xl rounded-3xl p-4 sm:p-6 text-white 
                     bg-gradient-to-br from-purple-900/30 via-purple-800/40 to-indigo-900/50 
-                    shadow-2xl'>
+                    shadow-2xl'
+      >
         {/* Título */}
         <h2 className='text-center text-xl sm:text-2xl font-extrabold mb-4 sm:mb-6 break-words'>
-          {t('holdingRoom')}#{id}
+          {t('holdingRoom')} #{id}
         </h2>
 
         {/* Contenedor jugadores + centro */}
@@ -370,8 +372,10 @@ export default function SalaEspera() {
                     className='w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-green-400'
                   />
                 ) : (
-                  <p className='text-[52px] sm:text-[70px] w-24 h-24 sm:w-28 sm:h-28 
-                               bg-gray-200/90 rounded-full flex items-center justify-center'>
+                  <p
+                    className='text-[52px] sm:text-[70px] w-24 h-24 sm:w-28 sm:h-28 
+                               bg-gray-200/90 rounded-full flex items-center justify-center'
+                  >
                     👤
                   </p>
                 )}
@@ -401,15 +405,19 @@ export default function SalaEspera() {
             {redirIn !== null && (
               <div className='mt-4 text-center'>
                 {redirIn > 0 ? (
-                  <div className='inline-flex flex-wrap items-center justify-center gap-2 
-                                bg-black/60 text-white px-4 py-2 rounded-xl text-sm sm:text-base'>
+                  <div
+                    className='inline-flex flex-wrap items-center justify-center gap-2 
+                                bg-black/60 text-white px-4 py-2 rounded-xl text-sm sm:text-base'
+                  >
                     <span>{t('completedRoom')}</span>
                     <span className='text-xl sm:text-2xl font-extrabold'>{redirIn}</span>
                     <span>…</span>
                   </div>
                 ) : (
-                  <div className='inline-flex items-center bg-black/60 text-white px-4 py-2 
-                                rounded-xl text-sm sm:text-base'>
+                  <div
+                    className='inline-flex items-center bg-black/60 text-white px-4 py-2 
+                                rounded-xl text-sm sm:text-base'
+                  >
                     {t('redirecting')}
                   </div>
                 )}
@@ -428,8 +436,10 @@ export default function SalaEspera() {
                     className='w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-green-400'
                   />
                 ) : (
-                  <p className='text-[52px] sm:text-[70px] w-24 h-24 sm:w-28 sm:h-28 
-                               bg-gray-200/90 rounded-full flex items-center justify-center'>
+                  <p
+                    className='text-[52px] sm:text-[70px] w-24 h-24 sm:w-28 sm:h-28 
+                               bg-gray-200/90 rounded-full flex items-center justify-center'
+                  >
                     👤
                   </p>
                 )}
@@ -454,5 +464,4 @@ export default function SalaEspera() {
       </div>
     </div>
   );
-
 }

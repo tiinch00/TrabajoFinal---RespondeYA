@@ -261,7 +261,7 @@ const CrearPartida = ({ modo }) => {
                       }}
                       className='block w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 text-purple-800 hover:bg-purple-100 font-medium text-sm sm:text-base transition'
                     >
-                      {categoryTranslations[cat.nombre] || cat.nombre}
+                      {categoryTranslations[cat.nombre]}
                     </button>
                   ))}
                 </div>

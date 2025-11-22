@@ -280,5 +280,8 @@
   "playerDetail": "Detalles del jugador",
   "noUsersFound": "No se encontraron usuarios que coincidan con la búsqueda",
   "writeName": "Escribe un nombre para buscar nuevos amigos.",
-  "noHaveFriendList": "No se encontraron amigos con ese nombre..."
+  "noHaveFriendList": "No se encontraron amigos con ese nombre...",
+  "registering": "Registrando...",
+  "logging": "Iniciando sesión…",
+  "getReady": "Preparate!"
 }

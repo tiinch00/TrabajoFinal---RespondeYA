@@ -119,7 +119,7 @@ const ComoJugar = () => {
             </div>
             <div>
               <div className='bg-gradient-to-br from-blue-600 to-purple-600 p-1 rounded-2xl shadow-2xl'>
-                <div className='bg-black rounded-xl p-4 max-[341px]:p-2'>
+                <div className='bg-black rounded-xl p-6 max-[341px]:p-2'>
                   <img
                     src='./assets/comoJugar/amigo.png'
                     alt='agreagar amigo'

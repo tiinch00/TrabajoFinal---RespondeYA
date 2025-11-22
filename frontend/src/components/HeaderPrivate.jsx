@@ -7,20 +7,20 @@ import { useTranslation } from 'react-i18next';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006';
 const resolveUserPhoto = (fp) => {
-    if (!fp) return null;
+  if (!fp) return null;
 
-    // viene de /assets/... (public del front)
-    if (fp.startsWith('/assets/')) return fp;
+  // viene de /assets/... (public del front)
+  if (fp.startsWith('/assets/')) return fp;
 
-    // ya es URL absoluta
-    if (/^https?:\/\//.test(fp)) return fp;
+  // ya es URL absoluta
+  if (/^https?:\/\//.test(fp)) return fp;
 
-    // ruta típica del backend
-    if (fp.startsWith('/uploads/')) return `${API_URL}${fp}`;
+  // ruta típica del backend
+  if (fp.startsWith('/uploads/')) return `${API_URL}${fp}`;
 
-    // fallback por si guardaste otra cosa relativa
-    return `${API_URL}${fp}`;
-  };
+  // fallback por si guardaste otra cosa relativa
+  return `${API_URL}${fp}`;
+};
 
 export default function HeaderPrivate() {
   const navigate = useNavigate();
@@ -30,15 +30,15 @@ export default function HeaderPrivate() {
   const menuRef = useRef(null);
   const btnRef = useRef(null);
   const mobileMenuRef = useRef(null);
-  const { user, logout, loading } = useAuth();  
+  const { user, logout, loading } = useAuth();
   const isAdmin = user?.role === 'administrador';
   const name = user.name || user?.email?.split('@')[0] || 'Jugador';
   const fotoUrl = user?.foto_perfil ? `${API_URL}${user.foto_perfil}` : null;
-  const { t, i18n } = useTranslation();  
+  const { t, i18n } = useTranslation();
 
   const rawPhoto = user?.foto_perfil ?? null;
   const baseFoto = rawPhoto ? resolveUserPhoto(rawPhoto) : null;
-   // cache busting sin romper URLs que ya tienen query
+  // cache busting sin romper URLs que ya tienen query
   const fotoSrc = baseFoto
     ? `${baseFoto}${baseFoto.includes('?') ? '&' : '?'}v=${Date.now()}`
     : null;
@@ -82,7 +82,6 @@ export default function HeaderPrivate() {
     setMobileMenuOpen(false);
   }, [location.pathname]);
 
-
   const adminLinks = [
     { to: '/', label: t('home') },
     { to: '/admin/categorias', label: t('admCategory') },
@@ -114,7 +113,11 @@ export default function HeaderPrivate() {
       </div>
 
       <nav className='relative flex items-center justify-between text-white'>
-        <Link to='/' className='h-10 sm:h-12 md:h-14 flex items-center group flex-shrink-0'>
+        <Link
+          to='/'
+          className='h-10 sm:h-12 md:h-14 flex items-center group flex-shrink-0'
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        >
           <div className='text-2xl sm:text-3xl md:text-4xl font-black tracking-tight'>
             <span className='bg-gradient-to-r from-purple-400 via-pink-400 to-purple-500 text-transparent bg-clip-text hover:from-purple-300 hover:via-pink-300 hover:to-purple-400 transition-all duration-300'>
               Dev
@@ -131,10 +134,11 @@ export default function HeaderPrivate() {
             <li key={link.to} className='flex items-center'>
               <Link
                 to={link.to}
-                className={`relative px-3 py-2 rounded-lg transition-all duration-300 ${location.pathname === link.to
+                className={`relative px-3 py-2 rounded-lg transition-all duration-300 ${
+                  location.pathname === link.to
                     ? 'text-pink-300  bg-white/10 shadow-[0_0_15px_rgba(34,211,238,0.3)]'
                     : 'hover:text-cyan-300 hover:bg-white/5'
-                  } font-semibold`}
+                } font-semibold`}
               >
                 {link.label}
                 {location.pathname === link.to && (
@@ -240,10 +244,11 @@ export default function HeaderPrivate() {
             <Link
               key={link.to}
               to={link.to}
-              className={`block px-4 py-3 rounded-xl transition-all text-sm font-semibold ${location.pathname === link.to
+              className={`block px-4 py-3 rounded-xl transition-all text-sm font-semibold ${
+                location.pathname === link.to
                   ? 'bg-gradient-to-r from-purple-500/30 to-pink-500/30 text-cyan-300 border-2 border-cyan-400/30'
                   : 'hover:bg-white/10 border-2 border-transparent hover:border-purple-400/30'
-                }`}
+              }`}
             >
               {link.label}
             </Link>
