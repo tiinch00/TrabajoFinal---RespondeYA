@@ -99,16 +99,16 @@ const update = async (req, res) => {
     }
 
     if (puntosGanados !== null && puntosGanados !== undefined) {
-      const puntaje = jugador.puntaje + puntosGanados;
+      const puntaje = puntosGanados;
       //console.log("PuntosGanados: ", puntosGanados);
       //console.log("PuntosGanados de jugador.puntaje: ", jugador.puntaje);
-      await jugador.update({ puntaje });
+      await jugador.update({ puntaje: puntaje });
     } else {
       if (puntosRestados !== null && puntosRestados !== undefined) {
         const puntaje = jugador.puntaje - puntosRestados;
         //console.log("puntosRestados: ", puntosRestados);
         //console.log("puntosRestados de jugador.puntaje: ", jugador.puntaje);
-        await jugador.update({ puntaje });
+        await jugador.update({ puntaje: puntaje });
       }
     }
 
@@ -142,7 +142,7 @@ const updatePuntajeEstadisticas = async (req, res) => {
     const jugador_id = Number(req.params.jugador_id);
     const puntosObtenidos = toNullableNumber(req.body.puntaje);
     const partida_id = toNullableNumber(req.body.partida_id);
-    
+
     // console.log("jugador_id: ", jugador_id);
     // console.log("puntosObtenidos: ", puntosObtenidos);
     // console.log("partida_id: ", partida_id);
@@ -182,7 +182,6 @@ const updatePuntajeEstadisticas = async (req, res) => {
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
-
 
 const destroy = async (req, res) => {
   const { jugador_id } = req.params;

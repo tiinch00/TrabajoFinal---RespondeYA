@@ -82,7 +82,7 @@ const store = async (req, res) => {
 const update = async (req, res) => {
   const { id } = req.params;
   const {
-    usuario_id,
+    jugador_id,
     partida_id,
     posicion,
     puntaje_total,
@@ -97,7 +97,7 @@ const update = async (req, res) => {
     }
 
     await estadistica.update({
-      usuario_id,
+      jugador_id,
       partida_id,
       posicion,
       puntaje_total,

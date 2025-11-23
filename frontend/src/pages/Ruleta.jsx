@@ -146,28 +146,25 @@ export default function Ruleta() {
   }, [spinKey, jugador?.ruleta_started_at]);
 
   const guardarPuntaje = async (jugador_id, nuevoPuntajeTotal) => {
+    console.log(nuevoPuntajeTotal);
     try {
-      const { data } = await axios.put(
-        `${API_URL}/jugadores/update/${jugador_id}`,
-        {
-          puntaje: nuevoPuntajeTotal,
-          ruleta_started_at: toMysqlLocal(), // guardás la fecha actual
-        }
-      );
+      const { data } = await axios.put(`${API_URL}/jugadores/update/${jugador_id}`, {
+        puntaje: nuevoPuntajeTotal,
+        ruleta_started_at: toMysqlLocal(), // guardás la fecha actual
+      });
+      console.log(data.puntaje);
 
       // si la API devuelve el jugador actualizado
-      const puntajeFinal =
-        data?.puntaje != null ? data.puntaje : nuevoPuntajeTotal;
+      const puntajeFinal = data?.puntaje != null ? data.puntaje : nuevoPuntajeTotal;
 
       // 🚀 actualizás el user del contexto (y localStorage)
       updateUser({ puntaje: puntajeFinal });
       // opcional: también sincronizás el jugador local
-      setJugador(prev => (prev ? { ...prev, puntaje: puntajeFinal } : prev));
+      setJugador((prev) => (prev ? { ...prev, puntaje: puntajeFinal } : prev));
     } catch (err) {
       console.log('PUT /jugadores error:', err.response?.data?.error || err.message);
     }
   };
-
 
   const lanzar = () => {
     if (tiradas === 0) return;
@@ -184,7 +181,7 @@ export default function Ruleta() {
 
     if (audioRef.current) {
       audioRef.current.currentTime = 0;
-      audioRef.current.play().catch(() => { });
+      audioRef.current.play().catch(() => {});
     }
 
     barraRef.current?.classList.toggle('parate');
@@ -222,8 +219,8 @@ export default function Ruleta() {
     setPuntos(puntosGanados);
 
     // ✅ puntaje actual del user (por las dudas lo fuerzo a número)
-    const puntajeActual = Number(user?.puntaje || 0);
-    const nuevoPuntajeTotal = puntajeActual + puntosGanados;
+    //const puntajeActual = Number(user?.puntaje || 0);
+    const nuevoPuntajeTotal = puntosGanados;
 
     // guarda en backend + actualiza contexto
     guardarPuntaje(jugador_id, nuevoPuntajeTotal);
@@ -237,7 +234,6 @@ export default function Ruleta() {
     }
   };
 
-
   useEffect(() => {
     if (puntos > 0 && tiradas === 0) {
       const timeout = setTimeout(() => {
@@ -249,7 +245,7 @@ export default function Ruleta() {
   }, [puntos, tiradas]);
 
   return (
-    <div className='relative min-h-screen flex flex-col items-center pt-4 pb-10 px-3 sm:px-4'>
+    <div className='relative min-h-screen lg:w-full flex flex-col items-center pt-4 pb-10 px-3 sm:px-4'>
       {/* Canvas full screen */}
       <canvas
         ref={canvasRef}
@@ -273,14 +269,19 @@ export default function Ruleta() {
             className='inline-flex items-center text-yellow-600 hover:text-yellow-800 transition-colors self-start'
           >
             <svg className='w-5 h-5 mr-2' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-              <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M15 19l-7-7 7-7' />
+              <path
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                strokeWidth={2}
+                d='M15 19l-7-7 7-7'
+              />
             </svg>
             {t('back')}
           </Link>
         </div>
 
         {/* Puntos */}
-        <div className='w-full bg-black/40 rounded-xl py-2 px-3 flex justify-center'>
+        <div className=' bg-black/40 rounded-xl py-2 px-3 flex justify-center'>
           <p className='text-gray-300 text-sm sm:text-base md:text-lg text-center'>
             {t('points')}: {Number(user.puntaje).toLocaleString('es-AR')}
           </p>
@@ -304,7 +305,6 @@ export default function Ruleta() {
           {/* Plafón / ruleta */}
           {/* Contenedor ruleta + puntero */}
           <div className='relative w-full max-w-xs sm:max-w-sm md:max-w-md aspect-square mx-auto'>
-
             {/* Puntero ABSOLUTO */}
             <img
               src='/assets/puntero.png'
@@ -350,10 +350,11 @@ export default function Ruleta() {
           <motion.button
             type='button'
             className={`w-full sm:w-auto text-lg sm:text-2xl font-semibold rounded-full px-8 sm:px-10 py-3 mt-6 shadow-lg transition-all duration-300 cursor-pointer
-          ${tiradas !== 0
-                ? 'bg-gradient-to-r from-indigo-500 to-purple-600 hover:scale-105 hover:shadow-[0_0_15px_rgba(147,51,234,0.6)] text-white'
-                : 'bg-gray-500 cursor-not-allowed text-gray-300'
-              }`}
+          ${
+            tiradas !== 0
+              ? 'bg-gradient-to-r from-indigo-500 to-purple-600 hover:scale-105 hover:shadow-[0_0_15px_rgba(147,51,234,0.6)] text-white'
+              : 'bg-gray-500 cursor-not-allowed text-gray-300'
+          }`}
             whileTap={tiradas !== 0 ? { scale: 0.9 } : {}}
             onClick={lanzar}
             disabled={tiradas === 0}
@@ -366,6 +367,5 @@ export default function Ruleta() {
 
       <audio ref={audioRef} src='/sounds/giraLaRueda.mp3' preload='auto' />
     </div>
-
   );
 }
