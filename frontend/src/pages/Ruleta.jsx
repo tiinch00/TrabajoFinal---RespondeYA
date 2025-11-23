@@ -219,8 +219,8 @@ export default function Ruleta() {
     setPuntos(puntosGanados);
 
     // ✅ puntaje actual del user (por las dudas lo fuerzo a número)
-    //const puntajeActual = Number(user?.puntaje || 0);
-    const nuevoPuntajeTotal = puntosGanados;
+    const puntajeActual = Number(user?.puntaje || 0);
+    const nuevoPuntajeTotal = puntosGanados + puntajeActual;
 
     // guarda en backend + actualiza contexto
     guardarPuntaje(jugador_id, nuevoPuntajeTotal);
