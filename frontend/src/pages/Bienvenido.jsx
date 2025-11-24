@@ -15,7 +15,7 @@ const Bienvenido = () => {
 
     const timer = setTimeout(() => {
       navigate('/', { replace: true });
-    }, 6000);
+    }, 2500);
 
     return () => clearTimeout(timer);
   }, [navigate]);

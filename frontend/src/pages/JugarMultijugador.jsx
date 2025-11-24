@@ -23,6 +23,7 @@ import { useGame } from '../context/ContextJuego.jsx';
 import useSound from 'use-sound';
 import { useTranslation } from 'react-i18next';
 import { useMusic } from '../context/MusicContext.jsx';
+import useNavigationGuard from '../context/useNavigationGuard.jsx';
 
 function formatearTimestampParaMySQL(timestampEnMilisegundos) {
   const MS_3HS = 3 * 60 * 60 * 1000;
@@ -140,6 +141,20 @@ export default function JugarMultijugador() {
   const [partidasPreguntasDeLaPartida, setPartidasPreguntasDeLaPartida] = useState([]);
   const [jugadorIdGanador, setJugadorIdGanador] = useState(null);
   const [mostrarEspera, setMostrarEspera] = useState(false); // siguiete pregunta msg...
+
+  useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault();
+      e.returnValue = ''; // necesario para que el navegador muestre la alerta
+    };
+
+    window.addEventListener('beforeunload', handler);
+
+    return () => {
+      window.removeEventListener('beforeunload', handler);
+    };
+  }, []);
+  useNavigationGuard(t('exit'), !juegoTerminado);
 
   // confeti
   const canvasRef = useRef(null);

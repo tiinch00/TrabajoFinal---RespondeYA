@@ -23,6 +23,12 @@ export default function useNavigationGuard(message, when = true) {
       } else {
         // limpiar historial
         window.history.replaceState(null, '', href);
+
+        // 🔥 bloquear atrás completamente
+        window.history.pushState(null, '', window.location.href);
+        window.onpopstate = () => {
+          window.history.pushState(null, '', window.location.href);
+        };
       }
     };
 

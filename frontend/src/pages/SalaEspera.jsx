@@ -134,14 +134,14 @@ export default function SalaEspera() {
     if (redirIntervalRef.current) clearInterval(redirIntervalRef.current);
     if (redirTimerRef.current) clearTimeout(redirTimerRef.current);
 
-    setMensaje('La sala ya está completa (máximo 2 jugadores).');
+    setMensaje(t('waitingRoomFull'));
     setRedirIn(3);
     redirIntervalRef.current = setInterval(() => {
       setRedirIn((prev) => {
         if (prev <= 1) {
           clearInterval(redirIntervalRef.current);
           redirIntervalRef.current = null;
-          setMensaje('Redirigiendo a la lista de sala de espera…');
+          setMensaje(t('redirectingWaitingRoom'));
           redirTimerRef.current = setTimeout(() => {
             navigate('/salaPartidas');
           }, 800);
@@ -262,7 +262,7 @@ export default function SalaEspera() {
 
       if (!estado?.ok) {
         // Sala no existe o expiró
-        setMensaje(estado?.error || 'Sala no encontrada');
+        setMensaje(estado?.error || t('roomNotFound'));
         if (redirTimerRef.current) clearTimeout(redirTimerRef.current);
         redirTimerRef.current = setTimeout(() => navigate('/salaPartidas'), 3000);
         return;
@@ -271,7 +271,7 @@ export default function SalaEspera() {
       const deduped = dedupeJugadores(estado.jugadores || []);
       const top2 = ordenarEstable(deduped);
       setJugadores(top2);
-      setMensaje(top2.length === 1 ? 'Esperando jugador 2...' : '');
+      setMensaje(top2.length === 1 ? t('waitingPlayer') : '');
 
       if (estado?.config) {
         setConfigJuego(estado.config);
@@ -397,7 +397,7 @@ export default function SalaEspera() {
               <p className='text-4xl sm:text-5xl font-extrabold'>{cuenta}</p>
             ) : (
               <p className='text-lg sm:text-xl font-bold px-4'>
-                {mensaje || (jugadores.length < 2 ? t('waitingPlayer') : t('readyToStart'))}
+                {jugadores.length < 2 ? t('waitingPlayer') : t('readyToStart')}
               </p>
             )}
 

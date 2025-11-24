@@ -284,5 +284,8 @@
   "registering": "Registering...",
   "logging": "Logging in…",
   "getReady": "Get Ready!",
-  "exit": "If you leave the game, you will lose your progress. Are you sure you want to leave?"
+  "exit": "If you leave the game, you will lose your progress. Are you sure you want to leave?",
+  "redirectingWaitingRoom": "Redirecting to the waiting room list…",
+  "waitingRoomFull": "The room is already full (maximum 2 players).",
+  "roomNotFound": "Room not found"
 }

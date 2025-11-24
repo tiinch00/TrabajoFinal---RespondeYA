@@ -285,5 +285,7 @@
   "logging": "Iniciando sesión…",
   "getReady": "Preparate!",
   "exit": "⚠️ Si salís de la partida perderás tu progreso. ¿Seguro que querés salir?",
-  "waitingPlayer2": "Esperando jugador 2..."
+  "redirectingWaitingRoom": "Redirigiendo a la lista de sala de espera…",
+  "waitingRoomFull": "La sala ya está completa (máximo 2 jugadores).",
+  "roomNotFound": "Sala no encontrada"
 }
