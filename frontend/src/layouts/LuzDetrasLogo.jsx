@@ -11,7 +11,7 @@ const LuzDetrasLogo = () => {
     const lightRays = [];
 
     const resizeCanvas = () => {
-      canvas.width = 600; // tamaño fijo centrado detrás del logo
+      canvas.width = 500; // tamaño fijo centrado detrás del logo
       canvas.height = 300;
     };
     resizeCanvas();
@@ -73,7 +73,7 @@ const LuzDetrasLogo = () => {
       ref={canvasRef}
       width={600}
       height={300}
-      className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none'
+      className='absolute top-1.5 left-1/2 sm:top-1/2 sm:left-1/2 md:top-1/2 md:left-1/2 lg:top-1/2 lg:left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none'
     />
   );
 };
