@@ -50,10 +50,10 @@ const Home = () => {
                   <motion.button
                     whileHover={{ scale: 1.15 }}
                     whileTap={{ scale: 0.95 }}
-                    className=' cursor-pointer bg-gradient-to-br from-blue-400 to-blue-500 h-11 sm:h-13 md:h-14 md:w-65 rounded-full shadow-xl hover:shadow-blue-500/50 transition-all duration-300 flex items-center justify-center gap-2 sm:gap-3 border-2 sm:border-3 md:border-4 border-blue-300'
+                    className=' cursor-pointer bg-gradient-to-br  from-blue-400 to-blue-500 h-11 w-40 sm:h-13 md:h-14 md:w-65 rounded-full shadow-xl hover:shadow-blue-500/50 transition-all duration-300 flex items-center justify-center gap-2 sm:gap-3 border-2 sm:border-3 md:border-4 border-blue-300'
                   >
                     <User className='w-4 h-4 sm:w-5 sm:h-5 text-white' />
-                    <span className='text-base sm:text-lg md:text-xl font-bold text-white'>
+                    <span className='text-base sm:text-lg md:text-xl  font-bold text-white'>
                       {t('singlePlayer')}
                     </span>
                   </motion.button>
@@ -63,7 +63,7 @@ const Home = () => {
                   <motion.button
                     whileHover={{ scale: 1.15 }}
                     whileTap={{ scale: 0.95 }}
-                    className=' cursor-pointer bg-gradient-to-br from-green-400 to-green-500 h-11 sm:h-13 md:h-14 md:w-65 rounded-full shadow-xl hover:shadow-green-500/50 transition-all duration-300 flex items-center justify-center gap-2 sm:gap-3 border-2 sm:border-3 md:border-4 border-green-300'
+                    className=' cursor-pointer bg-gradient-to-br from-green-400 to-green-500 w-40 h-11 sm:h-13 md:h-14 md:w-65 rounded-full shadow-xl hover:shadow-green-500/50 transition-all duration-300 flex items-center justify-center gap-2 sm:gap-3 border-2 sm:border-3 md:border-4 border-green-300'
                   >
                     <Users className='w-4 h-4 sm:w-5 sm:h-5 text-white' />
                     <span className='text-base sm:text-lg md:text-xl font-bold text-white'>

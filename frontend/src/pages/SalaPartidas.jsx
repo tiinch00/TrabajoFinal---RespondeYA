@@ -513,13 +513,20 @@ const SalaPartidas = () => {
 
                         return (
                           <div className='flex items-center gap-3 sm:gap-4'>
-                            {user.foto_perfil && (
+                            {user.foto_perfil ? (
                               <img
                                 src={resolveFotoAjena(user.foto_perfil)}
                                 alt={user.name}
                                 className='w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover 
                                          border-2 border-yellow-400 flex-shrink-0'
                               />
+                            ) : (
+                              <p
+                                className='text-[52px] sm:text-[70px] w-24 h-24 sm:w-28 sm:h-28 
+                               bg-gray-200/90 rounded-full flex items-center justify-center'
+                              >
+                                👤
+                              </p>
                             )}
                             <div className='space-y-1 text-xs sm:text-sm'>
                               <p>

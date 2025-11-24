@@ -35,19 +35,8 @@ export const GameProvider = ({ children }) => {
 
   // cargar datos iniciales al logear
   useEffect(() => {
-    const userLocal = localStorage.getItem('user');
-    if (userLocal) {
-      setUser(JSON.parse(userLocal));
-      fetchCategorias();
-    } else {
-      setLoading(false);
-    }
-  }, []);
-
-  // efectos
-  useEffect(() => {
     if (user) {
-      fetchCategorias()?.finally(() => setLoading(false));
+      fetchCategorias();
     } else {
       setLoading(false);
     }
@@ -100,7 +89,7 @@ export const GameProvider = ({ children }) => {
         });
       }
     },
-    [socket, inicializarSocket]
+    [socket, inicializarSocket, user]
   );
 
   // Unirse al lobby multiplayer

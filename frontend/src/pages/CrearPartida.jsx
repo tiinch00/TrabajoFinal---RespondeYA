@@ -102,7 +102,7 @@ const CrearPartida = ({ modo }) => {
     <div className='mt-1 sm:mt-1 md:mt-1 flex items-start justify-center w-full min-h-screen'>
       <div className='p-4 sm:p-6 md:p-8 lg:p-8 lg:w-120 rounded-2xl md:rounded-3xl text-center text-white space-y-6 md:mb-5 lg:mb-5 bg-gradient-to-br from-purple-900/30 via-purple-800/40 to-indigo-900/50 shadow-2xl'>
         <div className='space-y-3 md:space-y-4'>
-          <h2 className='bg-gradient-to-r from-pink-500 to-yellow-500  bg-clip-text text-lg sm:text-xl md:text-2xl sm: font-extrabold tracking-wider drop-shadow-lg sm:pb-8 lg:pb-8'>
+          <h2 className='bg-gradient-to-r from-pink-500 to-yellow-500 p-5 bg-clip-text text-lg sm:text-xl md:text-2xl sm: font-extrabold tracking-wider drop-shadow-lg sm:pb-8 lg:pb-8'>
             🎯 {t('categoryType')}
           </h2>
 

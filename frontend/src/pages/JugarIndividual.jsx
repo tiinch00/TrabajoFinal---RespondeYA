@@ -510,16 +510,16 @@ const JugarIndividual = () => {
           id: index,
           tiempo: respuesta.tiempoRespuesta,
         }));
-      console.log(respuestasFinales);
-      console.log(respuestasCor);
+      // console.log(respuestasFinales);
+      // console.log(respuestasCor);
 
-      const puntos = calcularPuntaje(respuestasCor, tiempo, dificultad);
+      //const puntos = calcularPuntaje(respuestasCor, tiempo, dificultad);
 
       const datosEstadisticas = {
         jugador_id: id,
         partida_id: partidaId,
         posicion: 1,
-        puntaje_total: puntos,
+        puntaje_total: 0,
         total_correctas: respuestasCorrectas,
         total_incorrectas: respuestasIncorrectas,
         tiempo_total_ms: tiempoTotalMs,
@@ -741,7 +741,7 @@ const JugarIndividual = () => {
                 </span>
               </div>
 
-              <p className='text-base sm:text-lg font-bold text-white mb-3 text-center leading-tight'>
+              <p className='text-base w-full sm:text-lg font-bold text-white mb-3 text-center leading-tight'>
                 {idioma === 'en' ? preguntaActual.enunciado_en : preguntaActual.enunciado}
               </p>
 
