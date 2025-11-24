@@ -71,6 +71,11 @@ export const GameProvider = ({ children }) => {
   // Crear partida (individual o multiplayer)
   const crearPartida = useCallback(
     (modo, { categoria, tiempo, dificultad }, navFunction) => {
+      if (!user) {
+        console.warn('crearPartida llamado sin user');
+        return;
+      }
+
       if (modo === 'individual') {
         navFunction(`/crearIndividual/${categoria.toLowerCase()}/${tiempo}/${dificultad}`);
       } else if (modo === 'multiplayer') {
@@ -82,7 +87,7 @@ export const GameProvider = ({ children }) => {
           dificultad: dificultad.toLowerCase(),
           timestamp: Date.now(),
           user_id: user?.id,
-          jugador_id: user.jugador_id,
+          jugador_id: user?.jugador_id || null,
         };
 
         socketInstance.emit('crear_partida', datosPartida, (response) => {
