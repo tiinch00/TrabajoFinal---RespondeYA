@@ -23,7 +23,6 @@ import { useGame } from '../context/ContextJuego.jsx';
 import { useMusic } from '../context/MusicContext.jsx';
 import useSound from 'use-sound';
 import { useTranslation } from 'react-i18next';
-import { useMusic } from '../context/MusicContext.jsx';
 import useNavigationGuard from '../context/useNavigationGuard.jsx';
 
 function formatearTimestampParaMySQL(timestampEnMilisegundos) {
