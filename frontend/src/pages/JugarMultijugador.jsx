@@ -20,6 +20,7 @@ import musicaPreguntasDefault from '/sounds/musicaPreguntasDefault.mp3';
 import { resolveFotoAjena } from '../utils/resolveFotoAjena.js';
 import { useAuth } from '../context/auth-context.jsx';
 import { useGame } from '../context/ContextJuego.jsx';
+import { useMusic } from '../context/MusicContext.jsx';
 import useSound from 'use-sound';
 import { useTranslation } from 'react-i18next';
 import { useMusic } from '../context/MusicContext.jsx';
@@ -1037,7 +1038,7 @@ export default function JugarMultijugador() {
 
   // ============================================================= html =====================================================================
   return (
-    <div className='w-full min-h-screen text-white pt-5 mb-10'>
+    <div className='w-full text-white pt-2 mb-10'>
       {/* Canvas SIEMPRE montado */}
       <canvas
         ref={canvasRef}
@@ -1348,175 +1349,393 @@ export default function JugarMultijugador() {
               </>
             ) : preguntaActual && juegoIniciado ? (
               <>
-                {/* === NUEVO CSS: reloj centrado arriba, como en “individual” === */}
-                <div className='w-full h-full text-white flex items-center justify-center'>
-                  <div
-                    className={`rounded-3xl px-6 py-4 text-center flex flex-col items-center justify-center shadow-2xl  w-60 h-48  border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20 ${
-                      tiempoRestante <= 5 && tiempoRestante > 0
-                        ? ' border-red-500/80 animate-pulse'
-                        : ' border-blue-400/30'
-                    }`}
-                  >
-                    <p className='text-4xl font-bold text-gray-800 mb-2'>⏱️</p>
-                    <p
-                      className={`text-5xl font-black ${
-                        tiempoRestante > 5 ? 'text-white' : 'text-red-600'
-                      }`}
-                    >
-                      {tiempoRestante}
-                    </p>
-                    <p className={`text-3xl font-bold mt-2 text-white`}>{t('seconds')}</p>
-                  </div>
-                </div>
-
-                {/* titulo de la categoria */}
-                {/* <div className='bg-gradient-to-r from-orange-500 to-pink-500 rounded-full px-8 py-3 mt-8 text-2xl font-black shadow-lg'>
-                                {String(config?.categoria || '').toUpperCase()}
-                            </div> */}
-
-                {/* NUEVA CATEGORÍA MEJORADA: con icono, gradiente animado y efectos de brillo */}
-                <div className='relative group mt-8 '>
-                  {/* Efecto de resplandor de fondo */}
-                  <div className='absolute inset-0 bg-gradient-to-r from-orange-400 via-pink-400 to-orange-400 rounded-full blur-xl opacity-50 group-hover:opacity-70 transition-opacity duration-300 animate-pulse'></div>
-                  <div className='relative bg-gradient-to-r from-orange-500 via-pink-500 to-orange-500 rounded-full px-10 py-4 text-2xl font-black shadow-2xl border-2 border-yellow-300/50 hover:scale-105 transition-transform duration-300'>
-                    <span className='text-3xl mr-3'>
-                      {/* {categoryIcons[categoria.toLowerCase()] || '🎯'} */}
-                      {categoryIcons[String(config?.categoria || '').toUpperCase()] || '🎯'}
-                    </span>
-                    {categoryTranslations[config?.categoria]?.toUpperCase()}
-                    <span className='absolute -top-1 -right-1 text-yellow-300 text-xl animate-pulse'>
-                      ✨
-                    </span>
-                    <span
-                      className='absolute -bottom-1 -left-1 text-cyan-300 text-xl animate-pulse'
-                      style={{ animationDelay: '0.5s' }}
-                    >
-                      ⭐
-                    </span>
-                  </div>
-                </div>
-
-                {/* === NUEVO CSS: layout en 5 columnas (jugador izq, centro, jugador der) === */}
-                <div className='grid grid-cols-3 gap-6 h-fit pt-10'>
-                  {/* izquierda - Jugador 1 - creador */}
-                  <div className='col-span-1 flex flex-col items-center justify-start'>
-                    {/* bg-gradient-to-b from-black/40 to-blue-800/10 rounded-2xl p-6 shadow-xl border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20 */}
-                    <div className='bg-gradient-to-b from-black/40 to-blue-800/10 rounded-2xl p-6 shadow-xl border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20 w-52'>
-                      <div className='flex flex-col items-center'>
-                        {creador ? (
-                          <>
-                            {creador?.foto_perfil &&
-                            creador?.foto_perfil !== `${API_URL}/uploads/default.png` &&
-                            creador?.foto_perfil !== `/uploads/default.png` ? (
-                              <img
-                                src={resolveFotoAjena(creador?.foto_perfil)}
-                                alt='Creador'
-                                className='w-24 h-24 rounded-full object-cover border-4 border-blue-800/10 bg-gradient-to-br group-hover:scale-105 transition-transform duration-300 shadow-lg mb-4'
-                              />
-                            ) : (
-                              <div className='w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-5xl mb-4 shadow-lg'>
-                                👤
-                              </div>
-                            )}
-                            <span className='bg-blue-800 px-4 py-2 rounded-full text-sm font-bold text-center text-white'>
-                              {creador?.nombre || 'Creador'}
-                            </span>
-                            <span className='text-xs mt-2 opacity-70'>{t('creator')}</span>
-                          </>
-                        ) : (
-                          <div className='w-24 h-24 rounded-full bg-white/20' />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  {/* Mesaje: Siguiente Pregunta... */}
-                  {mostrarEspera ? (
-                    <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-8 w-full max-w-2xl shadow-2xl flex items-center justify-center'>
-                      <div className='text-center'>
-                        <div className='flex justify-center gap-3 mb-6'>
-                          <div className='w-4 h-4 bg-yellow-400 rounded-full animate-bounce'></div>
-                          <div
-                            className='w-4 h-4 bg-yellow-400 rounded-full animate-bounce'
-                            style={{ animationDelay: '0.15s' }}
-                          ></div>
-                          <div
-                            className='w-4 h-4 bg-yellow-400 rounded-full animate-buto'
-                            style={{ animationDelay: '0.3s' }}
-                          ></div>
+                {/* ============= MOBILE: categoría + tiempo + jugadores arriba, preguntas abajo ============= */}
+                <div className='w-full block lg:hidden mt-4 space-y-2'>
+                  {/* GRID: 2 columnas para formar el bloque superior */}
+                  <div className='grid grid-cols-3 gap-3 w-full'>
+                    {/* JUGADOR CREADOR - fila 3, columna 1 */}
+                    <div className='flex justify-center'>
+                      {/* 🔹 Versión "chica" de la tarjeta del creador */}
+                      <div className='bg-gradient-to-b from-black/40 to-blue-800/10 rounded-2xl p-3 shadow-xl border-2 border-blue-400/30 w-full max-w-[8.5rem]'>
+                        <div className='flex flex-col items-center'>
+                          {creador ? (
+                            <>
+                              {creador?.foto_perfil &&
+                              creador?.foto_perfil !== `${API_URL}/uploads/default.png` &&
+                              creador?.foto_perfil !== `/uploads/default.png` ? (
+                                <img
+                                  src={resolveFotoAjena(creador?.foto_perfil)}
+                                  alt='Creador'
+                                  className='w-14 h-14 rounded-full object-cover border-4 border-blue-800/10 shadow-lg mb-2'
+                                />
+                              ) : (
+                                <div className='w-14 h-14 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-2xl mb-2 shadow-lg'>
+                                  👤
+                                </div>
+                              )}
+                              <span className='bg-blue-800 px-2 py-1 rounded-full text-[11px] font-bold text-center text-white truncate w-full'>
+                                {creador?.nombre || 'Creador'}
+                              </span>
+                              <span className='text-[10px] mt-1 opacity-70'>{t('creator')}</span>
+                            </>
+                          ) : (
+                            <div className='w-14 h-14 rounded-full bg-white/20' />
+                          )}
                         </div>
-                        <p className='text-4xl md:text-5xl font-black text-yellow-300 animate-pulse tracking-wide'>
-                          {t('nextQuestion')}
-                        </p>
-                        <p className='text-lg text-gray-300 mt-4 opacity-80'>{t('getReady')}</p>
                       </div>
                     </div>
-                  ) : (
-                    <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-8 w-full max-w-2xl shadow-2xl'>
-                      <div className='mb-6'>
-                        <span className='text-sm font-bold text-yellow-300'>
-                          {t('question')} {contador + 1}/10
-                        </span>
+
+                    {/* CATEGORÍA - fila 1, ocupa las 2 columnas */}
+                    <div className='col-span-1 flex flex-col items-center justify-center'>
+                      {/* 🔹 PEGÁ ACÁ TU BLOQUE DE CATEGORÍA (el div "relative group" que ya tenías) */}
+                      <div className='relative group w-full flex items-center justify-center'>
+                        <div className='absolute inset-0 bg-gradient-to-r from-orange-400 via-pink-400 to-orange-400 rounded-full blur-xl opacity-50 group-hover:opacity-70 transition-opacity duration-300 animate-pulse w-10 xs320:w-20 xs420:w-32 xs480:w-full' />
+
+                        <div
+                          className='relative bg-gradient-to-r from-orange-500 via-pink-500 to-orange-500    
+                                rounded-full py-2 sm:py-3 font-black shadow-2xl border-2 border-yellow-300/50 
+                                text-[10px] text-center xs320:w-20 xs420:w-32 xs480:w-full'
+                        >
+                          <span className='text[10px] mr-2'>
+                            {categoryIcons[String(config?.categoria || '').toLowerCase()] || '🎯'}
+                          </span>
+
+                          {categoryTranslations[config?.categoria]?.toUpperCase()}
+                        </div>
                       </div>
 
-                      <p className='text-2xl font-bold text-white mb-8 leading-relaxed'>
-                        {idioma === 'en' ? preguntaActual.enunciado_en : preguntaActual.enunciado}
-                      </p>
+                      {/* RELOJ - fila 2, ocupa las 1 columna */}
+                      <div className='flex w-full items-center justify-center mt-2'>
+                        {/* 🔹 PEGÁ ACÁ TU RELOJ (el cuadrito con el ⏱️) */}
+                        <div
+                          className={`rounded-2xl px-4 text-center flex flex-col items-center justify-center shadow-2xl 
+                            w-10           /* < 320px */
+                            xs320:w-20     /* ≥ 320px */
+                            xs420:w-32     /* ≥ 420px */
+                            xs480:w-full     /* ≥ 480px */
+                            xs320:h-18 xs480:h-20
+                            border-2                             
+                            ${
+                              tiempoRestante <= 5 && tiempoRestante > 0
+                                ? 'border-red-500/80 animate-pulse'
+                                : 'border-blue-400/30'
+                            }`}
+                        >
+                          {/* icono del reloj */}
+                          <p className='text-[12px] xs480:text-base font-bold text-gray-800 mb-1'>
+                            ⏱️
+                          </p>
 
-                      <div className='space-y-4'>
-                        {preguntaActual.Opciones.map((opcion, index) => {
-                          let colorClase =
-                            'bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600';
+                          {/* tiempo */}
+                          <p
+                            className={`text-[12px] xs480:text-sm font-black ${
+                              tiempoRestante > 5 ? 'text-white' : 'text-red-600'
+                            }`}
+                          >
+                            {tiempoRestante}
+                          </p>
 
-                          if (respuestaSeleccionada === opcion) {
-                            colorClase = respuestaCorrecta
-                              ? 'bg-gradient-to-r from-green-500 to-emerald-500 scale-105'
-                              : 'bg-gradient-to-r from-red-500 to-pink-500 scale-105';
-                          }
-
-                          return (
-                            <button
-                              key={index}
-                              className={`w-full rounded-xl py-4 px-6 cursor-pointer transition-all font-bold text-lg text-white shadow-lg border-2 border-transparent hover:border-yellow-300 disabled:opacity-50 ${colorClase}`}
-                              onClick={() => handleGuardarRespuesta(opcion)}
-                              disabled={
-                                !!respuestaSeleccionada || cronometroPausado || tiempoRestante <= 0
-                              }
-                            >
-                              {idioma === 'en' ? opcion.texto_en : opcion.texto}
-                            </button>
-                          );
-                        })}
+                          {/* segundos */}
+                          <p className='text-[12px] xs480:text-sm font-bold mt-1 text-white'>
+                            {t('seconds')}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  )}
 
-                  {/* derecha - Jugador 2 - invitado */}
-                  <div className='col-span-1 flex flex-col items-center justify-start gap-4'>
-                    <div className='bg-gradient-to-b from-black/40 to-blue-800/10 rounded-2xl p-6 shadow-xl border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20 w-52'>
-                      <div className='flex flex-col items-center'>
-                        {invitado ? (
-                          <>
-                            {invitado.foto_perfil &&
-                            invitado.foto_perfil !== `/uploads/default.png` &&
-                            invitado?.foto_perfil !== `/uploads/default.png` ? (
-                              <img
-                                src={resolveFotoAjena(invitado.foto_perfil)}
-                                alt='Invitado'
-                                className='w-24 h-24 rounded-full object-cover border-4 border-blue-800/10 shadow-lg mb-4 group-hover:scale-105 transition-transform duration-300'
-                              />
-                            ) : (
-                              <div className='w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-5xl mb-4 shadow-lg'>
-                                👤
-                              </div>
-                            )}
-                            <span className='bg-blue-600 px-4 py-2 rounded-full text-sm font-bold text-center text-yellow-300'>
-                              {invitado?.nombre || 'Invitado'}
+                    {/* JUGADOR INVITADO - fila 2, columna 2 */}
+                    <div className='flex justify-center'>
+                      {/* 🔹 Versión "chica" de la tarjeta del invitado */}
+                      <div className='bg-gradient-to-b from-black/40 to-blue-800/10 rounded-2xl p-3 shadow-xl border-2 border-blue-400/30 w-full max-w-[8.5rem]'>
+                        <div className='flex flex-col items-center'>
+                          {invitado ? (
+                            <>
+                              {invitado?.foto_perfil &&
+                              invitado?.foto_perfil !== `/uploads/default.png` ? (
+                                <img
+                                  src={resolveFotoAjena(invitado.foto_perfil)}
+                                  alt='Invitado'
+                                  className='w-14 h-14 rounded-full object-cover border-4 border-blue-800/10 shadow-lg mb-2'
+                                />
+                              ) : (
+                                <div className='w-14 h-14 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-2xl mb-2 shadow-lg'>
+                                  👤
+                                </div>
+                              )}
+                              <span className='bg-blue-600 px-2 py-1 rounded-full text-[11px] font-bold text-center text-yellow-300 truncate w-full'>
+                                {invitado?.nombre || 'Invitado'}
+                              </span>
+                              <span className='text-[10px] mt-1 opacity-70'>{t('guess')}</span>
+                            </>
+                          ) : (
+                            <div className='w-14 h-14 rounded-full bg-white/20' />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* siguienete pregunta*/}
+                  <div className='flex justify-center mt-3'>
+                    {mostrarEspera ? (
+                      <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-4 sm:p-6 w-full max-w-2xl shadow-2xl text-center'>
+                        <div className='flex flex-col items-center justify-center gap-3'>
+                          <div className='flex justify-center gap-1'>
+                            <div className='w-3 h-3 bg-yellow-300 rounded-full animate-bounce' />
+                            <div
+                              className='w-3 h-3 bg-yellow-300 rounded-full animate-bounce'
+                              style={{ animationDelay: '0.2s' }}
+                            />
+                            <div
+                              className='w-3 h-3 bg-yellow-300 rounded-full animate-bounce'
+                              style={{ animationDelay: '0.4s' }}
+                            />
+                          </div>
+                          <p className='text-lg sm:text-2xl font-bold text-yellow-300 animate-pulse'>
+                            {t('nextQuestion')}
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        {/* preguntas y opciones de respuestas */}
+                        <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-1 xs320:p-2 xs420:p-2 xs480:p-4 sm:p-6 w-full max-w-2xl shadow-2xl'>
+                          {/* cantidad de preguntas */}
+                          <div className='mb-1'>
+                            <span className='text-[12px] font-bold text-yellow-300'>
+                              {t('question')} {contador + 1}/10
                             </span>
-                            <span className='text-xs mt-2 opacity-70'>{t('guess')}</span>
-                          </>
-                        ) : (
-                          <div className='w-24 h-24 rounded-full bg-white/20' />
-                        )}
+                          </div>
+
+                          {/* pregunta */}
+                          <p className='text-[12px] font-bold text-white mb-4 sm:mb-6 leading-relaxed'>
+                            {idioma === 'en'
+                              ? preguntaActual.enunciado_en
+                              : preguntaActual.enunciado}
+                          </p>
+
+                          {/* opciones de respuestas */}
+                          <div className='space-y-2 sm:space-y-3'>
+                            {preguntaActual.Opciones.map((opcion, index) => {
+                              let colorClase =
+                                'bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600';
+
+                              if (respuestaSeleccionada === opcion) {
+                                colorClase = respuestaCorrecta
+                                  ? 'bg-gradient-to-r from-green-500 to-emerald-500 scale-105'
+                                  : 'bg-gradient-to-r from-red-500 to-pink-500 scale-105';
+                              }
+
+                              return (
+                                <button
+                                  key={index}
+                                  className={`rounded-xl w-full  
+                                    py-0.5 xs320:py-1 xs420:py-1.5 xs480:py-2 sm:py-3.5 px-3 sm:px-5 
+                                    text-[12px] text-sm sm:text-lg text-white font-bold
+                                    cursor-pointer transition-all shadow-lg border-2 border-transparent hover:border-yellow-300 disabled:opacity-50 ${colorClase}`}
+                                  onClick={() => handleGuardarRespuesta(opcion)}
+                                  disabled={
+                                    !!respuestaSeleccionada ||
+                                    cronometroPausado ||
+                                    tiempoRestante <= 0
+                                  }
+                                >
+                                  {idioma === 'en' ? opcion.texto_en : opcion.texto}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* ============= DESKTOP: categoría fila 1, tiempo fila 2, fila 3 con 3 columnas ============= */}
+                <div className='w-full hidden lg:block'>
+                  <div className='grid grid-cols-3 gap-6 lg:gap-2 place-items-center-safe'>
+                    {/* Fila 1: categoría - col-span-3 (ocupa 3 columnas) */}
+                    <div className='col-span-3 flex flex-col justify-center items-center gap-2'>
+                      {/* 🔹 tu misma categoría, versión grande */}
+                      <div className='relative group'>
+                        <div className='absolute inset-0 bg-gradient-to-r from-orange-400 via-pink-400 to-orange-400 rounded-full blur-xl opacity-50 group-hover:opacity-70 transition-opacity duration-300 animate-pulse lg:w-40 xl:w-52 2xl:w-60' />
+
+                        <div
+                          className='relative bg-gradient-to-r from-orange-500 via-pink-500 to-orange-500    
+                          rounded-full lg:px-0.5 lg:py-1 lg:text-xs font-black shadow-2xl border-2 border-yellow-300/50 text-center lg:w-40 xl:w-52 2xl:w-60'
+                        >
+                          <span className='lg:text-xs mr-3'>
+                            {categoryIcons[String(config?.categoria || '').toLowerCase()] || '🎯'}
+                          </span>
+                          {categoryTranslations[config?.categoria]?.toUpperCase()}
+                        </div>
+                      </div>
+
+                      {/* 🔹 tu reloj grande */}
+                      <div
+                        className={`rounded-3xl text-center flex flex-row gap-1 items-center justify-center shadow-2xl w-36 md:w-48 lg:w-40 xl:w-52 2xl:w-60 h-44 md:h-48 lg:h-8 border-2 ${
+                          tiempoRestante <= 5 && tiempoRestante > 0
+                            ? 'border-red-500/80 animate-pulse'
+                            : 'border-blue-400/30'
+                        }`}
+                      >
+                        {/* icono reloj */}
+                        <p className='text-4xl lg:text-sm font-bold text-gray-800'>⏱️</p>
+
+                        {/* tiempo contando */}
+                        <p
+                          className={`text-5xl lg:text-sm font-black ${
+                            tiempoRestante > 5 ? 'text-white' : 'text-red-600'
+                          }`}
+                        >
+                          {tiempoRestante}
+                        </p>
+
+                        {/* segundos */}
+                        <p className='text-2xl lg:text-sm font-bold text-white'>{t('seconds')}</p>
+                      </div>
+                    </div>
+
+                    {/* Fila 2: creador - preguntas - invitado */}
+                    {/* Columna 1: creador */}
+                    <div className='flex justify-center'>
+                      {/* 🔹 tu tarjeta grande de creador */}
+                      <div className='bg-gradient-to-b from-black/40 to-blue-800/10 rounded-2xl p-6 shadow-xl border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20'>
+                        <div className='flex flex-col items-center'>
+                          {creador ? (
+                            <>
+                              {/* imagen */}
+                              {creador?.foto_perfil &&
+                              creador?.foto_perfil !== `${API_URL}/uploads/default.png` &&
+                              creador?.foto_perfil !== `/uploads/default.png` ? (
+                                <img
+                                  src={resolveFotoAjena(creador?.foto_perfil)}
+                                  alt='Creador'
+                                  className='w-24 h-24 rounded-full object-cover border-4 border-blue-800/10 bg-gradient-to-br group-hover:scale-105 transition-transform duration-300 shadow-lg mb-4'
+                                />
+                              ) : (
+                                <div className='w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-5xl mb-4 shadow-lg'>
+                                  👤
+                                </div>
+                              )}
+
+                              {/* datos del jugador */}
+                              <span className='bg-blue-800 px-4 py-2 rounded-full text-sm font-bold text-center text-white'>
+                                {creador?.nombre || 'Creador'}
+                              </span>
+                              <span className='text-xs mt-2 opacity-70'>{t('creator')}</span>
+                            </>
+                          ) : (
+                            <>
+                              {/* cuando se va el jugador, quedal el fondo gris  */}
+                              <div className='w-24 h-24 rounded-full bg-white/20' />
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Columna 2: preguntas */}
+                    <div className='flex justify-center'>
+                      {mostrarEspera ? (
+                        <>
+                          {/* siguiente pregunta... */}
+                          <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-6 w-full max-w-2xl shadow-2xl text-center'>
+                            <div className='flex flex-col items-center justify-center gap-4'>
+                              <div className='flex justify-center gap-2'>
+                                <div className='w-3 h-3 bg-yellow-300 rounded-full animate-bounce' />
+                                <div
+                                  className='w-3 h-3 bg-yellow-300 rounded-full animate-bounce'
+                                  style={{ animationDelay: '0.2s' }}
+                                />
+                                <div
+                                  className='w-3 h-3 bg-yellow-300 rounded-full animate-bounce'
+                                  style={{ animationDelay: '0.4s' }}
+                                />
+                              </div>
+                              <p className='text-2xl font-bold text-yellow-300 animate-pulse'>
+                                {t('nextQuestion')}
+                              </p>
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-2 lg:p-4 xl:p-6 2xl:p-8 w-full shadow-2xl'>
+                          {/* numero de preguntas realizadas */}
+                          <div className='mb-6 lg:mb-2 xl:text-lg 2xl:text-xl'>
+                            <span className='text-sm font-bold text-yellow-300'>
+                              {t('question')} {contador + 1}/10
+                            </span>
+                          </div>
+
+                          {/* pregunta */}
+                          <p className='text-xs lg:text-mb xl:text-lg 2xl:text-xl font-bold text-white mb-8 lg:mb-4 leading-relaxed'>
+                            {idioma === 'en'
+                              ? preguntaActual.enunciado_en
+                              : preguntaActual.enunciado}
+                          </p>
+
+                          {/* opciones de respuestas */}
+                          <div className='space-y-4'>
+                            {preguntaActual.Opciones.map((opcion, index) => {
+                              let colorClase =
+                                'bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600';
+
+                              if (respuestaSeleccionada === opcion) {
+                                colorClase = respuestaCorrecta
+                                  ? 'bg-gradient-to-r from-green-500 to-emerald-500 scale-105'
+                                  : 'bg-gradient-to-r from-red-500 to-pink-500 scale-105';
+                              }
+
+                              return (
+                                // boton de respuesta
+                                <button
+                                  key={index}
+                                  className={`w-full rounded-xl py-4 lg:py-1 px-6 cursor-pointer transition-all font-bold text-lg lg:text-sm xl:text-md 2xl:text-lg text-white shadow-lg border-2 border-transparent hover:border-yellow-300 disabled:opacity-50 ${colorClase}`}
+                                  onClick={() => handleGuardarRespuesta(opcion)}
+                                  disabled={
+                                    !!respuestaSeleccionada ||
+                                    cronometroPausado ||
+                                    tiempoRestante <= 0
+                                  }
+                                >
+                                  {idioma === 'en' ? opcion.texto_en : opcion.texto}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Columna 3: invitado */}
+                    <div className='flex justify-center'>
+                      {/* 🔹 tu tarjeta grande de invitado */}
+                      <div className='bg-gradient-to-b from-black/40 to-blue-800/10 rounded-2xl p-6 shadow-xl border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20 w-full max-w-[13rem]'>
+                        <div className='flex flex-col items-center'>
+                          {invitado ? (
+                            <>
+                              {invitado?.foto_perfil &&
+                              invitado?.foto_perfil !== `/uploads/default.png` ? (
+                                <img
+                                  src={resolveFotoAjena(invitado.foto_perfil)}
+                                  alt='Invitado'
+                                  className='w-24 h-24 rounded-full object-cover border-4 border-blue-800/10 shadow-lg mb-4 group-hover:scale-105 transition-transform duration-300'
+                                />
+                              ) : (
+                                <div className='w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-5xl mb-4 shadow-lg'>
+                                  👤
+                                </div>
+                              )}
+                              <span className='bg-blue-600 px-4 py-2 rounded-full text-sm font-bold text-center text-yellow-300'>
+                                {invitado?.nombre || 'Invitado'}
+                              </span>
+                              <span className='text-xs mt-2 opacity-70'>{t('guess')}</span>
+                            </>
+                          ) : (
+                            <div className='w-24 h-24 rounded-full bg-white/20' />
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>

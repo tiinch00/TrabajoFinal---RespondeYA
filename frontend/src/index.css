@@ -1,10 +1,18 @@
 @import 'tailwindcss';
 
+@theme {
+  /* breakpoints custom */
+  --breakpoint-xs320: 20rem;      /* 320px */
+  --breakpoint-xs420: 26.25rem;   /* 420px */
+  --breakpoint-xs480: 30rem;      /* 480px */
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -16,10 +24,12 @@
 }
 
 @keyframes pulse-subtle {
+
   0%,
   100% {
     transform: scale(1);
   }
+
   50% {
     transform: scale(1.02);
   }
@@ -39,6 +49,7 @@
   0% {
     text-shadow: 0 0 10px #a855f7, 0 0 20px #9333ea, 0 0 30px #7e22ce;
   }
+
   100% {
     text-shadow: 0 0 20px #c084fc, 0 0 40px #a855f7, 0 0 80px #9333ea;
   }
