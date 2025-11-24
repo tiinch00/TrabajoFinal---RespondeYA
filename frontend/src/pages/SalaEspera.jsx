@@ -174,7 +174,7 @@ export default function SalaEspera() {
       }
 
       setJugadores(top2);
-      setMensaje(top2.length === 1 ? 'Esperando jugador 2...' : '');
+      setMensaje(top2.length === 1 ? t('waitingPlayer') : '');
     };
 
     const onSalaLlena = () => {
@@ -348,7 +348,7 @@ export default function SalaEspera() {
   // }
 
   return (
-    <div className='min-h-screen w-full px-3 py-4 flex items-center justify-center'>
+    <div className='min-h-screen w-full px-3 py-4 flex items-start justify-center'>
       <div
         className='w-full max-w-4xl rounded-3xl p-4 sm:p-6 text-white 
                     bg-gradient-to-br from-purple-900/30 via-purple-800/40 to-indigo-900/50 

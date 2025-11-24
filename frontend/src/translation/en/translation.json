@@ -241,7 +241,7 @@
   "deletingFriend": "Deleting...",
   "deleteFriendConfirm": "Are you sure you want to remove <1>{{name}}</1> from your friends list?",
   "repeatPass": "Repite new password",
-  "gamesList": "List of games to join",
+  "gamesList": "List of games",
   "all": "All",
   "state": "State",
   "noMatchSala": "There are no rooms that match the selected filters.",
@@ -283,5 +283,6 @@
   "noHaveFriendList": "No friends were found with that name...",
   "registering": "Registering...",
   "logging": "Logging in…",
-  "getReady": "Get Ready!"
+  "getReady": "Get Ready!",
+  "exit": "If you leave the game, you will lose your progress. Are you sure you want to leave?"
 }

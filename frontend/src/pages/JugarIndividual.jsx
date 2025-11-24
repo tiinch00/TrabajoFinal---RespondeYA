@@ -19,6 +19,7 @@ import { resolveFotoAjena } from '../utils/resolveFotoAjena.js';
 import useSound from 'use-sound';
 import { useTranslation } from 'react-i18next';
 import { useMusic } from '../context/MusicContext.jsx';
+import useNavigationGuard from '../context/useNavigationGuard.jsx';
 
 const JugarIndividual = () => {
   const { audioRef } = useMusic();
@@ -99,6 +100,19 @@ const JugarIndividual = () => {
   const [mostrarEspera, setMostrarEspera] = useState(false);
   const [tiempoTotalJugado, setTiempoTotalJugado] = useState(0);
 
+  useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault();
+      e.returnValue = ''; // necesario para que el navegador muestre la alerta
+    };
+
+    window.addEventListener('beforeunload', handler);
+
+    return () => {
+      window.removeEventListener('beforeunload', handler);
+    };
+  }, []);
+  useNavigationGuard(t('exit'), !juegoTerminado);
   useEffect(() => {
     if (canvasRef.current) {
       confetti.create(canvasRef.current, {

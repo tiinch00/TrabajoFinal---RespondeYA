@@ -241,14 +241,14 @@
   "deletingFriend": "Eliminando...",
   "deleteFriendConfirm": "¿Seguro que querés eliminar a <1>{{name}}</1> de tu lista de amigos?",
   "repeatPass": "Repetir nueva contraseña",
-  "gamesList": "Listado de partidas para unirte",
+  "gamesList": "Listado de partidas",
   "all": "Todas",
   "state": "Estado",
   "noMatchSala": "No hay salas que coincidan con los filtros seleccionados.",
   "noSalasHolding": "No hay salas en espera disponibles...",
   "salaDetails": "Detalles de la sala",
   "touch": "🎡 ¡Toca para elegir aleatoriamente!",
-  "spingin": "⏳ Girando...",
+  "spining": "⏳ Girando...",
   "waiting": "Esperando...",
   "goingToPlay": "Vas a jugar con",
   "noInfoYet": "Todavía no hay información del oponente.",
@@ -283,5 +283,7 @@
   "noHaveFriendList": "No se encontraron amigos con ese nombre...",
   "registering": "Registrando...",
   "logging": "Iniciando sesión…",
-  "getReady": "Preparate!"
+  "getReady": "Preparate!",
+  "exit": "⚠️ Si salís de la partida perderás tu progreso. ¿Seguro que querés salir?",
+  "waitingPlayer2": "Esperando jugador 2..."
 }

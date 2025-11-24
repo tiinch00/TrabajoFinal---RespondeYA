@@ -158,8 +158,6 @@ const SalaPartidas = () => {
     return catOk && tiempoOk && preguntaOk;
   });
 
-  
-
   // datos para paginado
   const totalItems = salasFiltradas.length;
   const totalPages = totalItems > 0 ? Math.ceil(totalItems / pageSize) : 1;
@@ -191,8 +189,10 @@ const SalaPartidas = () => {
         </div>
 
         {/* TÍTULO */}
-        <h2 className='text-2xl sm:text-3xl font-bold text-purple-200 my-4 sm:my-6 
-                     text-center sm:text-left'>
+        <h2
+          className='text-2xl sm:text-3xl font-bold text-purple-200 my-4 sm:my-6 
+                     text-center sm:text-left'
+        >
           {t('gamesList')}
         </h2>
 
@@ -210,10 +210,11 @@ const SalaPartidas = () => {
                     type='button'
                     onClick={() => setFilterCategoria('')}
                     className={`px-3 py-1 rounded-full border text-xs sm:text-sm cursor-pointer transition 
-                    ${filterCategoria === ''
+                    ${
+                      filterCategoria === ''
                         ? 'bg-pink-500 text-white border-pink-400'
                         : 'bg-transparent text-pink-200 border-pink-400/60 hover:bg-pink-500/20'
-                      }`}
+                    }`}
                   >
                     {t('all')}
                   </button>
@@ -223,12 +224,13 @@ const SalaPartidas = () => {
                       type='button'
                       onClick={() => setFilterCategoria(cat)}
                       className={`px-3 py-1 rounded-full border text-xs sm:text-sm cursor-pointer transition 
-                      ${filterCategoria === cat
+                      ${
+                        filterCategoria === cat
                           ? 'bg-pink-500 text-white border-pink-400'
                           : 'bg-transparent text-pink-200 border-pink-400/60 hover:bg-pink-500/20'
-                        }`}
+                      }`}
                     >
-                      {cat}
+                      {categoryTranslations[cat]}
                     </button>
                   ))}
                 </div>
@@ -244,10 +246,11 @@ const SalaPartidas = () => {
                     type='button'
                     onClick={() => setFilterTiempo('')}
                     className={`px-3 py-1 rounded-full border text-xs sm:text-sm cursor-pointer transition 
-                    ${filterTiempo === ''
+                    ${
+                      filterTiempo === ''
                         ? 'bg-blue-500 text-white border-blue-400'
                         : 'bg-transparent text-blue-200 border-blue-400/60 hover:bg-blue-500/20'
-                      }`}
+                    }`}
                   >
                     {t('all')}
                   </button>
@@ -257,12 +260,13 @@ const SalaPartidas = () => {
                       type='button'
                       onClick={() => setFilterTiempo(dif)}
                       className={`px-3 py-1 rounded-full border text-xs sm:text-sm cursor-pointer transition 
-                      ${filterTiempo === dif
+                      ${
+                        filterTiempo === dif
                           ? 'bg-blue-500 text-white border-blue-400'
                           : 'bg-transparent text-blue-200 border-blue-400/60 hover:bg-blue-500/20'
-                        }`}
+                      }`}
                     >
-                      {dif}
+                      {dificultadTranslations[dif]}
                     </button>
                   ))}
                 </div>
@@ -278,10 +282,11 @@ const SalaPartidas = () => {
                     type='button'
                     onClick={() => setFilterPregunta('')}
                     className={`px-3 py-1 rounded-full border text-xs sm:text-sm cursor-pointer transition 
-                    ${filterPregunta === ''
+                    ${
+                      filterPregunta === ''
                         ? 'bg-amber-500 text-white border-amber-400'
                         : 'bg-transparent text-amber-200 border-amber-400/60 hover:bg-amber-500/20'
-                      }`}
+                    }`}
                   >
                     {t('all')}
                   </button>
@@ -291,12 +296,13 @@ const SalaPartidas = () => {
                       type='button'
                       onClick={() => setFilterPregunta(dif)}
                       className={`px-3 py-1 rounded-full border text-xs sm:text-sm cursor-pointer transition 
-                      ${filterPregunta === dif
+                      ${
+                        filterPregunta === dif
                           ? 'bg-amber-500 text-white border-amber-400'
                           : 'bg-transparent text-amber-200 border-amber-400/60 hover:bg-amber-500/20'
-                        }`}
+                      }`}
                     >
-                      {dif}
+                      {dificultadTranslations[dif]}
                     </button>
                   ))}
                 </div>
@@ -317,10 +323,12 @@ const SalaPartidas = () => {
                         className='cursor-pointer h-full'
                         onClick={() => handleOpenModal(sala)}
                       >
-                        <div className='h-full bg-gradient-to-br from-pink-300/10 via-violet-500/90 to-pink-800/10 
+                        <div
+                          className='h-full bg-gradient-to-br from-pink-300/10 via-violet-500/90 to-pink-800/10 
                                       rounded-3xl shadow-2xl hover:shadow-violet-500/50 
                                       transition-all duration-300 border-2 md:border-4 border-violet-400 
-                                      text-white p-3 sm:p-4 flex flex-col justify-between'>
+                                      text-white p-3 sm:p-4 flex flex-col justify-between'
+                        >
                           <div>
                             <p className='font-semibold text-base sm:text-lg mb-1'>
                               {t('category')}:{' '}
@@ -368,10 +376,11 @@ const SalaPartidas = () => {
                       onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                       disabled={safePage === 1}
                       className={`px-3 py-1 rounded-full border text-xs sm:text-sm cursor-pointer transition 
-                      ${safePage === 1
+                      ${
+                        safePage === 1
                           ? 'border-gray-500 text-gray-500 cursor-not-allowed'
                           : 'border-purple-400 text-purple-100 hover:bg-purple-500/20'
-                        }`}
+                      }`}
                     >
                       {t('preview')}
                     </button>
@@ -384,10 +393,11 @@ const SalaPartidas = () => {
                         onClick={() => setCurrentPage(num)}
                         className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full text-xs sm:text-sm font-semibold 
                                   cursor-pointer transition 
-                        ${safePage === num
+                        ${
+                          safePage === num
                             ? 'bg-purple-500 text-white'
                             : 'bg-transparent text-purple-100 border border-purple-400/60 hover:bg-purple-500/20'
-                          }`}
+                        }`}
                       >
                         {num}
                       </button>
@@ -399,10 +409,11 @@ const SalaPartidas = () => {
                       onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                       disabled={safePage === totalPages}
                       className={`px-3 py-1 rounded-full border text-xs sm:text-sm cursor-pointer transition 
-                      ${safePage === totalPages
+                      ${
+                        safePage === totalPages
                           ? 'border-gray-500 text-gray-500 cursor-not-allowed'
                           : 'border-purple-400 text-purple-100 hover:bg-purple-500/20'
-                        }`}
+                      }`}
                     >
                       {t('next')}
                     </button>
@@ -489,18 +500,14 @@ const SalaPartidas = () => {
 
                     {/* Info del oponente */}
                     <div className='bg-black/20 rounded-xl p-3 sm:p-4 space-y-2 flex-1'>
-                      <h4 className='text-lg sm:text-xl font-semibold mb-2'>
-                        {t('goingToPlay')}:
-                      </h4>
+                      <h4 className='text-lg sm:text-xl font-semibold mb-2'>{t('goingToPlay')}:</h4>
                       {(() => {
                         const opponent = getOpponent(selectedSala);
                         const user = opponent?.user;
 
                         if (!opponent || !user) {
                           return (
-                            <p className='text-xs sm:text-sm text-gray-300'>
-                              {t('noInfoYet')}
-                            </p>
+                            <p className='text-xs sm:text-sm text-gray-300'>{t('noInfoYet')}</p>
                           );
                         }
 
@@ -565,9 +572,7 @@ const SalaPartidas = () => {
                         className='bg-indigo-950 rounded-2xl p-4 sm:p-6 max-w-md w-full 
                                  shadow-2xl space-y-4 border border-white/30'
                       >
-                        <p className='font-semibold text-white text-base sm:text-lg'>
-                          {t('sure')}
-                        </p>
+                        <p className='font-semibold text-white text-base sm:text-lg'>{t('sure')}</p>
                         <div className='flex gap-3 flex-wrap justify-end'>
                           <button
                             type='button'
@@ -597,7 +602,6 @@ const SalaPartidas = () => {
       </div>
     </div>
   );
-
 };
 
 export default SalaPartidas;
