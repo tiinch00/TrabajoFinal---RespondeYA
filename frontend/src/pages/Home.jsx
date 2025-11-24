@@ -16,6 +16,7 @@ const Home = () => {
   return (
     <div className='rounded-2xl md:rounded-3xl text-center relative py-10 lg:py-4 xl:py-3 md:my-2 lg:my-4 xl:my-6'>
       <div className='w-full px-1 sm:px-2 md:px-4 lg:px6 rounded-2xl md:rounded-4xl flex flex-col text-center items-center justify-center text-white gap-4 md:gap-4 xl:gap-6'>
+        
         {/* jugar */}
         <div className='flex flex-col items-center w-full max-w-xs sm:max-w-sm'>
           <motion.button
@@ -23,7 +24,7 @@ const Home = () => {
             whileHover={{ scale: 1.15 }}
             whileTap={{ scale: 0.95 }}
             className='relative bg-gradient-to-br from-yellow-100 via-orange-300 to-orange-400 
-              w-full h-12 sm:h-8 md:h-10 lg:h-12 md:w-48 lg:w-72 xl:w-82
+              w-full h-12 sm:h-8 md:h-10 lg:h-12 xl:h-16 md:w-48 lg:w-72 xl:w-82
               rounded-full cursor-pointer shadow-2xl hover:shadow-orange-300/50 transition-all  
               duration-300 border-1 sm:border-2 md:border-3 lg:border-3 xl:border-4 border-yellow-300'
           >
