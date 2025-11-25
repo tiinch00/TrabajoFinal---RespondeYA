@@ -1,4 +1,5 @@
 // src/components/LuzDetrasLogo.jsx
+
 import React, { useEffect, useRef } from 'react';
 
 const LuzDetrasLogo = () => {
@@ -73,7 +74,9 @@ const LuzDetrasLogo = () => {
       ref={canvasRef}
       width={600}
       height={300}
-      className='absolute top-1.5 left-1/2 sm:top-1/2 sm:left-1/2 md:top-1/2 md:left-1/2 lg:top-1/2 lg:left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none'
+      className='absolute top-1.5 left-1/2 sm:top-1/2 sm:left-1/2  
+      md:top-1/2 md:left-1/2 lg:top-[6px] xl:top-1/2 xl:left-1/2 
+      -translate-x-1/2 -translate-y-1/2 pointer-events-none'
     />
   );
 };

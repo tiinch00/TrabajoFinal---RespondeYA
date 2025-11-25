@@ -54,7 +54,7 @@ export const RespondeYaLogo = () => {
   }, []);
 
   return (
-    <div className='relative flex flex-col items-center justify-center mb-3 md:mb-4 lg:mb-2 xl:mb-12 pt-5 sm:pt-5 md:pt-6 lg:pt-6 xl:pt-10 lg:px-2 xl:px-4'>
+    <div className='relative flex flex-col items-center justify-center xl:mb-12 pt-2 sm:pt-5 lg:pt-4 lg:mr-2 xl:pt-10 lg:px-2 xl:px-4'>
       {/* RAYOS DE LUZ */}
       <div className='absolute inset-0 flex items-center justify-center z-0'>
         <LuzDetrasLogo />
@@ -62,7 +62,7 @@ export const RespondeYaLogo = () => {
 
       <h1
         ref={h1Ref}
-        className='relative text-4xl xs:text-5xl sm:text-6xl md:text-6xl lg:text-6xl xl:text-9xl font-black text-center z-10 leading-tight'
+        className='relative text-4xl xs:text-5xl sm:text-6xl md:text-6xl lg:text-5xl xl:text-9xl font-black text-center z-10 leading-tight'
         style={{
           color: '#ff7700',
           WebkitTextStroke: '1px sm:2px md:3px lg:4px xl:6px #cc00ff',

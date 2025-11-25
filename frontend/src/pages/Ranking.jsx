@@ -206,7 +206,7 @@ const Ranking = () => {
                       </td>
                       <td className='p-2 sm:p-3 text-center'>
                         <span className='text-base sm:text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-orange-400'>
-                          {jugador.puntaje}
+                          {Number(jugador.puntaje).toLocaleString('es-AR')}
                         </span>
                       </td>
                     </motion.tr>
