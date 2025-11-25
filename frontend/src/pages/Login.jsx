@@ -69,7 +69,7 @@ const Login = () => {
 
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user || { name: 'anonymous' }));
-      login(data.user, data.token);
+      login(user, token);
       setUser(user);
       console.log('Login: acabo de hacer setUser con ->', user);
       navigate('/bienvenido', { replace: true });

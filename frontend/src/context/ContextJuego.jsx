@@ -50,6 +50,13 @@ export const GameProvider = ({ children }) => {
     console.log('GameProvider: user actualizado ->', user);
   }, [user]);
 
+  useEffect(() => {
+    console.log('GameProvider: user actualizado ->', user);
+    if (user) {
+      console.log('¡User ya disponible para crear partida!');
+    }
+  }, [user]);
+
   // si querés log cuando cambie user:
   // useEffect(() => {
   //   console.log('user ->', user);
