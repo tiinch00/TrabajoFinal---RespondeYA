@@ -477,7 +477,7 @@ const Tienda = () => {
                                   shadow-2xl text-sm sm:text-base'
                         >
                           <p className='text-xl sm:text-2xl text-center mb-3'>
-                            ¿Estás seguro de comprar este avatar?
+                            {t('areyousure')}
                           </p>
                           <div className='flex justify-center gap-4 my-4 text-base sm:text-xl'>
                             <button

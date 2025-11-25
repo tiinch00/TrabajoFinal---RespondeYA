@@ -291,11 +291,11 @@ export default function Ruleta() {
         <div className='w-full flex flex-col items-center gap-2 text-center'>
           {tiradas === 1 ? (
             <p className='text-lg sm:text-xl text-white'>
-              1 intento {t('able')} — <b>{formatHMS(0)}</b>
+              1 {t('attempts')} {t('able')} — <b>{formatHMS(0)}</b>
             </p>
           ) : (
             <p className='text-lg sm:text-xl text-white'>
-              0 intento {t('backIn')} <b>{formatHMS(remainingMs)}</b>
+              0 {t('attempts')}. {t('backIn')} <b>{formatHMS(remainingMs)}</b>
             </p>
           )}
         </div>

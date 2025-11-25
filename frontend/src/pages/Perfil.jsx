@@ -1551,7 +1551,7 @@ const Perfil = () => {
     return `${minutos} ${t('minutes')}, ${segundos} ${t('seconds')}, ${milis} ${t('milliseconds')}`;
   };
 
-  const fmtMs = (ms) => (Number(ms) / 1000).toFixed(1) + ' segundos';
+  const fmtMs = (ms) => (Number(ms) / 1000).toFixed(1) + " " + t('seconds');
 
   // 1) Todas las respuestas de la partida
   const respuestasBrutas = objetoPartidaCompleto?.respuestasDeLaPartida ?? [];
@@ -2034,7 +2034,7 @@ const Perfil = () => {
                     aria-pressed={selectedPefilEditar}
                     onClick={() => setSelectedPefilEditar(true)}
                   >
-                    Editar
+                    {t('photoEdit')}
                   </motion.button>
                 )}
               </div>
@@ -2061,7 +2061,7 @@ const Perfil = () => {
                               htmlFor='file-picker'
                               className='rounded-md text-black hover:text-gray-600 cursor-pointer'
                             >
-                              Elegir de la biblioteca
+                              {t('libraryPhotoEdit')}
                             </label>
 
                             {/* Modal de recorte */}
@@ -2100,7 +2100,7 @@ const Perfil = () => {
                                         className='px-3 ml-1 py-1.5 rounded bg-gray-200 hover:bg-gray-400 cursor-pointer'
                                         onClick={cancelarCrop}
                                       >
-                                        Cancelar
+                                        {t('cancel')}
                                       </button>
                                       <button
                                         type='button'
@@ -2110,7 +2110,7 @@ const Perfil = () => {
                                           setSelectedPefilEditar(false);
                                         }}
                                       >
-                                        Aplicar recorte
+                                        {t('applycut')}
                                       </button>
                                     </div>
                                   </div>
@@ -2137,7 +2137,7 @@ const Perfil = () => {
                             setSelectedAvatar(true);
                           }}
                         >
-                          Elegir un avatar
+                          {t('avatarChosen')}
                         </li>
 
                         {/* Eliminar foto */}
@@ -2149,7 +2149,7 @@ const Perfil = () => {
                               disabled={eliminando}
                               className='cursor-pointer hover:text-red-500 text-red-600 disabled:opacity-50'
                             >
-                              {eliminando ? 'Eliminando...' : 'Eliminar foto'}
+                              {eliminando ? 'Eliminando...' : t('deletephoto')}
                             </button>
                           </li>
                         )}
@@ -2170,7 +2170,7 @@ const Perfil = () => {
                       >
                         <div className='flex justify-center'>
                           <span className='mr-2 text-center w-full'>
-                            ¿Seguro que querés eliminar tu foto de perfil?
+                            {t('suredeletephoto')}
                           </span>
                         </div>
 
@@ -2180,7 +2180,7 @@ const Perfil = () => {
                             onClick={() => setShowDeleteBar(false)}
                             className='px-3 py-1.5 rounded-md bg-gray-600 hover:bg-gray-800 text-white text-sm cursor-pointer'
                           >
-                            Cancelar
+                            {t('cancel')}
                           </button>
 
                           <button
@@ -2189,7 +2189,7 @@ const Perfil = () => {
                             disabled={eliminando}
                             className='px-3 py-1.5 rounded-md bg-red-600 hover:bg-red-700 text-white text-sm disabled:opacity-50 cursor-pointer'
                           >
-                            {eliminando ? 'Eliminando...' : 'Eliminar'}
+                            {eliminando ? t('deleting') : t('delete')}
                           </button>
                         </div>
                       </motion.div>
@@ -2211,7 +2211,7 @@ const Perfil = () => {
                   >
                     <div className='flex justify-center'>
                       <span className='text-md text-center text-slate-200 mt-1'>
-                        ¿Quieres usar este avatar?
+                        {t('areyousureChooseAvatar')}
                       </span>
                     </div>
 
@@ -2230,7 +2230,7 @@ const Perfil = () => {
                         disabled={applyingAvatar}
                         onClick={handleApplyAvatar}
                       >
-                        {applyingAvatar ? 'Aplicando...' : 'Usar avatar'}
+                        {applyingAvatar ? t('applying') : t('accept')}
                       </button>
                     </div>
                   </motion.div>
@@ -2250,7 +2250,7 @@ const Perfil = () => {
                   >
                     <div className='flex justify-center'>
                       <span className='mr-2 text-center w-full'>
-                        ¿Quieres guardar esta foto?
+                        {t('saveprofilephoto')}
                       </span>
                     </div>
 
@@ -2260,7 +2260,7 @@ const Perfil = () => {
                         onClick={cancelarFotoLocal}
                         className='px-3 py-1.5 rounded-md bg-gray-600 hover:bg-gray-800 text-white text-sm cursor-pointer'
                       >
-                        Cancelar
+                        {t('cancel')}
                       </button>
 
                       <button
@@ -2269,7 +2269,7 @@ const Perfil = () => {
                         disabled={subiendo}
                         className='px-3 py-1.5 rounded-md bg-violet-600 hover:bg-violet-800 text-white text-sm disabled:opacity-50 cursor-pointer'
                       >
-                        {subiendo ? 'Subiendo...' : 'Guardar foto'}
+                        {subiendo ? t('updating') : t('acceptprofilephoto')}
                       </button>
                     </div>
                   </motion.div>
@@ -2308,9 +2308,9 @@ const Perfil = () => {
                         ✕
                       </button>
 
-                      <h2 className='text-xl font-semibold mb-1'>Mis avatares</h2>
+                      <h2 className='text-xl font-semibold mb-1'>{t('myavatars')}</h2>
                       <p className='text-sm text-indigo-100 mb-4'>
-                        Elegí un avatar para usar como foto de perfil.
+                        {t('chooseAavatarList')}
                       </p>
 
                       <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 overflow-y-auto pr-1'>
@@ -2523,7 +2523,7 @@ const Perfil = () => {
               <b>{t('email')}:</b> {perfil.email}
             </p>
             <p>
-              <b>{t('country') || 'País'}:</b> {perfil.pais}
+              <b>{t('countryViewInfo') || 'País'}:</b> {perfil.pais}
             </p>
             <p>
               <b>{t('pass')}:</b> ••••••
@@ -2987,7 +2987,7 @@ const Perfil = () => {
                       {objetoPartidaCompleto?.partida?.[0]?.modo === 'multijugador' &&
                         contrincante && (
                           <div className='mt-4 pt-3 border-t border-purple-600/60 text-base sm:text-lg'>
-                            <h3 className='font-semibold mb-3'>Contrincante</h3>
+                            <h3 className='font-semibold mb-3'>{t('rivalPlayer')}</h3>
 
                             <div className='flex flex-col sm:flex-row items-center gap-4'>
                               <div className='w-16 h-16 rounded-full overflow-hidden bg-black/30 flex items-center justify-center'>
@@ -2999,7 +2999,7 @@ const Perfil = () => {
                                   return fotoContrincante ? (
                                     <img
                                       src={resolveFotoAjena(fotoContrincante)}
-                                      alt={contrincante.usuario?.name ?? 'Contrincante'}
+                                      alt={contrincante.usuario?.name ?? t('rivalPlayer')}
                                       className='w-16 h-16 object-cover'
                                     />
                                   ) : (
@@ -3040,12 +3040,12 @@ const Perfil = () => {
                                   }`}
                               >
                                 {esAmigo
-                                  ? 'Amigos'
+                                  ? t('friend')
                                   : pendienteConContrincante
-                                    ? 'Pendiente'
+                                    ? t('pending')
                                     : addingFriendId === contrincante.jugador?.id
-                                      ? 'Agregando...'
-                                      : 'Agregar amigo'}
+                                      ? t('addingNewFriend')
+                                      : t('addFriend')}
                               </button>
                             </div>
                           </div>

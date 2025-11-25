@@ -3,56 +3,57 @@
 import { useEffect, useState } from 'react';
 
 import { buildQuickChartURL } from '../../utils/quickchart';
+import { useTranslation } from 'react-i18next';
 
 export default function ChartMultilineLabels({
     arregloCompleto,
-    labels = ['pregunta 1', 'pregunta 2', 'pregunta 3', 'pregunta 4', 'pregunta 5', 'pregunta 6', 'pregunta 7', 'pregunta 8', 'pregunta 9', 'pregunta 10'],
-    width = "500px",
+    labels,
+    width = '500px',
     height = '250px',
     format = 'png',
     backgroundColor = 'transparent',
     alt = 'Gráfico con etiquetas multilínea',
     className = '',
 }) {
+    // ✅ Hook de traducción
+    const { t } = useTranslation();
 
-    //console.log("componente grafica: ", arregloCompleto?.respuestasDeLaPartida);
+    // ✅ Labels por defecto traducidos: "Pregunta 1", "Pregunta 2", ...
+    const defaultLabels = Array.from({ length: 10 }, (_, i) => `${t('question')} ${i + 1}`);
+    const finalLabels = labels ?? defaultLabels;
 
     const tiemposMs = (arregloCompleto?.respuestasDeLaPartida ?? [])
-        .map(e => Number(e.tiempo_respuesta_ms))
+        .map((e) => Number(e.tiempo_respuesta_ms))
         .filter(Number.isFinite);
 
-    const tiemposSeg = tiemposMs.map(ms => Math.round(ms / 1000));
+    const tiemposSeg = tiemposMs.map((ms) => Math.round(ms / 1000));
 
-    //console.log("tiemposSeg:", tiemposSeg);
-
-    // 10 primeros - jugador 1
+    // 10 primeros -> jugador 1
     const dataA = tiemposSeg.slice(0, 10);
 
-    // 10 últimos - jugador 2
+    // resto -> jugador 2
     const dataB = tiemposSeg.slice(10);
-
-    //console.log("dataA:", dataA);
-    //console.log("dataB:", dataB);
 
     const config = {
         type: 'line',
         data: {
-            labels, // si querés multilínea: [['pregunta','1'], ['pregunta','2'], ...]
+            // 👇 acá usamos los labels traducidos
+            labels: finalLabels,
             datasets: [
                 {
-                    label: 'Primer Jugador',
+                    label: t('firstPlayer'),
                     data: dataA,
                     borderColor: 'rgb(255, 99, 132)',
                     borderWidth: 2,
                     backgroundColor: 'rgba(255, 99, 132, 0.2)',
                     pointBackgroundColor: 'rgb(239, 20, 68)',
                     pointBorderColor: 'rgb(255, 99, 132)',
-                    pointRadius: 3,            //  radio del punto
+                    pointRadius: 3,
                     pointStyle: 'circle',
                     fill: false,
                 },
                 {
-                    label: 'Segundo Jugador',
+                    label: t('secondPlayer'),
                     data: dataB,
                     borderColor: 'rgb(54, 162, 235)',
                     borderWidth: 2,
@@ -69,15 +70,15 @@ export default function ChartMultilineLabels({
             plugins: {
                 title: {
                     display: false,
-                    // text: 'Chart.js Line Chart',
-                    // color: '#222',
                 },
                 legend: {
                     labels: {
                         color: 'white',
-                        usePointStyle: true,   // muestra círculo en la leyenda
+                        usePointStyle: true,
                         pointStyle: 'circle',
-                        boxWidth: 8, boxHeight: 8, padding: 12
+                        boxWidth: 8,
+                        boxHeight: 8,
+                        padding: 12,
                     },
                 },
             },
@@ -107,7 +108,7 @@ export default function ChartMultilineLabels({
                     },
                     title: {
                         display: true,
-                        text: 'Tiempo en segundos',
+                        text: t('timeSeconds'), // 👈 traducido, igual que en la otra gráfica
                         color: 'white',
                         padding: { top: 4, bottom: 4 },
                         font: { size: 14, family: 'sans-serif', weight: 'bold' },
@@ -118,13 +119,13 @@ export default function ChartMultilineLabels({
         },
     };
 
-    // Forzar v4 en QuickChart
     const [src, setSrc] = useState(() =>
         buildQuickChartURL({ config, width, height, format, backgroundColor }) + '&version=4'
     );
 
     useEffect(() => {
-        const url = buildQuickChartURL({ config, width, height, format, backgroundColor }) + '&version=4';
+        const url =
+            buildQuickChartURL({ config, width, height, format, backgroundColor }) + '&version=4';
         setSrc(url);
     }, [JSON.stringify(config), width, height, format, backgroundColor]);
 
@@ -134,7 +135,7 @@ export default function ChartMultilineLabels({
             alt={alt}
             className={className}
             style={{ width: '100%', height: 'auto', display: 'block' }}
-            loading="lazy"
+            loading='lazy'
         />
     );
 }
