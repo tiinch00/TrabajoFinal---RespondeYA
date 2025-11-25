@@ -2,11 +2,10 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-
-import axios from 'axios';
 import { resolveFotoAjena } from '../utils/resolveFotoAjena.js';
 import { useGame } from '../context/ContextJuego.jsx';
 import { useTranslation } from 'react-i18next';
+import useNavigationGuard from '../context/useNavigationGuard.jsx';
 
 // ===== Helpers para identificar usuarios de forma tolerante =====
 function normalizeName(s) {
@@ -56,6 +55,20 @@ export default function SalaEspera() {
   const [cuenta, setCuenta] = useState(null); // null | 10..0
   const [configJuego, setConfigJuego] = useState(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault();
+      e.returnValue = ''; // necesario para que el navegador muestre la alerta
+    };
+
+    window.addEventListener('beforeunload', handler);
+
+    return () => {
+      window.removeEventListener('beforeunload', handler);
+    };
+  }, []);
+  useNavigationGuard(t('exitWaitingRoom'), true);
 
   // Normaliza rutas absolutas de imágenes
   const abs = (p) =>
@@ -222,6 +235,20 @@ export default function SalaEspera() {
       navigate(`/jugarMultijugador/${id}`, { state: { config: cfg } });
       // (La ruta puede seguir usando el param visible `id`; los emits usan `salaKeyRef.current`)
     };
+    s.on('sala_eliminada', ({ motivo, mensaje }) => {
+      console.log('Sala eliminada:', motivo, mensaje);
+
+      setJugadores([]);
+      // Mensaje más claro para el usuario
+      if (
+        typeof motivo === 'string' &&
+        (motivo.includes('abandono') || motivo.includes('desconecto'))
+      ) {
+        setMensaje('cancelada');
+      }
+
+      navigate('/salaPartidas');
+    });
 
     // ---- Attach listeners (una sola vez) ----
     s.on('sala_actualizada', onSalaActualizada);
@@ -360,101 +387,108 @@ export default function SalaEspera() {
         </h2>
 
         {/* Contenedor jugadores + centro */}
-        <div className='grid grid-cols-1 sm:grid-cols-3 gap-6 items-center'>
-          {/* Jugador 1 */}
-          <div className='flex flex-col items-center'>
-            {jugador1 ? (
-              <>
-                {jugador1?.foto_perfil !== `/uploads/default.png` ? (
-                  <img
-                    src={resolveFotoAjena(jugador1.foto_perfil)}
-                    alt='jugador1'
-                    className='w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-green-400'
-                  />
-                ) : (
-                  <p
-                    className='text-[52px] sm:text-[70px] w-24 h-24 sm:w-28 sm:h-28 
+
+        {(mensaje && mensaje === 'cancelada') || (mensaje && mensaje === 'cerrrada') ? (
+          <p className='text-center mt-6 text-yellow-300 font-semibold text-sm sm:text-base'>
+            {t('playerLeftRoom')}
+          </p>
+        ) : (
+          <div className='grid grid-cols-1 sm:grid-cols-3 gap-6 items-center'>
+            {/* Jugador 1 */}
+            <div className='flex flex-col items-center'>
+              {jugador1 ? (
+                <>
+                  {jugador1?.foto_perfil !== `/uploads/default.png` ? (
+                    <img
+                      src={resolveFotoAjena(jugador1.foto_perfil)}
+                      alt='jugador1'
+                      className='w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-green-400'
+                    />
+                  ) : (
+                    <p
+                      className='text-[52px] sm:text-[70px] w-24 h-24 sm:w-28 sm:h-28 
                                bg-gray-200/90 rounded-full flex items-center justify-center'
-                  >
-                    👤
+                    >
+                      👤
+                    </p>
+                  )}
+                  <p className='mt-2 font-bold text-sm sm:text-base text-center px-2 break-words'>
+                    {jugador1.nombre}
                   </p>
-                )}
-                <p className='mt-2 font-bold text-sm sm:text-base text-center px-2 break-words'>
-                  {jugador1.nombre}
+                  <span className='text-[11px] sm:text-xs opacity-70'>
+                    {jugador1?.esCreador ? t('creator') : 'Jugador 1'}
+                  </span>
+                </>
+              ) : (
+                <div className='w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-white/20' />
+              )}
+            </div>
+
+            {/* Centro: estado / countdown */}
+            <div className='text-center'>
+              {cuenta !== null ? (
+                <p className='text-4xl sm:text-5xl font-extrabold'>{cuenta}</p>
+              ) : (
+                <p className='text-lg sm:text-xl font-bold px-4'>
+                  {jugadores.length < 2 ? t('waitingPlayer') : t('readyToStart')}
                 </p>
-                <span className='text-[11px] sm:text-xs opacity-70'>
-                  {jugador1?.esCreador ? t('creator') : 'Jugador 1'}
-                </span>
-              </>
-            ) : (
-              <div className='w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-white/20' />
-            )}
-          </div>
+              )}
 
-          {/* Centro: estado / countdown */}
-          <div className='text-center'>
-            {cuenta !== null ? (
-              <p className='text-4xl sm:text-5xl font-extrabold'>{cuenta}</p>
-            ) : (
-              <p className='text-lg sm:text-xl font-bold px-4'>
-                {jugadores.length < 2 ? t('waitingPlayer') : t('readyToStart')}
-              </p>
-            )}
-
-            {/* Banner de cuenta regresiva / redirección */}
-            {redirIn !== null && (
-              <div className='mt-4 text-center'>
-                {redirIn > 0 ? (
-                  <div
-                    className='inline-flex flex-wrap items-center justify-center gap-2 
+              {/* Banner de cuenta regresiva / redirección */}
+              {redirIn !== null && (
+                <div className='mt-4 text-center'>
+                  {redirIn > 0 ? (
+                    <div
+                      className='inline-flex flex-wrap items-center justify-center gap-2 
                                 bg-black/60 text-white px-4 py-2 rounded-xl text-sm sm:text-base'
-                  >
-                    <span>{t('completedRoom')}</span>
-                    <span className='text-xl sm:text-2xl font-extrabold'>{redirIn}</span>
-                    <span>…</span>
-                  </div>
-                ) : (
-                  <div
-                    className='inline-flex items-center bg-black/60 text-white px-4 py-2 
+                    >
+                      <span>{t('completedRoom')}</span>
+                      <span className='text-xl sm:text-2xl font-extrabold'>{redirIn}</span>
+                      <span>…</span>
+                    </div>
+                  ) : (
+                    <div
+                      className='inline-flex items-center bg-black/60 text-white px-4 py-2 
                                 rounded-xl text-sm sm:text-base'
-                  >
-                    {t('redirecting')}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+                    >
+                      {t('redirecting')}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
-          {/* Jugador 2 */}
-          <div className='flex flex-col items-center'>
-            {jugador2 ? (
-              <>
-                {jugador2?.foto_perfil !== `/uploads/default.png` ? (
-                  <img
-                    src={resolveFotoAjena(jugador2.foto_perfil)}
-                    alt='jugador2'
-                    className='w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-green-400'
-                  />
-                ) : (
-                  <p
-                    className='text-[52px] sm:text-[70px] w-24 h-24 sm:w-28 sm:h-28 
+            {/* Jugador 2 */}
+            <div className='flex flex-col items-center'>
+              {jugador2 ? (
+                <>
+                  {jugador2?.foto_perfil !== `/uploads/default.png` ? (
+                    <img
+                      src={resolveFotoAjena(jugador2.foto_perfil)}
+                      alt='jugador2'
+                      className='w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-green-400'
+                    />
+                  ) : (
+                    <p
+                      className='text-[52px] sm:text-[70px] w-24 h-24 sm:w-28 sm:h-28 
                                bg-gray-200/90 rounded-full flex items-center justify-center'
-                  >
-                    👤
+                    >
+                      👤
+                    </p>
+                  )}
+                  <p className='mt-2 font-bold text-sm sm:text-base text-center px-2 break-words'>
+                    {jugador2.nombre}
                   </p>
-                )}
-                <p className='mt-2 font-bold text-sm sm:text-base text-center px-2 break-words'>
-                  {jugador2.nombre}
-                </p>
-                <span className='text-[11px] sm:text-xs opacity-70'>
-                  {jugador2?.esCreador ? t('creator') : t('guess')}
-                </span>
-              </>
-            ) : (
-              <div className='w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-white/20' />
-            )}
+                  <span className='text-[11px] sm:text-xs opacity-70'>
+                    {jugador2?.esCreador ? t('creator') : t('guess')}
+                  </span>
+                </>
+              ) : (
+                <div className='w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-white/20' />
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {!socketReady && (
           <p className='text-center mt-6 text-yellow-300 font-semibold text-sm sm:text-base'>

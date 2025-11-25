@@ -287,5 +287,7 @@
   "exit": "If you leave the game, you will lose your progress. Are you sure you want to leave?",
   "redirectingWaitingRoom": "Redirecting to the waiting room list…",
   "waitingRoomFull": "The room is already full (maximum 2 players).",
-  "roomNotFound": "Room not found"
+  "roomNotFound": "Room not found",
+  "playerLeftRoom": "A player left the room. Redirecting...",
+  "exitWaitingRoom": "If you leave now, the game will not start"
 }

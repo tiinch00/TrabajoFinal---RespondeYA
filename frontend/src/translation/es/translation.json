@@ -287,5 +287,7 @@
   "exit": "⚠️ Si salís de la partida perderás tu progreso. ¿Seguro que querés salir?",
   "redirectingWaitingRoom": "Redirigiendo a la lista de sala de espera…",
   "waitingRoomFull": "La sala ya está completa (máximo 2 jugadores).",
-  "roomNotFound": "Sala no encontrada"
+  "roomNotFound": "Sala no encontrada",
+  "playerLeftRoom": "Un jugador salio de la sala... Redirigiendo",
+  "exitWaitingRoom": "Si salis ahora, no empezara la partida."
 }
