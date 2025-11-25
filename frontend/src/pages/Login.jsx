@@ -4,18 +4,18 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/auth-context';
+import { useGame } from '../context/ContextJuego.jsx';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useGame } from '../context/game-context';
 
 const Login = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { login, setLoading } = useAuth();
+  const { setUser: setGameUser } = useGame();
   const [errores, setErrores] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006';
-  const { setUser } = useGame();
 
   const [values, setValues] = useState({
     email: '',
@@ -60,6 +60,7 @@ const Login = () => {
       const token = data.token;
       let user = data.user;
 
+      // Por si el backend sólo manda token y no user
       if (!user && token) {
         const meRes = await axios.get(`${API_URL}/auth/me`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -67,11 +68,17 @@ const Login = () => {
         user = meRes.data;
       }
 
+      // Guardar en localStorage
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user || { name: 'anonymous' }));
+
+      // 🔹 Actualizar contexto de auth con el user correcto
       login(user, token);
-      setUser(user);
-      console.log('Login: acabo de hacer setUser con ->', user);
+
+      // 🔹 Actualizar contexto de juego (GameProvider)
+      setGameUser(user); // 👈 ESTA ES LA CLAVE
+
+      setIsLoading(false);
       navigate('/bienvenido', { replace: true });
     } catch (err) {
       const backendError = err.response?.data?.error;
@@ -144,11 +151,10 @@ const Login = () => {
               value={values.email}
               onChange={handleChanges}
               placeholder={t('email') || 'tu@email.com'}
-              className={`w-full px-4 md:px-6 py-3 md:py-4 rounded-xl bg-white/10 border-2 backdrop-blur-sm text-white placeholder-gray-400 text-sm md:text-base focus:outline-none transition-all duration-300 ${
-                errores.email || errores.emailValido
+              className={`w-full px-4 md:px-6 py-3 md:py-4 rounded-xl bg-white/10 border-2 backdrop-blur-sm text-white placeholder-gray-400 text-sm md:text-base focus:outline-none transition-all duration-300 ${errores.email || errores.emailValido
                   ? 'border-red-500 focus:border-red-400'
                   : 'border-purple-400/50 focus:border-cyan-400 focus:bg-white/20'
-              }`}
+                }`}
             />
             {(errores.email || errores.emailValido) && (
               <p className='text-red-400 text-xs md:text-sm mt-1 flex items-center gap-1'>
@@ -173,11 +179,10 @@ const Login = () => {
               value={values.password}
               onChange={handleChanges}
               placeholder={t('pass') || '••••••••'}
-              className={`w-full px-4 md:px-6 py-3 md:py-4 rounded-xl bg-white/10 border-2 backdrop-blur-sm text-white placeholder-gray-400 text-sm md:text-base focus:outline-none transition-all duration-300 ${
-                errores.password
+              className={`w-full px-4 md:px-6 py-3 md:py-4 rounded-xl bg-white/10 border-2 backdrop-blur-sm text-white placeholder-gray-400 text-sm md:text-base focus:outline-none transition-all duration-300 ${errores.password
                   ? 'border-red-500 focus:border-red-400'
                   : 'border-purple-400/50 focus:border-pink-400 focus:bg-white/20'
-              }`}
+                }`}
             />
             {errores.password && (
               <p className='text-red-400 text-xs md:text-sm mt-1 flex items-center gap-1'>

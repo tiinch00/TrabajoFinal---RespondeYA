@@ -1,14 +1,22 @@
+import { ChevronDown, Gamepad } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useGame } from '../context/ContextJuego.jsx';
-import { useTranslation } from 'react-i18next';
-import { Gamepad, ChevronDown } from 'lucide-react';
+
 import pop from '/sounds/pop.mp3';
-import useSound from 'use-sound';
 import start from '/sounds/start.mp3';
+import { useGame } from '../context/ContextJuego.jsx';
+import { useNavigate } from 'react-router-dom';
+import useSound from 'use-sound';
+import { useTranslation } from 'react-i18next';
 
 const CrearPartida = ({ modo }) => {
-  const { categorias, fetchCategorias, loading, crearPartida } = useGame();
+  const {
+    user,
+    categorias,
+    fetchCategorias,
+    loadingUser,
+    loadingCategorias,
+    crearPartida,
+  } = useGame();
   const { t } = useTranslation();
   const [categoria, setCategoria] = useState('');
   const [tiempo, setTiempo] = useState('');
@@ -29,9 +37,10 @@ const CrearPartida = ({ modo }) => {
   };
 
   useEffect(() => {
-    fetchCategorias();
-  }, []);
-
+    if (user) {
+      fetchCategorias();
+    }
+  }, [user]);
   const handleJugar = () => {
     if (!categoria || !tiempo || !dificultad) {
       setAlerta(t('alert'));
@@ -41,6 +50,13 @@ const CrearPartida = ({ modo }) => {
     // console.log(categoria);
     // console.log(tiempo);
     // console.log(dificultad);
+
+    if (!user) {
+      setAlerta(t('mustLogin') || 'Tenés que iniciar sesión primero.');
+      return;
+    }
+
+
     startButton();
     setAlerta(t('goodLuck'));
 
@@ -88,12 +104,29 @@ const CrearPartida = ({ modo }) => {
     });
   };
 
-  if (loading)
+  // Mientras se carga el usuario
+  if (loadingUser) {
     return (
       <p className='text-center text-white text-lg sm:text-xl md:text-2xl'>
-        {t('loadingCategory')}🌟
+        {t('loadingUser') || 'Cargando usuario...'} 🌟
       </p>
     );
+  }
+
+  // Si no hay usuario logueado → mandalo al login
+  if (!user) {
+    navigate('/login'); // o la ruta que uses
+    return null;
+  }
+
+  // Mientras se cargan categorías
+  if (loadingCategorias) {
+    return (
+      <p className='text-center text-white text-lg sm:text-xl md:text-2xl'>
+        {t('loadingCategory')} 🌟
+      </p>
+    );
+  }
 
   const nivelesOptions = [t('easy'), t('medium'), t('hard')];
   const degreesPerCategory = 360 / categorias.length;
@@ -113,9 +146,8 @@ const CrearPartida = ({ modo }) => {
               <button
                 onClick={handleRuletaClick}
                 disabled={isSpinning || categorias.length === 0}
-                className={`relative w-56 h-56 sm:w-64 sm:h-64 md:w-68 md:h-68 rounded-full shadow-2xl transform transition-transform duration-300 ${
-                  !isSpinning ? 'cursor-pointer hover:scale-110' : 'cursor-not-allowed'
-                }`}
+                className={`relative w-56 h-56 sm:w-64 sm:h-64 md:w-68 md:h-68 rounded-full shadow-2xl transform transition-transform duration-300 ${!isSpinning ? 'cursor-pointer hover:scale-110' : 'cursor-not-allowed'
+                  }`}
               >
                 {/* Fondo del botón */}
                 <div className='absolute inset-0 bg-gradient-to-br from-indigo-600 to-purple-700 rounded-full'></div>
@@ -204,9 +236,8 @@ const CrearPartida = ({ modo }) => {
                                 y='50'
                                 textAnchor='middle'
                                 dominantBaseline='middle'
-                                transform={`rotate(${
-                                  startAngle + degreesPerCategory / 2
-                                } 50 50) translate(30 0)`}
+                                transform={`rotate(${startAngle + degreesPerCategory / 2
+                                  } 50 50) translate(30 0)`}
                                 fill='white'
                                 fontSize='4.5'
                                 fontWeight='bold'
@@ -239,9 +270,8 @@ const CrearPartida = ({ modo }) => {
                   setShowDropdown(!showDropdown);
                   touchButton();
                 }}
-                className={`w-60 bg-gradient-to-r from-indigo-500 to-purple-600 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-full font-bold text-sm sm:text-base text-white shadow-lg transform transition-all duration-200 hover:scale-105 hover:shadow-xl cursor-pointer active:scale-95 flex justify-center items-center gap-1 sm:gap-2 ${
-                  categoria ? 'ring-2 sm:ring-4 ring-yellow-400 ring-opacity-70' : ''
-                }`}
+                className={`w-60 bg-gradient-to-r from-indigo-500 to-purple-600 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-full font-bold text-sm sm:text-base text-white shadow-lg transform transition-all duration-200 hover:scale-105 hover:shadow-xl cursor-pointer active:scale-95 flex justify-center items-center gap-1 sm:gap-2 ${categoria ? 'ring-2 sm:ring-4 ring-yellow-400 ring-opacity-70' : ''
+                  }`}
               >
                 <span className='truncate'>
                   {categoria ? categoryTranslations[categoria] || categoria : t('choose')}
@@ -282,15 +312,13 @@ const CrearPartida = ({ modo }) => {
                   setTiempo(nivel);
                   touchButton();
                 }}
-                className={`px-4 sm:px-6 md:px-8 py-2 sm:py-2.5 md:py-3 rounded-full font-bold text-sm sm:text-base text-white shadow-lg transform transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer whitespace-nowrap ${
-                  nivel === t('easy')
-                    ? 'bg-gradient-to-r from-lime-500 to-emerald-600'
-                    : nivel === t('medium')
+                className={`px-4 sm:px-6 md:px-8 py-2 sm:py-2.5 md:py-3 rounded-full font-bold text-sm sm:text-base text-white shadow-lg transform transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer whitespace-nowrap ${nivel === t('easy')
+                  ? 'bg-gradient-to-r from-lime-500 to-emerald-600'
+                  : nivel === t('medium')
                     ? 'bg-gradient-to-r from-yellow-500 to-orange-600'
                     : 'bg-gradient-to-r from-red-500 to-rose-600'
-                } ${
-                  tiempo === nivel ? 'ring-2 sm:ring-4 ring-white ring-opacity-80 shadow-2xl' : ''
-                }`}
+                  } ${tiempo === nivel ? 'ring-2 sm:ring-4 ring-white ring-opacity-80 shadow-2xl' : ''
+                  }`}
               >
                 {nivel.charAt(0).toUpperCase() + nivel.slice(1)}
               </button>
@@ -310,17 +338,15 @@ const CrearPartida = ({ modo }) => {
                   setDificultad(nivel);
                   touchButton();
                 }}
-                className={`px-4 sm:px-6 md:px-8 py-2 sm:py-2.5 md:py-3 rounded-full font-bold text-sm sm:text-base text-white shadow-lg transform transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer whitespace-nowrap ${
-                  nivel === t('easy')
-                    ? 'bg-gradient-to-r from-green-500 to-teal-600'
-                    : nivel === t('medium')
+                className={`px-4 sm:px-6 md:px-8 py-2 sm:py-2.5 md:py-3 rounded-full font-bold text-sm sm:text-base text-white shadow-lg transform transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer whitespace-nowrap ${nivel === t('easy')
+                  ? 'bg-gradient-to-r from-green-500 to-teal-600'
+                  : nivel === t('medium')
                     ? 'bg-gradient-to-r from-amber-500 to-yellow-600'
                     : 'bg-gradient-to-r from-pink-500 to-red-600'
-                } ${
-                  dificultad === nivel
+                  } ${dificultad === nivel
                     ? 'ring-2 sm:ring-4 ring-white ring-opacity-80 shadow-2xl'
                     : ''
-                }`}
+                  }`}
               >
                 {nivel.charAt(0).toUpperCase() + nivel.slice(1)}
               </button>

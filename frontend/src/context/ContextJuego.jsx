@@ -13,6 +13,8 @@ export const GameProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006';
   const [user, setUser] = useState(null);
+  const [loadingUser, setLoadingUser] = useState(true);
+  const [loadingCategorias, setLoadingCategorias] = useState(false);
 
   useEffect(() => {
     const cargarUsuario = () => {
@@ -24,7 +26,7 @@ export const GameProvider = ({ children }) => {
       } catch (error) {
         console.error('Error parsing user from localStorage', error);
       } finally {
-        setLoading(false);
+        setLoadingUser(false);
       }
     };
 
@@ -33,10 +35,13 @@ export const GameProvider = ({ children }) => {
   // fetch de categorias
   const fetchCategorias = async () => {
     try {
+      setLoadingCategorias(true);
       const res = await axios.get(`${API_URL}/categorias`);
       setCategorias(res.data);
     } catch (error) {
       console.error('Error al cargar categorías:', error);
+    } finally {
+      setLoadingCategorias(false);
     }
   };
 
@@ -44,16 +49,6 @@ export const GameProvider = ({ children }) => {
   useEffect(() => {
     if (user) {
       fetchCategorias();
-    }
-  }, [user]);
-  useEffect(() => {
-    console.log('GameProvider: user actualizado ->', user);
-  }, [user]);
-
-  useEffect(() => {
-    console.log('GameProvider: user actualizado ->', user);
-    if (user) {
-      console.log('¡User ya disponible para crear partida!');
     }
   }, [user]);
 
@@ -120,7 +115,8 @@ export const GameProvider = ({ children }) => {
     categorias,
     setCategorias,
     fetchCategorias,
-    loading,
+    loadingUser,
+    loadingCategorias,
     crearPartida,
     unirseLobby,
     socket,
