@@ -98,7 +98,7 @@ export default function HeaderPrivate() {
   const links = isAdmin ? adminLinks : userLinks;
 
   return (
-    <header className=' bg-black/80 lg:px-2 xl:px-4 sm:px-6 xl:py-4 
+    <header className=' bg-black/80 px-4 sm:px-6 xl:py-4 
     font-semibold shadow-2xl sticky top-0 w-full z-50 border-b-2 border-purple-500/30'>
       
       <div className='absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer'></div>
@@ -118,7 +118,7 @@ export default function HeaderPrivate() {
       <nav className='relative flex items-center justify-between text-white'>
         <Link
           to='/'
-          className='h-10 sm:h-12 md:h-14 flex items-center group flex-shrink-0'
+          className='h-10 sm:h-12 xl:h-14 flex items-center group flex-shrink-0'
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         >
           <div className='sm:text-md md:text-xl lg:text-3xl xl:text-4xl font-black tracking-tight'>
@@ -132,7 +132,8 @@ export default function HeaderPrivate() {
           </div>
         </Link>
 
-        <ul className='hidden md:flex items-center gap-1 xl:gap-5 text-base xl:text-lg'>
+        {/* links del lado derecha */}
+        <ul className='hidden md:flex items-center gap-1 xl:gap-5 text-sm xl:text-lg'>
           {links.map((link) => (
             <li key={link.to} className='flex items-center'>
               <Link

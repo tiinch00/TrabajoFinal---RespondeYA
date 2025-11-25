@@ -82,6 +82,39 @@ const Perfil = () => {
     normal: t('medium'),
     dificil: t('hard'),
   };
+
+  const mapDifficulty = (raw) => {
+    const key = normalize(raw); // quita tildes, pasa a minúsculas, etc.
+
+    if (key.startsWith('facil')) return difficultyTranslations.facil;
+    if (key.startsWith('normal') || key.startsWith('media')) return difficultyTranslations.normal;
+    if (key.startsWith('dificil')) return difficultyTranslations.dificil;
+
+    return null; // si no matchea nada
+  };
+
+  const formatTimePorModo = (isoString, modo) => {
+    if (!isoString) return '';
+    const d = new Date(isoString);
+    if (isNaN(d)) return '';
+
+    let time = d.getTime();
+
+    if (modo === 'Individual') {
+      // ⏰ restar 3 horas
+      time -= 3 * 60 * 60 * 1000;
+    } else if (modo === 'multijugador') {
+      // ⏰ sumar 6 horas
+      time += 6 * 60 * 60 * 1000;
+    }
+    // si viene otro modo, lo dejamos igual
+
+    const ajustada = new Date(time);
+    const hh = String(ajustada.getHours()).padStart(2, '0');
+    const mm = String(ajustada.getMinutes()).padStart(2, '0');
+    return `${hh}:${mm}`;
+  };
+
   // scroll respuestas
   const listRef = useRef(null);
 
@@ -2744,6 +2777,10 @@ const Perfil = () => {
                           setModalEstadisticaAbierto(true);
                         }}
                       >
+
+                        {console.log("categoria: ", e?.categoria)}
+                        {console.log("pregunta: ", e?.dificultad)}
+                        {console.log("tiempo: ", e?.dificultad_tiempo)}
                         <p className={`${claseColor} text-sm sm:text-base`}>{etiqueta}</p>
 
                         <div className='flex flex-col sm:flex-row flex-wrap gap-1 sm:gap-4 text-xs sm:text-sm text-white'>
@@ -2751,7 +2788,7 @@ const Perfil = () => {
                             {t('date')}: {formatDateDMYLocal(e?.ended_at) ?? '-'}
                           </p>
                           <p>
-                            {t('dateHs')}: {formatTimeHMLocal(e?.ended_at) ?? '-'}
+                            {t('dateHs')}: {formatTimePorModo(e?.ended_at, e?.modo)?? '-'}
                           </p>
                           <p>
                             {t('mode')}: {modeTranslations[e?.modo] ?? '-'}
@@ -2761,7 +2798,7 @@ const Perfil = () => {
                           </p>
                           <p>
                             {t('dificultyquestion')}:{' '}
-                            {difficultyTranslations[e?.dificultad] ?? '-'}
+                            {mapDifficulty(e?.dificultad_pregunta ?? e?.dificultad) ?? '-'}
                           </p>
                           <p>
                             {t('dificultytime')}:{' '}
@@ -2923,7 +2960,7 @@ const Perfil = () => {
                       <p className='p-1'>
                         <strong>{t('date')}:</strong>{' '}
                         {formatDateDMYLocal(partidaSeleccionada?.ended_at) ?? '—'}{' '}
-                        {formatTimeHMLocal(partidaSeleccionada?.ended_at) ?? '—'}
+                        {formatTimePorModo(partidaSeleccionada?.ended_at, partidaSeleccionada?.modo) ?? '—'}
                       </p>
                       <p className='p-1'>
                         <strong>{t('rightAnswer')}:</strong>{' '}
