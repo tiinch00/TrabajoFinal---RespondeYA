@@ -104,8 +104,8 @@ const Perfil = () => {
       // ⏰ restar 3 horas
       time -= 3 * 60 * 60 * 1000;
     } else if (modo === 'multijugador') {
-      // ⏰ sumar 3 horas
-      time += 3 * 60 * 60 * 1000;
+      // ⏰ sumar 6 horas
+      time += 6 * 60 * 60 * 1000;
     }
     // si viene otro modo, lo dejamos igual
 
