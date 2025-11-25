@@ -9,18 +9,27 @@ const ContextJuego = createContext();
 // crear un provider (componente que envuelve toda la app)
 export const GameProvider = ({ children }) => {
   const [categorias, setCategorias] = useState([]);
-  const [loading, setLoading] = useState(() => !localStorage.getItem('user'));
+  const [loading, setLoading] = useState(true);
   const [socket, setSocket] = useState(null);
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006';
-  const [user, setUser] = useState(() => {
-    try {
-      const raw = localStorage.getItem('user');
-      return raw ? JSON.parse(raw) : null; // ya no es null si existe en localStorage
-    } catch {
-      return null;
-    }
-  });
+  const [user, setUser] = useState(null);
 
+  useEffect(() => {
+    const cargarUsuario = () => {
+      try {
+        const raw = localStorage.getItem('user');
+        if (raw) {
+          setUser(JSON.parse(raw));
+        }
+      } catch (error) {
+        console.error('Error parsing user from localStorage', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    cargarUsuario();
+  }, []);
   // fetch de categorias
   const fetchCategorias = async () => {
     try {
@@ -28,8 +37,6 @@ export const GameProvider = ({ children }) => {
       setCategorias(res.data);
     } catch (error) {
       console.error('Error al cargar categorías:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -37,8 +44,6 @@ export const GameProvider = ({ children }) => {
   useEffect(() => {
     if (user) {
       fetchCategorias();
-    } else {
-      setLoading(false);
     }
   }, [user]);
 
