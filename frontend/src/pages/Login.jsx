@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../context/auth-context';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useGame } from '../context/game-context';
 
 const Login = () => {
   const { t } = useTranslation();
@@ -14,6 +15,7 @@ const Login = () => {
   const [errores, setErrores] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006';
+  const { setUser } = useGame();
 
   const [values, setValues] = useState({
     email: '',
@@ -68,6 +70,8 @@ const Login = () => {
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user || { name: 'anonymous' }));
       login(data.user, data.token);
+      setUser(user);
+      console.log('Login: acabo de hacer setUser con ->', user);
       navigate('/bienvenido', { replace: true });
     } catch (err) {
       const backendError = err.response?.data?.error;

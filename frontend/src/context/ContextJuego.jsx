@@ -46,6 +46,9 @@ export const GameProvider = ({ children }) => {
       fetchCategorias();
     }
   }, [user]);
+  useEffect(() => {
+    console.log('GameProvider: user actualizado ->', user);
+  }, [user]);
 
   // si querés log cuando cambie user:
   // useEffect(() => {
