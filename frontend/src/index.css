@@ -5,6 +5,8 @@
   --breakpoint-xs320: 20rem;      /* 320px */
   --breakpoint-xs420: 26.25rem;   /* 420px */
   --breakpoint-xs480: 30rem;      /* 480px */
+  --breakpoint-lg1120: 70rem;      /* 1120px */
+  --breakpoint-xl1600: 100rem;      /* 1600px  1rem = 16px*/
 }
 
 @keyframes fadeIn {

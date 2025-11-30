@@ -116,33 +116,42 @@ const Login = () => {
   };
 
   return (
-    <div className='flex items-start w-full justify-center min-h-screen  md:py-0'>
+    <div className='flex items-start w-full justify-center xl:py-0 lg1120:py-6'>
+      
       <motion.div
         variants={containerVariants}
         initial='hidden'
         animate='visible'
-        className='w-full max-w-md md:max-w-lg bg-gradient-to-br from-purple-900/40 via-purple-800/50 to-indigo-900/70 backdrop-blur-sm rounded-2xl md:rounded-3xl p-6 md:p-8 border border-purple-500/30 shadow-2xl'
+        className='w-full max-w-md md:max-w-lg bg-gradient-to-br from-purple-900/40 via-purple-800/50 to-indigo-900/70 backdrop-blur-sm rounded-2xl md:rounded-3xl p-6 md:p-4 lg1120:p-3 xl:p-8 border border-purple-500/30 shadow-2xl'
       >
-        <motion.div variants={itemVariants} className='text-center mb-6 md:mb-8'>
-          <div className='flex items-center justify-center mb-4'>
+        <motion.div variants={itemVariants} className='text-center mb-6 md:mb-8 lg1120:h-10'>
+          
+          <div className='flex items-center justify-center lg1120:mb-1 xl:mb-4'>
+            
             <Gamepad2 className='w-8 h-8 md:w-10 md:h-10 text-cyan-400 mr-2' />
-            <h2 className='text-3xl md:text-4xl font-black bg-gradient-to-r from-cyan-400 via-pink-400 to-purple-400 text-transparent bg-clip-text'>
+            
+            <h2 className='text-xl lg1120:text-2xl xl:text-4xl font-black bg-gradient-to-r from-cyan-400 via-pink-400 to-purple-400 text-transparent bg-clip-text'>
               {t('welcome')}
             </h2>
+
             <Gamepad2 className='w-8 h-8 md:w-10 md:h-10 text-pink-400 ml-2' />
+            
           </div>
-          <p className='text-purple-200 text-sm md:text-base font-medium'>
+
+          <p className='text-purple-200 text-sm xl:text-base font-medium'>
             {t('loginDescription')}
           </p>
+
         </motion.div>
 
         <form onSubmit={handleSubmit} className='space-y-5 md:space-y-6'>
+          
           <motion.div variants={itemVariants} className='relative'>
             <label
               htmlFor='email'
               className=' text-white font-semibold text-sm md:text-base mb-2 flex items-center gap-2'
             >
-              <Mail className='w-4 h-4 md:w-5 md:h-5 text-cyan-400' />
+              <Mail className='w-4 h-4 xl:w-5 xl:h-5 text-cyan-400' />
               {t('insertEmail')}
             </label>
             <input
@@ -151,14 +160,14 @@ const Login = () => {
               value={values.email}
               onChange={handleChanges}
               placeholder={t('email') || 'tu@email.com'}
-              className={`w-full px-4 md:px-6 py-3 md:py-4 rounded-xl bg-white/10 border-2 backdrop-blur-sm text-white placeholder-gray-400 text-sm md:text-base focus:outline-none transition-all duration-300 ${errores.email || errores.emailValido
+              className={`w-full px-4 md:px-6 py-3 md:py-3 xl:py-4 rounded-xl bg-white/10 border-2 backdrop-blur-sm text-white placeholder-gray-400 text-sm xl:text-base focus:outline-none transition-all duration-300 ${errores.email || errores.emailValido
                   ? 'border-red-500 focus:border-red-400'
                   : 'border-purple-400/50 focus:border-cyan-400 focus:bg-white/20'
                 }`}
             />
             {(errores.email || errores.emailValido) && (
               <p className='text-red-400 text-xs md:text-sm mt-1 flex items-center gap-1'>
-                <AlertCircle className='w-3 h-3 md:w-4 md:h-4' />
+                <AlertCircle className='w-3 h-3 xl:w-4 xl:h-4' />
                 {errores.email || errores.emailValido}
               </p>
             )}
@@ -168,7 +177,7 @@ const Login = () => {
             <label
               htmlFor='password'
               // block
-              className='text-white font-semibold text-sm md:text-base mb-2 flex items-center gap-2'
+              className='text-white font-semibold text-sm xl:text-base mb-2 flex items-center gap-2'
             >
               <Lock className='w-4 h-4 md:w-5 md:h-5 text-pink-400' />
               {t('insertPass')}
@@ -179,14 +188,14 @@ const Login = () => {
               value={values.password}
               onChange={handleChanges}
               placeholder={t('pass') || '••••••••'}
-              className={`w-full px-4 md:px-6 py-3 md:py-4 rounded-xl bg-white/10 border-2 backdrop-blur-sm text-white placeholder-gray-400 text-sm md:text-base focus:outline-none transition-all duration-300 ${errores.password
+              className={`w-full px-4 md:px-6 py-3 md:py-3 xl:py-4 rounded-xl bg-white/10 border-2 backdrop-blur-sm text-white placeholder-gray-400 text-sm xl:text-base focus:outline-none transition-all duration-300 ${errores.password
                   ? 'border-red-500 focus:border-red-400'
                   : 'border-purple-400/50 focus:border-pink-400 focus:bg-white/20'
                 }`}
             />
             {errores.password && (
               <p className='text-red-400 text-xs md:text-sm mt-1 flex items-center gap-1'>
-                <AlertCircle className='w-3 h-3 md:w-4 md:h-4' />
+                <AlertCircle className='w-3 h-3 xl:w-4 xl:h-4' />
                 {errores.password}
               </p>
             )}
@@ -197,7 +206,7 @@ const Login = () => {
               variants={itemVariants}
               className='bg-red-500/20 border-2 border-red-500 rounded-xl p-3 md:p-4 flex items-start gap-2'
             >
-              <AlertCircle className='w-5 h-5 md:w-6 md:h-6 text-red-400 flex-shrink-0 mt-0.5' />
+              <AlertCircle className='w-3 h-3 xl:w-4 xl:h-4 text-red-400 flex-shrink-0 mt-0.5' />
               <p className='text-red-300 text-sm md:text-base'>{errores.general}</p>
             </motion.div>
           )}
@@ -208,11 +217,11 @@ const Login = () => {
             whileTap={{ scale: 0.98 }}
             type='submit'
             disabled={isLoading}
-            className='w-full py-3 cursor-pointer md:py-4 mt-6 md:mt-8 bg-gradient-to-r from-green-500 via-emerald-500 to-teal-600 hover:from-green-400 hover:via-emerald-400 hover:to-teal-500 disabled:from-gray-600 disabled:via-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed text-white font-bold text-base md:text-lg rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 flex items-center justify-center gap-2'
+            className='w-full py-2 cursor-pointer md:py-3 lg1120:py-3 xl:py-4 mt-4 lg1120:mt-2 xl:mt-8 bg-gradient-to-r from-green-500 via-emerald-500 to-teal-600 hover:from-green-400 hover:via-emerald-400 hover:to-teal-500 disabled:from-gray-600 disabled:via-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed text-white font-bold text-base xl:text-lg rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 flex items-center justify-center gap-1'
           >
             {isLoading ? (
               <>
-                <div className='w-4 h-4 md:w-5 md:h-5 border-2 border-white border-t-transparent rounded-full animate-spin' />
+                <div className='w-4 h-4 xl:w-5 xl:h-5 border-2 border-white border-t-transparent rounded-full animate-spin' />
                 {t('logging')}...
               </>
             ) : (
@@ -222,9 +231,9 @@ const Login = () => {
 
           <motion.div
             variants={itemVariants}
-            className='text-center pt-4 md:pt-6 border-t border-purple-500/30'
+            className='text-center pt-4 lg1120:pt-3 xl:pt-6 border-t border-purple-500/30'
           >
-            <p className='text-gray-300 text-sm md:text-base'>
+            <p className='text-gray-300 text-sm xl:text-base'>
               {t('noAccount')}{' '}
               <Link
                 to='/register'
@@ -236,8 +245,14 @@ const Login = () => {
           </motion.div>
         </form>
 
-        <div className='absolute top-0 right-0 w-40 h-40 bg-purple-600/20 rounded-full -z-10 blur-3xl' />
-        <div className='absolute bottom-0 left-0 w-40 h-40 bg-pink-600/20 rounded-full -z-10 blur-3xl' />
+        <div 
+        className='absolute top-0 right-0 w-40 h-40 bg-purple-600/20 rounded-full -z-10 blur-3xl' 
+        />
+        
+        <div 
+        className='absolute bottom-0 left-0 w-40 h-40 bg-pink-600/20 rounded-full -z-10 blur-3xl' 
+        />
+
       </motion.div>
     </div>
   );

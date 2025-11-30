@@ -54,7 +54,11 @@ export const RespondeYaLogo = () => {
   }, []);
 
   return (
-    <div className='relative flex flex-col items-center justify-center xl:mb-12 pt-2 sm:pt-5 lg:pt-4 lg:mr-2 xl:pt-10 lg:px-2 xl:px-4'>
+    <div className='relative flex flex-col items-center justify-center 
+    lg1120::mb-12 xl:mb-12 
+    pt-2 sm:pt-5 lg:pt-4 lg1120::pt-2  xl:pt-10
+    lg:mr-2  
+    lg:px-2 lg1120:lg:px-1 xl:px-4'>
       {/* RAYOS DE LUZ */}
       <div className='absolute inset-0 flex items-center justify-center z-0'>
         <LuzDetrasLogo />

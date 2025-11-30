@@ -132,21 +132,32 @@ const CrearPartida = ({ modo }) => {
   const degreesPerCategory = 360 / categorias.length;
 
   return (
-    <div className='mt-1 sm:mt-1 md:mt-1 flex items-start justify-center w-full min-h-screen'>
-      <div className='p-4 sm:p-6 md:p-8 lg:p-8 lg:w-120 rounded-2xl md:rounded-3xl text-center text-white space-y-6 md:mb-5 lg:mb-5 bg-gradient-to-br from-purple-900/30 via-purple-800/40 to-indigo-900/50 shadow-2xl'>
-        <div className='space-y-3 md:space-y-4'>
-          <h2 className='bg-gradient-to-r from-pink-500 to-yellow-500 p-5 bg-clip-text text-lg sm:text-xl md:text-2xl sm: font-extrabold tracking-wider drop-shadow-lg sm:pb-8 lg:pb-8'>
+    <div className='mt-1 sm:mt-5 xl:mt-2 pb-6 flex items-start justify-center w-full'>
+
+      <div className='p-1 sm:p-1 sm:pl-4 sm:pr-4 xl:p-8 xl:w-120 
+      rounded-2xl md:rounded-3xl text-center text-white 
+      space-y-6 md:mb-2 xl:mb-5 
+      bg-gradient-to-br from-purple-900/30 via-purple-800/40 to-indigo-900/50 shadow-2xl'>
+        
+        {/* Ruleta y Select */}
+        <div>
+          {/* Titulo: tipo de categoria */}
+          <h2 className='bg-gradient-to-r from-pink-500 to-yellow-500 bg-clip-text 
+          text-lg sm:text-lg lg1120:text-sm xl:text-xl 
+          font-extrabold tracking-wider drop-shadow-lg sm:pb-6 xl:pb-8'>
             🎯 {t('categoryType')}
           </h2>
 
-          <div className='gap-2 sm:gap-3 grid grid-cols-1 items-center justify-center w-full'>
-            <div className='relative flex flex-col items-center justify-center gap-4'>
-              <div className='absolute -top-6 z-30 w-0 h-0 border-l-[12px] border-r-[12px] border-t-[16px] border-l-transparent border-r-transparent border-t-yellow-400 sm:border-l-[14px] sm:border-r-[14px] sm:border-t-[20px]'></div>
+          <div className='gap-2 sm:gap-2 grid grid-cols-1 items-center justify-center w-full'>
+            
+            <div className='relative flex flex-col items-center justify-center gap-2 xl:gap-4'>
+              
+              <div className='absolute -top-6 z-30 w-0 h-0 border-l-[12px] border-r-[12px] border-t-[16px] border-l-transparent border-r-transparent border-t-yellow-400 xl:border-l-[14px] xl:border-r-[14px] xl:border-t-[20px]'></div>
 
               <button
                 onClick={handleRuletaClick}
                 disabled={isSpinning || categorias.length === 0}
-                className={`relative w-56 h-56 sm:w-64 sm:h-64 md:w-68 md:h-68 rounded-full shadow-2xl transform transition-transform duration-300 ${!isSpinning ? 'cursor-pointer hover:scale-110' : 'cursor-not-allowed'
+                className={`relative w-32 h-32 lg1120:w-20 lg1120:h-20 xl:w-68 xl:h-68 xl1600:w-10 xl1600:h-10 rounded-full shadow-2xl transform transition-transform duration-300 ${!isSpinning ? 'cursor-pointer hover:scale-110' : 'cursor-not-allowed'
                   }`}
               >
                 {/* Fondo del botón */}
@@ -253,24 +264,29 @@ const CrearPartida = ({ modo }) => {
                   })}
                 </svg>
 
-                <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 rounded-full shadow-lg flex items-center justify-center z-10'>
-                  <div className='text-2xl sm:text-3xl'>🎲</div>
+                <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 xl:w-12 xl:h-12 rounded-full shadow-lg flex items-center justify-center z-10'>
+                  <div className='text-md xl:text-3xl'>🎲</div>
                 </div>
+                
               </button>
 
-              <p className='text-xs sm:text-sm font-semibold text-cyan-300'>
+              <p className='text-xs sm:text-xs font-semibold text-cyan-300'>
                 {isSpinning ? t('spining') : t('touch')}
               </p>
             </div>
 
-            {/* Dropdown tradicional */}
+            {/* Dropdown - SELECT - tradicional */}
             <div className='relative flex-1 flex  items-center justify-center'>
               <button
                 onClick={() => {
                   setShowDropdown(!showDropdown);
                   touchButton();
                 }}
-                className={`w-60 bg-gradient-to-r from-indigo-500 to-purple-600 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-full font-bold text-sm sm:text-base text-white shadow-lg transform transition-all duration-200 hover:scale-105 hover:shadow-xl cursor-pointer active:scale-95 flex justify-center items-center gap-1 sm:gap-2 ${categoria ? 'ring-2 sm:ring-4 ring-yellow-400 ring-opacity-70' : ''
+                className={`w-64 bg-gradient-to-r from-indigo-500 to-purple-600 px-3 
+                  sm:px-4 xl:px-6 py-1 sm:py-1 xl:py-3 
+                  rounded-full font-bold text-sm sm:text-base 
+                  text-white shadow-lg transform transition-all duration-200 hover:scale-105 hover:shadow-xl cursor-pointer active:scale-95 flex justify-center items-center gap-1 
+                  sm:gap-2 ${categoria ? 'ring-2 sm:ring-4 ring-yellow-400 ring-opacity-70' : ''
                   }`}
               >
                 <span className='truncate'>
@@ -280,7 +296,7 @@ const CrearPartida = ({ modo }) => {
               </button>
 
               {showDropdown && (
-                <div className='absolute top-full mt-2 lg:w-60 bg-white rounded-xl md:rounded-2xl shadow-2xl overflow-hidden z-20 animate-fadeIn max-h-48 md:max-h-60 overflow-y-auto'>
+                <div className='absolute top-full mt-2 sm:w-fit xl:w-60 bg-white rounded-xl md:rounded-2xl shadow-2xl overflow-hidden z-20 animate-fadeIn max-h-48 md:max-h-60 overflow-y-auto'>
                   {categorias.map((cat) => (
                     <button
                       key={cat.id}
@@ -289,7 +305,7 @@ const CrearPartida = ({ modo }) => {
                         setShowDropdown(false);
                         touchButton();
                       }}
-                      className='block w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 text-purple-800 hover:bg-purple-100 font-medium text-sm sm:text-base transition'
+                      className='block w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 text-purple-800 hover:bg-purple-100 font-medium text-sm xl:text-base transition'
                     >
                       {categoryTranslations[cat.nombre]}
                     </button>
@@ -298,13 +314,16 @@ const CrearPartida = ({ modo }) => {
               )}
             </div>
           </div>
-        </div>
 
-        <div className='space-y-3 md:space-y-4'>
-          <h2 className='bg-gradient-to-r from-red-500 to-orange-500 text-red-500 bg-clip-text text-lg sm:text-xl md:text-2xl font-extrabold tracking-wider drop-shadow-lg'>
+        </div>
+        
+        {/* Dificultad de tiempo */}
+        <div className='space-y-2 lg1120:space-y-2 xl:space-y-4'>
+          <h2 className='bg-gradient-to-r from-red-500 to-orange-500 text-red-500 bg-clip-text text-lg sm:text-xl lg1120:text-sm xl:text-2xl font-extrabold tracking-wider drop-shadow-lg'>
             ⏱️ {t('dificultyTime')}
           </h2>
-          <div className='flex justify-center gap-2 sm:gap-3 md:gap-4 flex-wrap'>
+
+          <div className='flex justify-center gap-2 sm:gap-3 xl:gap-4 flex-wrap'>
             {nivelesOptions.map((nivel) => (
               <button
                 key={`tiempo-${nivel}`}
@@ -312,7 +331,10 @@ const CrearPartida = ({ modo }) => {
                   setTiempo(nivel);
                   touchButton();
                 }}
-                className={`px-4 sm:px-6 md:px-8 py-2 sm:py-2.5 md:py-3 rounded-full font-bold text-sm sm:text-base text-white shadow-lg transform transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer whitespace-nowrap ${nivel === t('easy')
+                className={`px-4 sm:px-6 lg1120:px-6 xl:px-8 
+                  py-2 sm:py-2.5 lg1120:py-1.5 xl:py-2                 
+                  text-xs xl:text-base 
+                  text-white rounded-full font-bold  shadow-lg transform transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer whitespace-nowrap ${nivel === t('easy')
                   ? 'bg-gradient-to-r from-lime-500 to-emerald-600'
                   : nivel === t('medium')
                     ? 'bg-gradient-to-r from-yellow-500 to-orange-600'
@@ -325,12 +347,14 @@ const CrearPartida = ({ modo }) => {
             ))}
           </div>
         </div>
-
-        <div className='space-y-3 md:space-y-4'>
-          <h2 className='bg-gradient-to-r from-blue-500 to-cyan-500 text-blue-500 bg-clip-text text-lg sm:text-xl md:text-2xl font-extrabold tracking-wider drop-shadow-lg'>
+        
+        {/* Dificultad de preguntas */}
+        <div className='space-y-2 lg1120:space-y-3 xl:space-y-4'>
+          <h2 className='bg-gradient-to-r from-blue-500 to-cyan-500 text-blue-500 bg-clip-text text-lg sm:text-xl lg1120:text-sm xl:text-2xl font-extrabold tracking-wider drop-shadow-lg'>
             ❓ {t('dificultyQuestions')}
           </h2>
-          <div className='flex justify-center gap-2 sm:gap-3 md:gap-4 flex-wrap'>
+
+          <div className='flex justify-center gap-2 sm:gap-3 xl:gap-4 flex-wrap'>
             {nivelesOptions.map((nivel) => (
               <button
                 key={`dificultad-${nivel}`}
@@ -338,7 +362,9 @@ const CrearPartida = ({ modo }) => {
                   setDificultad(nivel);
                   touchButton();
                 }}
-                className={`px-4 sm:px-6 md:px-8 py-2 sm:py-2.5 md:py-3 rounded-full font-bold text-sm sm:text-base text-white shadow-lg transform transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer whitespace-nowrap ${nivel === t('easy')
+                className={`px-4 sm:px-6 lg1120:px-6 xl:px-8 
+                  py-2 sm:py-1.5 lg1120:py-1.5 xl:py-3 text-xs xl:text-base 
+                  rounded-full font-bold text-white shadow-lg transform transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer whitespace-nowrap ${nivel === t('easy')
                   ? 'bg-gradient-to-r from-green-500 to-teal-600'
                   : nivel === t('medium')
                     ? 'bg-gradient-to-r from-amber-500 to-yellow-600'
@@ -353,21 +379,29 @@ const CrearPartida = ({ modo }) => {
             ))}
           </div>
         </div>
-
+        
+        {/* JUGAR AHORA */}
         <button
           onClick={handleJugar}
-          className='bg-gradient-to-r from-emerald-500 to-lime-600 w-full py-3 sm:py-3.5 md:py-4 rounded-full font-extrabold text-base sm:text-lg md:text-xl text-white shadow-xl transform transition-all duration-300 cursor-pointer hover:scale-105 hover:from-emerald-400 hover:to-lime-500 active:scale-95 flex items-center justify-center gap-2 animate-pulse-subtle'
+          className='bg-gradient-to-r from-emerald-500 to-lime-600 w-full 
+          py-1 sm:py-1.5 lg1120:py-1.5 xl:py-4 
+          rounded-full font-extrabold 
+          text-base sm:text-xs xl:text-xl 
+          text-white shadow-xl transform transition-all duration-300 cursor-pointer hover:scale-105 hover:from-emerald-400 hover:to-lime-500 active:scale-95 flex items-center justify-center gap-2 animate-pulse-subtle'
         >
-          <Gamepad className='text-black h-5 w-6 sm:h-6 sm:w-8' />
+          <Gamepad className='text-black h-5 w-6 xl:h-6 xl:w-8' />
           {t('playNow')}
         </button>
-
+        
+        {/* VALIDACION DEL FORMULARIO JUGAR AHORA */}
         {alerta && (
-          <p className='text-yellow-300 font-bold animate-bounce text-sm sm:text-base md:text-lg'>
+          <p className='text-yellow-300 font-bold animate-bounce text-sm sm:text-xs xl:text-lg'>
             {alerta}
           </p>
         )}
+
       </div>
+
     </div>
   );
 };

@@ -4,11 +4,11 @@ import { useTranslation } from 'react-i18next';
 export const Footer = () => {
   const { t, i18n } = useTranslation();
   return (
-    <footer className='bg-gradient-to-b from-black/90 to-black w-full py-6 lg:py-1 xl:py-8 mt-auto border-t border-purple-500/30'>
+    <footer className='bg-gradient-to-b from-black/90 to-black w-full py-6 lg:py-1 lg1120:py-0.5 xl:py-8 mt-auto border-t border-purple-500/30'>
       
-      <div className='max-w-7xl mx-auto sm:px-0 lg:px-2 xl:px-4 '>
+      <div className='max-w-7xl mx-auto sm:px-0 lg:px-2 lg1120:px-0 xl:px-4 '>
         
-        <div className='grid grid-cols-1 md:grid-cols-3 lg:gap-2 lg:py-2 xl:gap-6 items-center'>
+        <div className='grid grid-cols-1 md:grid-cols-3 lg:gap-2 lg1120:gap-1 lg:py-2  xl:gap-6 items-center'>
           
           {/* logo repondeya */}
           <div className='flex justify-center items-center'>
@@ -17,7 +17,7 @@ export const Footer = () => {
               className='flex items-center group'
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             >              
-              <div className='text-xl lg:text-2xl xl:text-5xl font-black tracking-tight'>
+              <div className='text-xl lg:text-2xl lg1120:text-xl xl:text-5xl font-black tracking-tight'>
                 <span className='bg-gradient-to-r from-purple-400 via-pink-400 to-purple-500 text-transparent bg-clip-text hover:from-purple-300 hover:via-pink-300 hover:to-purple-400 transition-all duration-300'>
                   Dev
                   <span className='text-cyan-400 hover:text-cyan-300 transition-colors duration-300'>
@@ -34,7 +34,7 @@ export const Footer = () => {
           <div className='flex justify-center items-center'>
             <Link
               to='/contacto'
-              className='text-white font-semibold text-base md:text-md lg:text-lg xl:text-2xl tracking-wide hover:text-purple-400 hover:scale-105 transition-all duration-300'
+              className='text-white font-semibold text-base md:text-md lg:text-lg lg1120:text-base xl:text-2xl tracking-wide hover:text-purple-400 hover:scale-105 transition-all duration-300'
               style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}
             >
               {t('contactUs')}

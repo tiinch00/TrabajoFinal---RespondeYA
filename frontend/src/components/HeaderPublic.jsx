@@ -1,7 +1,8 @@
-import { Link, useLocation } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import { Globe, Menu, X } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+
+import { useTranslation } from 'react-i18next';
 
 export default function HeaderPublic() {
   const { t, i18n } = useTranslation();
@@ -34,23 +35,32 @@ export default function HeaderPublic() {
   ];
 
   return (
-    <header className='bg-black/80 px-4 sm:px-6 py-3 sm:py-4 font-semibold shadow-2xl sticky top-0 w-full z-50 border-b-2 border-purple-500/30'>
+    <header className='bg-black/80 px-4 sm:px-6 lg1120:px-2 py-3 sm:py-4 lg1120:py-0 xl:py-4  font-semibold shadow-2xl sticky top-0 w-full z-50 border-b-2 border-purple-500/30'>
+      
       <div className='absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer'></div>
+
       <div className='absolute inset-0 overflow-hidden pointer-events-none'>
+
         <div className='absolute top-1/2 left-1/4 w-2 h-2 bg-cyan-400 rounded-full animate-pulse opacity-60'></div>
+
         <div
           className='absolute top-1/4 right-1/3 w-1.5 h-1.5 bg-pink-400 rounded-full animate-pulse opacity-50'
           style={{ animationDelay: '0.5s' }}
         ></div>
+
         <div
           className='absolute bottom-1/3 right-1/4 w-2 h-2 bg-purple-400 rounded-full animate-pulse opacity-40'
           style={{ animationDelay: '1s' }}
         ></div>
+        
       </div>
 
       <nav className='relative flex items-center justify-between text-white'>
+        
         <Link to='/' className='h-10 sm:h-12 md:h-14 flex items-center group flex-shrink-0'>
-          <div className='text-2xl sm:text-3xl md:text-4xl font-black tracking-tight'>
+
+          <div className='text-2xl sm:text-3xl lg1120:text-2xl xl:text-4xl font-black tracking-tight'>
+
             <span className='bg-gradient-to-r from-purple-400 via-pink-400 to-purple-500 text-transparent bg-clip-text hover:from-purple-300 hover:via-pink-300 hover:to-purple-400 transition-all duration-300'>
               Dev
               <span className='text-cyan-400 hover:text-cyan-300 transition-colors duration-300'>
@@ -58,10 +68,11 @@ export default function HeaderPublic() {
               </span>
               Play
             </span>
+            
           </div>
         </Link>
 
-        <ul className='hidden md:flex items-center gap-3 lg:gap-5 text-base lg:text-lg'>
+        <ul className='hidden md:flex items-center gap-3 lg:gap-5 lg1120:gap-1 text-base lg:text-lg lg1120:text-base'>
           {menuLinks.map((link) => (
             <li key={link.to} className='flex items-center'>
               <Link
@@ -82,11 +93,15 @@ export default function HeaderPublic() {
 
           <li className='flex items-center relative'>
             <div className='relative group'>
-              <Globe className='absolute left-3 top-1/2 transform -translate-y-1/2 text-white w-4 h-4 pointer-events-none z-10 group-hover:text-purple-300 transition-colors' />
+              <Globe className='absolute left-3 top-1/2 transform -translate-y-1/2 text-white w-4 h-4 
+              xl:w-4 xl:h-4 pointer-events-none z-10 group-hover:text-purple-300 transition-colors' />
               <select
                 value={i18n.language}
                 onChange={cambiarIdioma}
-                className='cursor-pointer hover:scale-105 transition-all p-2 pl-9 pr-3 rounded-full bg-white/10 backdrop-blur-sm text-white border-2 border-purple-400/30 hover:border-cyan-400/50 appearance-none text-sm lg:text-base font-bold shadow-lg hover:shadow-cyan-400/20'
+                className='cursor-pointer hover:scale-105 transition-all 
+                p-2 pl-9 pr-3 xl:p-2 xl:pl-9 xl:pr-3
+                lg1120:p-1 lg1120:pl-9 lg1120:pr-2
+                rounded-full bg-white/10 backdrop-blur-sm text-white border-2 border-purple-400/30 hover:border-cyan-400/50 appearance-none text-sm lg:text-base lg1120:text-xs xl:text-base font-bold shadow-lg hover:shadow-cyan-400/20'
               >
                 <option value='es' className='bg-purple-900'>
                   ES
