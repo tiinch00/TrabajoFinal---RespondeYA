@@ -23,7 +23,7 @@ export default function PrivateLayout() {
         )}
 
         {/* Contenido principal por encima del fondo */}
-        <div className='relative z-10 w-full flex flex-col items-center justify-start xl:mt-12 xpx-4 lg:px-4 xl:px-8 lg:pb-2 xl:pb-6'>
+        <div className='relative z-10 w-full flex flex-col items-center justify-start xpx-4 lg:px-4 xl:px-8 lg:pb-2 xl:pb-2'>
           {mostrarLogo && <RespondeYaLogo />}
           <Outlet />
         </div>

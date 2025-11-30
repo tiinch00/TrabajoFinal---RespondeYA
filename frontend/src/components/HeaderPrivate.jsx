@@ -98,7 +98,7 @@ export default function HeaderPrivate() {
   const links = isAdmin ? adminLinks : userLinks;
 
   return (
-    <header className=' bg-black/80 px-4 sm:px-6 xl:py-4 
+    <header className=' bg-black/80 px-4 sm:px-6 xl:py-0 
     font-semibold shadow-2xl sticky top-0 w-full z-50 border-b-2 border-purple-500/30'>
       
       <div className='absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer'></div>
@@ -133,7 +133,7 @@ export default function HeaderPrivate() {
         </Link>
 
         {/* links del lado derecha */}
-        <ul className='hidden md:flex items-center gap-1 xl:gap-5 text-sm xl:text-lg'>
+        <ul className='hidden md:flex items-center gap-1 xl:gap-5 text-sm xl:text-md'>
           {links.map((link) => (
             <li key={link.to} className='flex items-center'>
               <Link
@@ -151,10 +151,11 @@ export default function HeaderPrivate() {
             </li>
           ))}
 
-          <li className='flex items-center relative mr-2'>
+          {/* opciones de idioma */}
+          <li className='flex items-center relative'>
             <div className='relative group'>
               
-              {/* planeta */}
+              {/* icono planeta */}
               <Globe className='absolute left-3 top-1/2 transform -translate-y-1/2 text-white w-4 h-4 pointer-events-none z-10 group-hover:text-purple-300  transition-colors' />
               
               {/* opciones de idiomas */}
@@ -162,9 +163,9 @@ export default function HeaderPrivate() {
                 value={i18n.language}
                 onChange={cambiarIdioma}
                 className='cursor-pointer hover:scale-105 transition-all 
-                lg:p-1 xl:p-2 lg:pl-8 xl:pl-9 lg:pr-2.5 xl:pr-3 
+                lg:p-1 xl:p-2 lg:pl-8 xl:pl-8 lg:pr-2.5 xl:pr-3 
                 rounded-full bg-white/10 backdrop-blur-sm text-white border-2 border-purple-400/30 hover:border-cyan-400/50 appearance-none 
-                text-xs lg:text-sm xl:text-base
+                text-xs lg:text-sm xl:text-sm
                 font-bold shadow-lg hover:shadow-cyan-400/20'
               >
 
@@ -180,6 +181,7 @@ export default function HeaderPrivate() {
             </div>
           </li>
 
+          {/* perfil */}
           <li className='relative flex items-center'>
             <button
               ref={btnRef}
@@ -188,7 +190,7 @@ export default function HeaderPrivate() {
               aria-haspopup='menu'
               aria-expanded={open}
               className='flex items-center gap-2 rounded-full bg-gradient-to-r from-purple-500/30 to-pink-500/30 backdrop-blur-sm 
-              lg:px-1 xl:px-4 lg:py-0.5 xl:py-2 
+              lg:px-1 xl:px-4 lg:py-0.5 xl:py-1 
               hover:from-purple-500/40 hover:to-pink-500/40 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 cursor-pointer transition-all 
               text-xs lg:text-sm xl:text-base
               border-2 border-purple-400/30 hover:border-pink-400/50 shadow-lg hover:shadow-pink-400/20 hover:scale-105'

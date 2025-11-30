@@ -116,7 +116,7 @@ const Login = () => {
   };
 
   return (
-    <div className='flex items-start w-full justify-center xl:py-0 lg1120:py-6'>
+    <div className='flex items-start w-full justify-center 2xl:py-0 lg1120:py-6'>
       
       <motion.div
         variants={containerVariants}
@@ -144,7 +144,7 @@ const Login = () => {
 
         </motion.div>
 
-        <form onSubmit={handleSubmit} className='space-y-5 md:space-y-6'>
+        <form onSubmit={handleSubmit} className='space-y-5 2xl:space-y-6'>
           
           <motion.div variants={itemVariants} className='relative'>
             <label
@@ -217,7 +217,7 @@ const Login = () => {
             whileTap={{ scale: 0.98 }}
             type='submit'
             disabled={isLoading}
-            className='w-full py-2 cursor-pointer md:py-3 lg1120:py-3 xl:py-4 mt-4 lg1120:mt-2 xl:mt-8 bg-gradient-to-r from-green-500 via-emerald-500 to-teal-600 hover:from-green-400 hover:via-emerald-400 hover:to-teal-500 disabled:from-gray-600 disabled:via-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed text-white font-bold text-base xl:text-lg rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 flex items-center justify-center gap-1'
+            className='w-full py-2 cursor-pointer md:py-3 lg1120:py-3 xl:py-4 mt-4 lg1120:mt-2 2xl:mt-8 bg-gradient-to-r from-green-500 via-emerald-500 to-teal-600 hover:from-green-400 hover:via-emerald-400 hover:to-teal-500 disabled:from-gray-600 disabled:via-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed text-white font-bold text-base xl:text-lg rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 flex items-center justify-center gap-1'
           >
             {isLoading ? (
               <>
