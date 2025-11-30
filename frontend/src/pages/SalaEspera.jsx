@@ -291,7 +291,7 @@ export default function SalaEspera() {
         // Sala no existe o expiró
         setMensaje(estado?.error || t('roomNotFound'));
         if (redirTimerRef.current) clearTimeout(redirTimerRef.current);
-        redirTimerRef.current = setTimeout(() => navigate('/salaPartidas'), 3000);
+        redirTimerRef.current = navigate('/salaPartidas');
         return;
       }
 

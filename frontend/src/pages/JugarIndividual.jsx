@@ -34,6 +34,19 @@ const JugarIndividual = () => {
       }
     };
   }, [audioRef]);
+
+  useEffect(() => {
+    const unlockAudio = () => {
+      const audio = new Audio();
+      audio.play().catch(() => {});
+      window.removeEventListener('click', unlockAudio);
+    };
+
+    window.addEventListener('click', unlockAudio);
+
+    return () => window.removeEventListener('click', unlockAudio);
+  }, []);
+
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006';
   const navigate = useNavigate();
   const musicStartedRef = useRef(false);
@@ -53,7 +66,7 @@ const JugarIndividual = () => {
   const [playCorrect] = useSound(correcta, { volume: 0.3 });
   const [playWrong] = useSound(incorrecta, { volume: 0.3 });
   const [playTimeout] = useSound(finalDeJuego, { volume: 0.5 });
-  const [fiveSecondsSound, { stop: stopFiveSeconds }] = useSound(fiveSeconds, { volume: 0.4 });
+  //const [fiveSecondsSound, { stop: stopFiveSeconds }] = useSound(fiveSeconds, { volume: 0.4 });
   const [playing, { stop }] = useSound(musicaPreguntasDefault, { volume: 0.5 });
   const [playingCine, { stop: cineStop }] = useSound(cine, { volume: 0.7 });
   const [playingHistoria, { stop: historiaStop }] = useSound(historia, { volume: 0.3 });
@@ -79,6 +92,17 @@ const JugarIndividual = () => {
     geografía: '🌍',
     informatica: '💻',
   };
+  const fiveSecondsAudio = useRef(null);
+
+  useEffect(() => {
+    fiveSecondsAudio.current = new Audio(fiveSeconds);
+    fiveSecondsAudio.current.volume = 0.6;
+
+    return () => {
+      fiveSecondsAudio.current?.pause();
+      fiveSecondsAudio.current = null;
+    };
+  }, []);
 
   const [idioma, setIdioma] = useState(i18n.language);
   const { categoria, tiempo, dificultad } = useParams();
@@ -179,12 +203,12 @@ const JugarIndividual = () => {
       geografiaStop();
       informaticaStop();
       conocimientoStop();
-      stopFiveSeconds();
+      //stopFiveSeconds();
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [
     stop,
-    stopFiveSeconds,
+    //stopFiveSeconds,
     cineStop,
     historiaStop,
     geografiaStop,
@@ -243,7 +267,8 @@ const JugarIndividual = () => {
   useEffect(() => {
     if (mostrarContador && contadorInicial > 0) {
       if (contadorInicial === 5) {
-        fiveSecondsSound();
+        fiveSecondsAudio.current.currentTime = 0;
+        fiveSecondsAudio.current.play().catch(() => {});
       }
       const timer = setTimeout(() => {
         setContadorInicial(contadorInicial - 1);
@@ -280,7 +305,7 @@ const JugarIndividual = () => {
     playingGeografia,
     playingInformatica,
     playingConocimiento,
-    fiveSecondsSound,
+    //fiveSecondsSound,
     tiempo,
   ]);
 

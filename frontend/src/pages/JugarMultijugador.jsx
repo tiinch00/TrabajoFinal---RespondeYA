@@ -110,7 +110,7 @@ export default function JugarMultijugador() {
   const [playCorrect] = useSound(correcta, { volume: 0.3 });
   const [playWrong] = useSound(incorrecta, { volume: 0.3 });
   const [playTimeout] = useSound(finalDeJuego, { volume: 0.5 });
-  const [fiveSecondsSound, { stop: stopFiveSeconds }] = useSound(fiveSeconds, { volume: 0.4 });
+  //const [fiveSecondsSound, { stop: stopFiveSeconds }] = useSound(fiveSeconds, { volume: 0.4 });
   // MÚSICA DE FONDO POR CATEGORÍA
   const [playing, { stop }] = useSound(musicaPreguntasDefault, { volume: 0.5 });
   const [playingCine, { stop: cineStop }] = useSound(cine, { volume: 0.7 });
@@ -133,7 +133,7 @@ export default function JugarMultijugador() {
   const [contador, setContador] = useState(0);
   const [juegoTerminado, setJuegoTerminado] = useState(false);
   const [tiempoRestante, setTiempoRestante] = useState(0);
-  const [contadorInicial, setContadorInicial] = useState(3);
+  const [contadorInicial, setContadorInicial] = useState(5);
   const [juegoIniciado, setJuegoIniciado] = useState(false);
   const [mostrarContador, setMostrarContador] = useState(true);
   const [cronometroPausado, setCronometroPausado] = useState(false);
@@ -184,6 +184,30 @@ export default function JugarMultijugador() {
     };
   }, [audioRef]);
 
+  useEffect(() => {
+    const unlockAudio = () => {
+      const audio = new Audio();
+      audio.play().catch(() => {});
+      window.removeEventListener('click', unlockAudio);
+    };
+
+    window.addEventListener('click', unlockAudio);
+
+    return () => window.removeEventListener('click', unlockAudio);
+  }, []);
+
+  const fiveSecondsAudio = useRef(null);
+
+  useEffect(() => {
+    fiveSecondsAudio.current = new Audio(fiveSeconds);
+    fiveSecondsAudio.current.volume = 0.6;
+
+    return () => {
+      fiveSecondsAudio.current?.pause();
+      fiveSecondsAudio.current = null;
+    };
+  }, []);
+
   // Mapeo de iconos por categoría
   const categoryIcons = {
     cine: '🎬',
@@ -226,7 +250,7 @@ export default function JugarMultijugador() {
       geografiaStop();
       informaticaStop();
       conocimientoStop();
-      stopFiveSeconds();
+      //stopFiveSeconds();
     };
   }, [
     stop,
@@ -235,7 +259,7 @@ export default function JugarMultijugador() {
     geografiaStop,
     informaticaStop,
     conocimientoStop,
-    stopFiveSeconds,
+    //stopFiveSeconds,
   ]);
 
   // === NEW: identificar al usuario actual (desde localStorage) ===
@@ -538,9 +562,9 @@ export default function JugarMultijugador() {
     if (!mostrarContador) return;
 
     if (contadorInicial > 0) {
-      if (contadorInicial === 3) {
-        // sonido de "prepárate"
-        fiveSecondsSound();
+      if (contadorInicial === 5) {
+        fiveSecondsAudio.current.currentTime = 0;
+        fiveSecondsAudio.current.play().catch(() => {});
       }
 
       const t = setTimeout(() => setContadorInicial((v) => v - 1), 1000);
@@ -580,7 +604,7 @@ export default function JugarMultijugador() {
     juegoTerminado,
     config?.categoria,
     config?.tiempo,
-    fiveSecondsSound,
+    //fiveSecondsSound,
     playing,
     playingCine,
     playingHistoria,
