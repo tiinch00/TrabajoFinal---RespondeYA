@@ -1080,18 +1080,14 @@ export default function JugarMultijugador() {
       <div className='w-full'>
         {mostrarContador && contadorInicial > 0 ? (
           // 🧮 PANTALLA DE CONTADOR
-          <div className='min-h-[70vh] 2xl:min-h-screen flex items-center justify-center relative overflow-hidden'>
+          <div className='min-h-[70vh] 2xl:min-h-screen flex items-start justify-center relative overflow-hidden'>
             <div className='relative z-10 text-center flex flex-col items-center gap-6 px-3'>
-              <h1 className='text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white drop-shadow-lg'>
-                {t('beReady')}
-              </h1>
-
-              <div className='bg-gradient-to-r from-purple-600 to-purple-700 px-4 py-3 rounded-3xl text-white text-lg sm:text-xl font-bold shadow-2xl border-2 border-purple-400/50 max-w-md w-full'>
+              <div className='bg-gradient-to-r from-purple-600 to-purple-700 px-4 py-2 rounded-3xl text-white text-lg sm:text-xl font-bold shadow-2xl border-2 border-purple-400/50 max-w-md w-full mx-auto'>
                 🎮 {t('category')}:{' '}
                 <span className='text-yellow-300'>{translatedCategory.toUpperCase()}</span>
               </div>
 
-              <div className='space-y-2 bg-black/30 p-4 rounded-2xl backdrop-blur-sm border border-purple-400/50 max-w-md w-full'>
+              <div className='space-y-1 bg-black/30 p-4 rounded-2xl backdrop-blur-sm border border-purple-400/50 max-w-md w-full'>
                 <p className='text-white text-base sm:text-lg flex items-center justify-center gap-3'>
                   <span className='text-xl'>⏱️</span>
                   {t('timeQuestion')}:{' '}
@@ -1111,9 +1107,13 @@ export default function JugarMultijugador() {
                   {t('questionTotal')}: <span className='font-bold text-green-400'>10</span>
                 </p>
               </div>
+              <h1 className='text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white drop-shadow-lg'>
+                {t('beReady')}
+              </h1>
 
-              <div className='mb-2'>
-                <div className='text-[120px] sm:text-[160px] md:text-[200px] font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-400 to-yellow-300 animate-pulse drop-shadow-[0_0_60px_rgba(250,204,21,1)] leading-none'>
+
+              <div className='mb-1'>
+                <div className='text-[120px] sm:text-[160px] md:text-[180px] 2xl:text-[180px font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-400 to-yellow-300 animate-pulse drop-shadow-[0_0_60px_rgba(250,204,21,1)] leading-none'>
                   {contadorInicial}
                 </div>
               </div>
@@ -1575,7 +1575,7 @@ export default function JugarMultijugador() {
                 </div>
 
                 {/* ============= DESKTOP: categoría fila 1, tiempo fila 2, fila 3 con 3 columnas ============= */}
-                <div className='w-full hidden lg:block'>
+                <div className='w-full hidden lg:block pt-6'>
                   <div className='grid grid-cols-3 gap-6 lg:gap-2 items-start'>
                     {/* Fila 1: categoría - col-span-3 (ocupa 3 columnas) */}
                     <div className='col-span-3 flex flex-col justify-center items-center gap-2'>
@@ -1668,7 +1668,7 @@ export default function JugarMultijugador() {
                     </div>
 
                     {/* Columna 2: preguntas */}
-                    <div className='flex justify-center'>
+                    <div className='flex justify-center pt-6'>
                       {mostrarEspera ? (
                         <>
                           {/* siguiente pregunta... */}

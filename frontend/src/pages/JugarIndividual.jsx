@@ -605,20 +605,16 @@ const JugarIndividual = () => {
 
   if (mostrarContador && contadorInicial > 0) {
     return (
-      <div className='min-h-[70vh] 2xl:min-h-screen flex items-start justify-center relative overflow-hidden'>
+      <div className='min-h-[70vh] 2xl:min-h-screen flex items-start justify-center relative overflow-hidden mt-2'>
         <div className='relative z-10 text-center px-3'>
-          <h1 className='text-3xl sm:text-4xl md:text-6xl font-black text-white mb-4 drop-shadow-lg'>
-            {t('beReady')}
-          </h1>
-
-          <div className='bg-gradient-to-r from-purple-600 to-purple-700 px-3 py-2 sm:px-4 sm:py-3 rounded-2xl text-white text-sm sm:text-lg md:text-2xl font-bold mb-3 shadow-2xl border-2 border-purple-400 mx-auto w-full'>
+          <div className='bg-gradient-to-r from-purple-600 to-purple-700 px-3 py-2 sm:px-4 sm:py-2 rounded-2xl text-white text-sm sm:text-lg md:text-2xl font-bold mb-3 shadow-2xl border-2 border-purple-400 mx-auto w-full'>
             🎮 {t('category')}:{' '}
             <span className='text-yellow-300'>
               {categoryTranslations[categoria]?.toUpperCase()}
             </span>
           </div>
 
-          <div className='space-y-2  bg-black/30 p-4 sm:p-3 rounded-xl backdrop-blur-sm border border-purple-400/50 max-w-md w-full'>
+          <div className='space-y-1  bg-black/30 p-4 sm:p-3 rounded-xl backdrop-blur-sm border border-purple-400/50 max-w-md w-full mx-auto'>
             <p className='text-white text-xs sm:text-sm md:text-lg flex items-center justify-center gap-3'>
               <span className='text-lg sm:text-xl'>⏱️</span>
               {t('timeQuestion')}:{' '}
@@ -634,9 +630,12 @@ const JugarIndividual = () => {
               {t('questionTotal')}: <span className='font-bold text-green-400'>10</span>
             </p>
           </div>
+          <h1 className='text-3xl sm:text-4xl md:text-6xl font-black text-white mb-1 drop-shadow-lg'>
+            {t('beReady')}
+          </h1>
 
-          <div className='mb-2'>
-            <div className='text-[80px] sm:text-[120px] md:text-[200px] font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-400 to-yellow-300 animate-pulse'>
+          <div className='mb-1'>
+            <div className='text-[80px] sm:text-[120px] md:text-[180px] 2xl:text-[180px]  font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-400 to-yellow-300 animate-pulse'>
               {contadorInicial}
             </div>
           </div>
@@ -831,10 +830,10 @@ const JugarIndividual = () => {
       </div>
 
       {/* DESKTOP LAYOUT */}
-      <div className='hidden md:grid grid-cols-5 gap-6 h-screen pt-15'>
+      <div className='hidden md:grid grid-cols-5 gap-3 h-full w-full pt-6'>
         {/* Panel izquierdo - Usuario */}
         <div className='col-span-1 flex flex-col items-center justify-start'>
-          <div className='bg-gradient-to-b from-black/40 to-blue-800/10 rounded-2xl p-6 shadow-xl w-60 h-48 border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20'>
+          <div className='bg-gradient-to-b from-black/40 to-blue-800/10 rounded-2xl p-4 shadow-xl w-60 h-48 border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20'>
             <div className='flex flex-col items-center'>
               {user?.foto_perfil ? (
                 <div className='relative group'>
@@ -859,7 +858,7 @@ const JugarIndividual = () => {
 
         <div className='col-span-3 flex flex-col items-center justify-start'>
           {/* CATEGORÍA MEJORADA */}
-          <div className='relative group mb-8'>
+          <div className='relative group mb-5'>
             <div className='absolute inset-0 bg-gradient-to-r from-orange-400 via-pink-400 to-orange-400 rounded-full blur-xl opacity-50 group-hover:opacity-70 transition-opacity duration-300 animate-pulse'></div>
             <div className='relative bg-gradient-to-r from-orange-500 via-pink-500 to-orange-500 rounded-full px-10 py-4 text-2xl font-black shadow-2xl border-2 border-yellow-300/50 hover:scale-105 transition-transform duration-300'>
               <span className='text-3xl mr-3'>
@@ -919,14 +918,14 @@ const JugarIndividual = () => {
               </div>
             </div>
           ) : preguntaActual && juegoIniciado ? (
-            <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-8 w-full max-w-2xl shadow-2xl'>
-              <div className='mb-6'>
+            <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-4 w-full max-w-2xl shadow-2xl'>
+              <div className='mb-3'>
                 <span className='text-sm font-bold text-yellow-300'>
                   {t('question')} {contador + 1}/10
                 </span>
               </div>
 
-              <p className='text-3xl font-bold text-white mb-8 text-center leading-relaxed'>
+              <p className='text-3xl font-bold text-white mb-4 text-center leading-relaxed'>
                 {idioma === 'en' ? preguntaActual.enunciado_en : preguntaActual.enunciado}
               </p>
 
@@ -959,7 +958,7 @@ const JugarIndividual = () => {
           )}
 
           {juegoTerminado && (
-            <div className='bg-black/50 rounded-2xl p-8 mt-8 w-full max-w-2xl'>
+            <div className='bg-black/50 rounded-2xl p-6 mt-6 w-full max-w-2xl'>
               <h2 className='text-2xl font-bold text-yellow-300 mb-6'>{t('resumeAnswer')}</h2>
               <div className='space-y-3 max-h-64 overflow-y-auto'>
                 {respuestas.map((respuesta, index) => (

@@ -92,7 +92,7 @@ const Ranking = () => {
   };
 
   return (
-    <div className='min-h-screen px-2 py-3 sm:px-4 lg:px-8'>
+    <div className='min-h-screen 2xl:w-180 px-2 py-3 sm:px-4 lg:px-8'>
       <div className='max-w-5xl mx-auto'>
         {/* BACK */}
         <div className='flex justify-center sm:justify-center items-center mb-3'>
