@@ -21,8 +21,8 @@ const Bienvenido = () => {
   }, [navigate]);
 
   return (
-    <div className='w-full h-screen flex flex-col items-center justify-cente'>
-      <h1 className='text-5xl font-bold text-amber-700 mb-4 animate-pulse'>
+    <div className='w-full h-screen flex flex-col items-center mt-15 '>
+      <h1 className='text-5xl font-bold text-amber-700 mb-8 animate-pulse'>
         ¡{t('welcome')} {user?.name || 'Jugador'}! 🎉
       </h1>
       <p className='text-lg text-white/60'>{t('loading')}</p>
