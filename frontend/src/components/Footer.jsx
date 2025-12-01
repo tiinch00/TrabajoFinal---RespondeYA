@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 export const Footer = () => {
   const { t, i18n } = useTranslation();
   return (
-    <footer className='bg-gradient-to-b from-black/90 to-black w-full py-6 lg:py-1 lg1120:py-0.5 xl:py-8 mt-auto border-t border-purple-500/30'>
+    <footer className='bg-gradient-to-b from-black/90 to-black w-full lg:py-1 lg1120:py-0.5 xl:py-4  2xl:py-4 mt-auto border-t  border-purple-500/30'>
       
       <div className='max-w-7xl mx-auto sm:px-0 lg:px-2 lg1120:px-0 xl:px-4 '>
         
@@ -97,7 +97,7 @@ export const Footer = () => {
           </div>
         </div>
 
-        <div className='text-center xl:mt-8 pt-4 lg:pt-1.5 lg:mt-1 xl:pt-6 border-t border-purple-500/20'>
+        <div className='text-center xl:mt-5  lg:pt-1.5 lg:mt-1 xl:pt-3 *:l:pt-3 2xl:mt-5 border-t border-purple-500/20'>
           <p className='text-gray-400 text-xs lg:text-[10px] xl:text-sm'>
             © {new Date().getFullYear()} Dev2Play - {t('allRights')}
           </p>

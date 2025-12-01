@@ -605,8 +605,8 @@ const JugarIndividual = () => {
 
   if (mostrarContador && contadorInicial > 0) {
     return (
-      <div className='min-h-screen flex items-start justify-center relative overflow-hidden'>
-        <div className='relative z-10 text-center px-4 pt-8'>
+      <div className='min-h-[70vh] 2xl:min-h-screen flex items-start justify-center relative overflow-hidden'>
+        <div className='relative z-10 text-center px-3'>
           <h1 className='text-3xl sm:text-4xl md:text-6xl font-black text-white mb-4 drop-shadow-lg'>
             {t('beReady')}
           </h1>
@@ -618,24 +618,24 @@ const JugarIndividual = () => {
             </span>
           </div>
 
-          <div className='space-y-2 sm:space-y-3 mb-4 bg-black/30 p-2 sm:p-3 rounded-xl backdrop-blur-sm border border-purple-400/50 mx-auto'>
-            <p className='text-white text-xs sm:text-sm md:text-lg flex items-center justify-center gap-2'>
+          <div className='space-y-2  bg-black/30 p-4 sm:p-3 rounded-xl backdrop-blur-sm border border-purple-400/50 max-w-md w-full'>
+            <p className='text-white text-xs sm:text-sm md:text-lg flex items-center justify-center gap-3'>
               <span className='text-lg sm:text-xl'>⏱️</span>
               {t('timeQuestion')}:{' '}
               <span className='font-bold text-yellow-300'>{pasarTiempo(tiempo)}s</span>
             </p>
-            <p className='text-white text-xs sm:text-sm md:text-lg flex items-center justify-center gap-2'>
+            <p className='text-white text-xs sm:text-sm md:text-lg flex items-center justify-center gap-3'>
               <span className='text-lg sm:text-xl'>📊</span>
               {t('dificulty')}:{' '}
               <span className='font-bold text-orange-400 capitalize'>{dificultad}</span>
             </p>
-            <p className='text-white text-xs sm:text-sm md:text-lg flex items-center justify-center gap-2'>
+            <p className='text-white text-xs sm:text-sm md:text-lg flex items-center justify-center gap-3'>
               <span className='text-lg sm:text-xl'>❓</span>
               {t('questionTotal')}: <span className='font-bold text-green-400'>10</span>
             </p>
           </div>
 
-          <div className='mb-4'>
+          <div className='mb-2'>
             <div className='text-[80px] sm:text-[120px] md:text-[200px] font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-400 to-yellow-300 animate-pulse'>
               {contadorInicial}
             </div>

@@ -172,7 +172,7 @@ const SalaPartidas = () => {
 
   return (
     <div className='min-h-screen w-full px-3 py-4 sm:px-4 sm:py-6 md:px-6 lg:px-8'>
-      <div className='max-w-6xl mx-auto'>
+      <div className='max-w-6xl mx-auto mt-10'>
         {/* BOTÓN CREAR PARTIDA */}
         <div className='mb-6 flex items-center justify-center'>
           <button

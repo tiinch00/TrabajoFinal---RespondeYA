@@ -301,10 +301,10 @@ export default function Ruleta() {
         </div>
 
         {/* Ruleta + botón */}
-        <div className='w-full flex flex-col items-center mt-2'>
+        <div className='w-full flex flex-col items-center mt-1'>
           {/* Plafón / ruleta */}
           {/* Contenedor ruleta + puntero */}
-          <div className='relative w-full max-w-xs sm:max-w-sm md:max-w-md aspect-square mx-auto'>
+          <div className='relative w-full max-w-xs sm:max-w-sm md:max-w-md 2xl:max-w-[300px] aspect-square mx-auto'>
             {/* Puntero ABSOLUTO */}
             <img
               src='/assets/puntero.png'
@@ -326,7 +326,7 @@ export default function Ruleta() {
 
           {/* Texto premio / click */}
           <motion.div
-            className='text-2xl sm:text-3xl md:text-4xl font-bold text-center my-2'
+            className='text-2xl sm:text-3xl md:text-4xl font-bold text-center my-1'
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: [0, 1.2, 1], opacity: 1 }}
             transition={{ duration: 0.8, ease: 'easeOut' }}
@@ -349,7 +349,7 @@ export default function Ruleta() {
           {/* Botón lanzar */}
           <motion.button
             type='button'
-            className={`w-full sm:w-auto text-lg sm:text-2xl font-semibold rounded-full px-8 sm:px-10 py-3 mt-6 shadow-lg transition-all duration-300 cursor-pointer
+            className={`w-full sm:w-auto text-lg sm:text-2xl font-semibold rounded-full px-8 sm:px-10 py-3 mt-4 shadow-lg transition-all duration-300 cursor-pointer
           ${
             tiradas !== 0
               ? 'bg-gradient-to-r from-indigo-500 to-purple-600 hover:scale-105 hover:shadow-[0_0_15px_rgba(147,51,234,0.6)] text-white'

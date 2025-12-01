@@ -14,7 +14,7 @@ const Home = () => {
   const { isMuted, toggleMute } = useMusic();
 
   return (
-    <div className='rounded-2xl md:rounded-3xl text-center relative py-10 lg:py-2 xl:py-3 md:my-2 lg:my-4 xl:my-6'>
+    <div className='rounded-2xl md:rounded-3xl text-center relative py-10 lg:py-2 xl:py-3 md:my-2 lg:my-4 xl:my-6 2xl:mt-25 min-h-screen'>
       <div className='w-full px-1 sm:px-2 md:px-4 lg:px6 rounded-2xl md:rounded-4xl flex flex-col text-center items-center justify-center text-white gap-4 md:gap-4 xl:gap-6'>
         
         {/* jugar */}
@@ -24,7 +24,7 @@ const Home = () => {
             whileHover={{ scale: 1.15 }}
             whileTap={{ scale: 0.95 }}
             className='relative bg-gradient-to-br from-yellow-100 via-orange-300 to-orange-400 
-              w-full h-12 sm:h-8 md:h-10 lg:h-10 xl:h-16 md:w-48 lg:w-60 xl:w-82
+             w-full h-12 sm:h-14 md:h-14 lg:h-14 xl:h-14 lg:w-60 xl:w-82
               rounded-full cursor-pointer shadow-2xl hover:shadow-orange-300/50 transition-all  
               duration-300 border-1 sm:border-2 md:border-3 lg:border-3 xl:border-4 border-yellow-300'
           >
@@ -34,7 +34,7 @@ const Home = () => {
                 {t('play')}
               </span>
               <motion.div
-                animate={{ rotate: mostrarJugarOptions ? 180 : 0 }}
+                animate={{ rotate: mostrarJugarOptions ? 180 : 0 }} 
                 transition={{ duration: 0.3 }}
               >
                 <ChevronDown className='w-5 h-5 sm:w-6 sm:h-6 text-white' />
@@ -72,7 +72,7 @@ const Home = () => {
                     whileHover={{ scale: 1.15 }}
                     whileTap={{ scale: 0.95 }}
                     className=' cursor-pointer bg-gradient-to-br from-green-400 to-green-500 
-                    w-36 h-10 sm:h-10 xl:h-14 lg:w-52 xl:w-65 rounded-full shadow-xl hover:shadow-green-500/50 
+                    w-40 h-11 sm:h-10 xl:h-14 lg:w-52 xl:w-65 rounded-full shadow-xl hover:shadow-green-500/50 
                     transition-all duration-300 flex items-center justify-center gap-2 sm:gap-3 border-2 
                     sm:border-3 xl:border-4 border-green-300'
                   >
@@ -93,7 +93,7 @@ const Home = () => {
             whileHover={{ scale: 1.15 }}
             whileTap={{ scale: 0.95 }}
             className='relative bg-gradient-to-br from-yellow-100 via-orange-300 
-            to-orange-400 w-full h-12 sm:h-14 md:h-16 lg:h-10 xl:h-16 lg:w-60 xl:w-82 rounded-full 
+            to-orange-400 w-full h-12 sm:h-14 md:h-14 lg:h-14 xl:h-14 lg:w-60 xl:w-82 rounded-full 
             cursor-pointer shadow-2xl hover:shadow-orange-300/50 transition-all duration-300 
             border-1 md:border-2 lg:border-3 xl:border-4 border-yellow-300'
           >
@@ -114,7 +114,7 @@ const Home = () => {
             whileHover={{ scale: 1.15 }}
             whileTap={{ scale: 0.95 }}
             className='relative bg-gradient-to-br from-yellow-100 via-orange-300 to-orange-400 
-            h-12 sm:h-14 md:h-16 lg:h-10 xl:h-16 lg:w-60 xl:w-82 
+            w-full h-12 sm:h-14 md:h-14 lg:h-14 xl:h-14 lg:w-60 xl:w-82
             rounded-full cursor-pointer shadow-2xl hover:shadow-orange-300/50 transition-all 
             duration-300 border-1 sm:border-2 md:border-3 xl:border-4 border-yellow-300'
           >

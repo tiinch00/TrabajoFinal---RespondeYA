@@ -4,6 +4,7 @@ import QCChartStable from '../../components/graficosQuickchart.io/QCChartStable'
 import React from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 const AbmEstadisticas = () => {
   const [chartData, setChartData] = useState(null);
@@ -12,6 +13,8 @@ const AbmEstadisticas = () => {
   const [promedio, setPromedio] = useState(0);
   const [preguntasCalculadas, setPreguntasCalculadas] = useState(0);
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006';
+
+  const {t} = useTranslation();
 
   const navigate = useNavigate();
 
@@ -117,22 +120,22 @@ const AbmEstadisticas = () => {
 
   return (
     <div className='statistics-section min-h-screen'>
-      <h2 className='text-white text-center mb-8'>Estadísticas Generales</h2>
+      <h2 className='text-white text-center mb-8'>{t('generalsStadistics')}</h2>
 
       {/* Resumen general */}
       <div className='grid grid-cols-2 gap-4 mb-8'>
         <p className='text-white text-center bg-slate-700 p-4 rounded'>
-          ⏱️ Promedio de tiempo de respuesta por pregunta: <strong>{promedio}ms</strong>
+          ⏱️ {t('promedio')} <strong>{promedio}ms</strong>
         </p>
         <p className='text-white text-center bg-slate-700 p-4 rounded'>
-          ✅ Porcentaje de preguntas acertadas de todas las partidas jugadas:{' '}
+          ✅ {t('percent')}{' '}
           <strong>{preguntasCalculadas}%</strong>
         </p>
       </div>
 
-      {/* Gráfico 1: Categorías más jugadas */}
+   
       <div className='mb-12'>
-        <h3 className='text-white text-center mb-4'>Categorías Más Jugadas</h3>
+        <h3 className='text-white text-center mb-4'>{t('mostPlaysCategories')}</h3>
         <div className='flex justify-center'>
           <QCChartStable
             arregloCompleto={chartData}

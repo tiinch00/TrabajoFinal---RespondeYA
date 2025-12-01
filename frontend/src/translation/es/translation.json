@@ -311,5 +311,9 @@
   "addingNewFriend": "Agregando...",
   "rivalPlayer": "Contrincante",
   "attempts": "Intento",
-  "avatarChosen": "Elegir una avatar"
+  "avatarChosen": "Elegir una avatar",
+  "generalsStadistics":"Estadísticas Generales",
+  "promedio" : "Promedio de tiempo de respuesta por pregunta:",
+  "percent" : "Porcentaje de preguntas acertadas de todas las partidas jugadas:",
+  "mostPlaysCategories" : "Categorías Más Jugadas"
 }

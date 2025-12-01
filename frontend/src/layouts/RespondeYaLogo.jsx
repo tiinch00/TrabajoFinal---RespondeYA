@@ -66,7 +66,7 @@ export const RespondeYaLogo = () => {
 
       <h1
         ref={h1Ref}
-        className='relative text-4xl xs:text-5xl sm:text-5xl md:text-5xl lg:text-5xl xl:text-4xl font-black text-center z-10 leading-tight'
+        className='relative text-4xl xs:text-5xl sm:text-5xl md:text-5xl lg:text-5xl xl:text-4xl 2xl:text-7xl font-black text-center z-10 leading-tight'
         style={{
           color: '#ff7700',
           WebkitTextStroke: '1px sm:2px md:3px lg:4px xl:6px #cc00ff',

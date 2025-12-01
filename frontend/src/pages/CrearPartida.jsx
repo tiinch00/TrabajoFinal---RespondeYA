@@ -132,7 +132,7 @@ const CrearPartida = ({ modo }) => {
   const degreesPerCategory = 360 / categorias.length;
 
   return (
-    <div className='mt-1 sm:mt-5 xl:mt-4 pb-6 xl:pb-1 flex items-start justify-center w-full'>
+    <div className=' min-h-[70vh] 2xl:min-h-screen mt-1 sm:mt-5 xl:mt-4 pb-6 xl:pb-1 flex items-start justify-center w-full'>
 
       <div className='p-1 sm:p-1 sm:pl-4 sm:pr-4 xl:p-2 xl:w-120 
       rounded-2xl md:rounded-3xl text-center text-white 
@@ -158,7 +158,7 @@ const CrearPartida = ({ modo }) => {
               <button
                 onClick={handleRuletaClick}
                 disabled={isSpinning || categorias.length === 0}
-                className={`relative w-32 h-32 lg1120:w-20 lg1120:h-20 xl:w-32 xl:h-32 xl1600:w-68 xl1600:h-68 rounded-full shadow-2xl transform transition-transform duration-300 ${!isSpinning ? 'cursor-pointer hover:scale-110' : 'cursor-not-allowed'
+                className={`relative w-32 h-32 lg1120:w-20 lg1120:h-20 xl:w-32 xl:h-32 xl1600:w-68 xl1600:h-68 2xl:h-50 2xl:w-50 rounded-full shadow-2xl transform transition-transform duration-300 ${!isSpinning ? 'cursor-pointer hover:scale-110' : 'cursor-not-allowed'
                   }`}
               >
                 {/* Fondo del botón */}
@@ -321,7 +321,7 @@ const CrearPartida = ({ modo }) => {
         </div>
 
         {/* Dificultad de tiempo */}
-        <div className='space-y-2 lg1120:space-y-2 xl:space-y-2'>
+        <div className='space-y-1 lg1120:space-y-1 xl:space-y-1'>
           <h2 className='bg-gradient-to-r from-red-500 to-orange-500 text-red-500 bg-clip-text 
           text-lg sm:text-xl lg1120:text-sm xl:text-lg 
           font-extrabold tracking-wider drop-shadow-lg'>
@@ -337,7 +337,7 @@ const CrearPartida = ({ modo }) => {
                   touchButton();
                 }}
                 className={`px-4 sm:px-6 lg1120:px-6 xl:px-8 
-                  py-2 sm:py-2.5 lg1120:py-1.5 xl:py-1                 
+                  py-1 sm:py-2.5 lg1120:py-1.5 xl:py-1                 
                   text-xs xl:text-sm 
                   text-white rounded-full font-bold  shadow-lg transform transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer whitespace-nowrap ${nivel === t('easy')
                     ? 'bg-gradient-to-r from-lime-500 to-emerald-600'
@@ -354,7 +354,7 @@ const CrearPartida = ({ modo }) => {
         </div>
 
         {/* Dificultad de preguntas */}
-        <div className='space-y-2 lg1120:space-y-2 xl:space-y-2'>
+        <div className='space-y-1 lg1120:space-y-1 xl:space-y-1'>
           <h2 className='bg-gradient-to-r from-blue-500 to-cyan-500 text-blue-500 bg-clip-text 
           text-lg sm:text-xl lg1120:text-sm xl:text-lg font-extrabold tracking-wider drop-shadow-lg'>
             ❓ {t('dificultyQuestions')}
@@ -369,7 +369,7 @@ const CrearPartida = ({ modo }) => {
                   touchButton();
                 }}
                 className={`px-4 sm:px-6 lg1120:px-6 xl:px-8 
-                  py-2 sm:py-1.5 lg1120:py-1.5 xl:py-1
+                  py-1 sm:py-1.5 lg1120:py-1.5 xl:py-1
                   text-xs xl:text-sm
                   rounded-full font-bold text-white shadow-lg transform transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer whitespace-nowrap ${nivel === t('easy')
                     ? 'bg-gradient-to-r from-green-500 to-teal-600'
@@ -388,7 +388,7 @@ const CrearPartida = ({ modo }) => {
         </div>
 
         {/* JUGAR AHORA */}
-        <div className='flex flex-col items-center justify-center xl:mb-4'>
+        <div className='flex flex-col items-center justify-center xl:mb-2'>
           <button
             onClick={handleJugar}
             className='bg-gradient-to-r from-emerald-500 to-lime-600 w-full max-w-88

@@ -1080,7 +1080,7 @@ export default function JugarMultijugador() {
       <div className='w-full'>
         {mostrarContador && contadorInicial > 0 ? (
           // 🧮 PANTALLA DE CONTADOR
-          <div className='min-h-[70vh] flex items-center justify-center relative overflow-hidden'>
+          <div className='min-h-[70vh] 2xl:min-h-screen flex items-center justify-center relative overflow-hidden'>
             <div className='relative z-10 text-center flex flex-col items-center gap-6 px-3'>
               <h1 className='text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white drop-shadow-lg'>
                 {t('beReady')}
@@ -1091,7 +1091,7 @@ export default function JugarMultijugador() {
                 <span className='text-yellow-300'>{translatedCategory.toUpperCase()}</span>
               </div>
 
-              <div className='space-y-4 bg-black/30 p-4 rounded-2xl backdrop-blur-sm border border-purple-400/50 max-w-md w-full'>
+              <div className='space-y-2 bg-black/30 p-4 rounded-2xl backdrop-blur-sm border border-purple-400/50 max-w-md w-full'>
                 <p className='text-white text-base sm:text-lg flex items-center justify-center gap-3'>
                   <span className='text-xl'>⏱️</span>
                   {t('timeQuestion')}:{' '}
@@ -1125,7 +1125,7 @@ export default function JugarMultijugador() {
           </div>
         ) : (
           // 🎮 PANTALLA PRINCIPAL (preguntas / podio / resumen)
-          <div className='flex flex-col items-center justify-start'>
+          <div className='flex flex-col items-center justify-start min-h-screen'>
             {loading ? (
               <div className='text-center space-y-4 mt-10'>
                 <p className='text-white text-2xl font-bold'>{t('loadingQuestions')}</p>
@@ -1576,7 +1576,7 @@ export default function JugarMultijugador() {
 
                 {/* ============= DESKTOP: categoría fila 1, tiempo fila 2, fila 3 con 3 columnas ============= */}
                 <div className='w-full hidden lg:block'>
-                  <div className='grid grid-cols-3 gap-6 lg:gap-2 place-items-center-safe'>
+                  <div className='grid grid-cols-3 gap-6 lg:gap-2 items-start'>
                     {/* Fila 1: categoría - col-span-3 (ocupa 3 columnas) */}
                     <div className='col-span-3 flex flex-col justify-center items-center gap-2'>
                       {/* 🔹 tu misma categoría, versión grande */}
@@ -1585,45 +1585,54 @@ export default function JugarMultijugador() {
 
                         <div
                           className='relative bg-gradient-to-r from-orange-500 via-pink-500 to-orange-500    
-                          rounded-full lg:px-0.5 lg:py-1 lg:text-xs font-black shadow-2xl border-2 border-yellow-300/50 text-center lg:w-40 xl:w-52 2xl:w-60'
+                          rounded-full lg:px-0.5 lg:py-1 lg:text-lg xl:text-base 2xl:text-2xl 2xl:px-2 font-black shadow-2xl border-2 border-yellow-300/50 text-center lg:w-40 xl:w-52 2xl:w-60'
                         >
-                          <span className='lg:text-xs mr-3'>
+                          <span className='lg:text-xs xl:text-2xl 2xl:text-2xl 2xl:h-6 2xl:w-6 mr-3'>
                             {categoryIcons[String(config?.categoria || '').toLowerCase()] || '🎯'}
                           </span>
                           {categoryTranslations[config?.categoria]?.toUpperCase()}
                         </div>
                       </div>
 
-                      {/* 🔹 tu reloj grande */}
-                      <div
-                        className={`rounded-3xl text-center flex flex-row gap-1 items-center justify-center shadow-2xl w-36 md:w-48 lg:w-40 xl:w-52 2xl:w-60 h-44 md:h-48 lg:h-8 border-2 ${
-                          tiempoRestante <= 5 && tiempoRestante > 0
-                            ? 'border-red-500/80 animate-pulse'
-                            : 'border-blue-400/30'
-                        }`}
-                      >
-                        {/* icono reloj */}
-                        <p className='text-4xl lg:text-sm font-bold text-gray-800'>⏱️</p>
+                     <div
+  className={`rounded-3xl text-center flex flex-row gap-2 items-center justify-center shadow-2xl 
+    w-36 h-16
+    md:w-48 md:h-20
+    lg:w-52 lg:h-12
+    xl:w-56 xl:h-14
+    2xl:w-60 2xl:h-16
+    border-2 ${
+    tiempoRestante <= 5 && tiempoRestante > 0
+      ? 'border-red-500/80 animate-pulse'
+      : 'border-blue-400/30'
+  }`}
+>
+  {/* icono reloj */}
+  <p className='text-3xl md:text-4xl lg:text-2xl xl:text-3xl 2xl:text-4xl font-bold text-gray-800'>
+    ⏱️
+  </p>
 
-                        {/* tiempo contando */}
-                        <p
-                          className={`text-5xl lg:text-sm font-black ${
-                            tiempoRestante > 5 ? 'text-white' : 'text-red-600'
-                          }`}
-                        >
-                          {tiempoRestante}
-                        </p>
+  {/* tiempo contando */}
+  <p
+    className={`text-4xl md:text-5xl lg:text-3xl xl:text-4xl 2xl:text-4xl font-black ${
+      tiempoRestante > 5 ? 'text-white' : 'text-red-600'
+    }`}
+  >
+    {tiempoRestante}
+  </p>
 
-                        {/* segundos */}
-                        <p className='text-2xl lg:text-sm font-bold text-white'>{t('seconds')}</p>
-                      </div>
+  {/* segundos */}
+  <p className='text-xl md:text-2xl lg:text-xl xl:text-2xl 2xl:text-2xl font-bold text-white'>
+    {t('seconds')}
+  </p>
+</div>
                     </div>
 
                     {/* Fila 2: creador - preguntas - invitado */}
                     {/* Columna 1: creador */}
                     <div className='flex justify-center'>
                       {/* 🔹 tu tarjeta grande de creador */}
-                      <div className='bg-gradient-to-b from-black/40 to-blue-800/10 rounded-2xl p-6 shadow-xl border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20'>
+                      <div className='bg-gradient-to-b from-black/40 to-blue-800/10 rounded-2xl p-6 shadow-xl border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20 w-full max-w-[13rem]'>
                         <div className='flex flex-col items-center'>
                           {creador ? (
                             <>
@@ -1663,8 +1672,9 @@ export default function JugarMultijugador() {
                       {mostrarEspera ? (
                         <>
                           {/* siguiente pregunta... */}
-                          <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-6 w-full max-w-2xl shadow-2xl text-center'>
-                            <div className='flex flex-col items-center justify-center gap-4'>
+                        <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-8 lg:p-4 xl:p-6 2xl:p-8 w-140 h-95 shadow-2xl flex items-center justify-center'>
+
+                            <div className='flex flex-col items-center justify-center gap-4 text-center'>
                               <div className='flex justify-center gap-2'>
                                 <div className='w-3 h-3 bg-yellow-300 rounded-full animate-bounce' />
                                 <div
@@ -1683,7 +1693,7 @@ export default function JugarMultijugador() {
                           </div>
                         </>
                       ) : (
-                        <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-2 lg:p-4 xl:p-6 2xl:p-8 w-full shadow-2xl'>
+                        <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-8 lg:p-4 xl:p-6 2xl:p-8 w-140 h-95  max-w-2xl  shadow-2xl'>
                           {/* numero de preguntas realizadas */}
                           <div className='mb-6 lg:mb-2 xl:text-lg 2xl:text-xl'>
                             <span className='text-sm font-bold text-yellow-300'>

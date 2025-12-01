@@ -271,7 +271,7 @@ const Tienda = () => {
     jugadorAvatares.some((a) => a.avatar_id === avatares[selected].id);
 
   return (
-    <div className='min-h-screen px-3 py-6 sm:px-6 lg:px-10'>
+    <div className='min-h-screen px-3 py-4 sm:px-6 lg:px-10'>
       {/* TÍTULO */}
       <motion.h1
         className='text-3xl sm:text-5xl lg:text-6xl font-extrabold text-center tracking-wider text-white neon-text'
@@ -372,13 +372,13 @@ const Tienda = () => {
       )}
 
       {/* GRID DE AVATARES */}
-      <div className='mt-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6 justify-items-center'>
+      <div className='mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6 justify-items-center'>
         {avatares.map((avatar, index) => (
           <motion.img
             key={index}
             src={avatar.preview_url}
             alt={`Avatar ${index + 1}`}
-            className='w-28 h-28 sm:w-32 sm:h-32 lg:w-36 lg:h-36 object-cover rounded-full cursor-pointer bg-indigo-900/60 p-2 shadow-lg'
+            className='w-28 h-28 sm:w-32 sm:h-32 lg:w-36 lg:h-36 2xl:w-30 2xl:h-30 object-cover rounded-full cursor-pointer bg-indigo-900/60 p-2 shadow-lg'
             whileHover={{ scale: 1.08 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setSelected(index)}
@@ -397,7 +397,7 @@ const Tienda = () => {
             initial={{ opacity: 0, y: 10, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10 }}
-            className='relative w-full max-w-lg max-h-[90vh] overflow-y-auto
+            className='relative top-6 w-full max-w-lg max-h-[90vh] overflow-y-auto
                      rounded-2xl bg-indigo-900 text-white p-4 sm:p-6 shadow-2xl'
           >
             {/* Botón X */}
@@ -415,7 +415,7 @@ const Tienda = () => {
             <img
               src={avatares[selected].preview_url}
               alt={`Avatar ${selected + 1}`}
-              className='w-40 h-40 sm:w-52 sm:h-52 object-cover rounded-full mx-auto mt-4'
+              className='w-40 h-40 sm:w-48 sm:h-48 object-cover rounded-full mx-auto mt-4'
             />
 
             <hr className='my-6 border border-sky-500/60' />
@@ -509,7 +509,7 @@ const Tienda = () => {
                     </div>
                   )
                 ) : (
-                  <div className='flex-col items-center justify-center text-center mt-4'>
+                  <div className='flex-col items-center justify-center text-center mt-2'>
                     <button
                       className='mt-3 px-3 py-2 rounded bg-gray-500 text-white hover:bg-gray-600 cursor-not-allowed text-sm sm:text-base'
                       disabled
@@ -521,7 +521,7 @@ const Tienda = () => {
                 )}
 
                 {/* Compra con MercadoPago */}
-                <div className='flex items-center justify-center mt-3'>
+                <div className='flex items-center justify-center mt-2'>
                   <button
                     onClick={() => crearPago(avatares[selected].nombre)}
                     className={`text-base sm:text-xl mt-3 px-3 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 cursor-pointer ${yaLoTiene || confirmar ? 'hidden' : ''
