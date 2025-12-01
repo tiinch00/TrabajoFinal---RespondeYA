@@ -5,18 +5,15 @@ export const Footer = () => {
   const { t, i18n } = useTranslation();
   return (
     <footer className='bg-gradient-to-b from-black/90 to-black w-full lg:py-1 lg1120:py-0.5 xl:py-4  2xl:py-4 mt-auto border-t  border-purple-500/30'>
-      
       <div className='max-w-7xl mx-auto sm:px-0 lg:px-2 lg1120:px-0 xl:px-4 '>
-        
         <div className='grid grid-cols-1 md:grid-cols-3 lg:gap-2 lg1120:gap-1 lg:py-2  xl:gap-6 items-center'>
-          
           {/* logo repondeya */}
           <div className='flex justify-center items-center'>
             <Link
               to='/'
               className='flex items-center group'
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            >              
+            >
               <div className='text-xl lg:text-2xl lg1120:text-xl xl:text-5xl font-black tracking-tight'>
                 <span className='bg-gradient-to-r from-purple-400 via-pink-400 to-purple-500 text-transparent bg-clip-text hover:from-purple-300 hover:via-pink-300 hover:to-purple-400 transition-all duration-300'>
                   Dev
@@ -26,7 +23,6 @@ export const Footer = () => {
                   Play
                 </span>
               </div>
-              
             </Link>
           </div>
 
@@ -45,7 +41,7 @@ export const Footer = () => {
           <div className='flex justify-center items-center md:justify-center gap-3 sm:gap-4 md:gap-6 flex-wrap'>
             {/* ig */}
             <a
-              href='https://instagram.com/tiin.ch00'
+              href='https://instagram.com/'
               target='_blank'
               rel='noopener noreferrer'
               aria-label='Instagram'
@@ -58,7 +54,7 @@ export const Footer = () => {
 
             {/* facebook */}
             <a
-              href='https://www.facebook.com/tiin.cho.908'
+              href='https://www.facebook.com/'
               target='_blank'
               rel='noopener noreferrer'
               aria-label='Facebook'
@@ -68,10 +64,10 @@ export const Footer = () => {
                 <use xlinkHref='/sprite.svg#icon-facebook' />
               </svg>
             </a>
-            
+
             {/* github */}
             <a
-              href='https://github.com/tiinch00'
+              href='https://github.com/tiinch00/TrabajoFinal---RespondeYA'
               target='_blank'
               rel='noopener noreferrer'
               aria-label='GitHub'
@@ -84,7 +80,7 @@ export const Footer = () => {
 
             {/* youtube */}
             <a
-              href='https://www.youtube.com/@tiinch00asdas11'
+              href='https://www.youtube.com/'
               target='_blank'
               rel='noopener noreferrer'
               aria-label='YouTube'
