@@ -23,9 +23,9 @@ const InputField = ({
   >
     <label
       htmlFor={name}
-      className='flex items-center gap-2 text-white font-semibold text-sm md:text-base mb-2'
+      className='flex items-center gap-2 text-white font-semibold text-sm md:text-base 2xl:text-sm mb-2'
     >
-      <Icon className={`w-4 h-4 md:w-5 md:h-5 flex-shrink-0 text-${color}-400`} />
+      <Icon className={`w-4 h-4 md:w-5 md:h-5 2xl:w-4 2xl:h-4 flex-shrink-0 text-${color}-400`} />
       {label}
     </label>
     <input
@@ -35,15 +35,15 @@ const InputField = ({
       value={value || ''}
       onChange={onChange}
       placeholder={placeholder}
-      className={`w-full px-4 md:px-6 py-3 md:py-4 rounded-xl bg-white/10 border-2 backdrop-blur-sm text-white placeholder-gray-400 text-sm md:text-base focus:outline-none transition-all duration-300 ${
+      className={`w-full px-4 md:px-6 2xl:px-4 py-3 md:py-4 2xl:py-2.5 rounded-xl bg-white/10 border-2 backdrop-blur-sm text-white placeholder-gray-400 text-sm md:text-base 2xl:text-sm focus:outline-none transition-all duration-300 ${
         error
           ? 'border-red-500 focus:border-red-400'
           : `border-purple-400/50 focus:border-${color}-400 focus:bg-white/20`
       }`}
     />
     {error && (
-      <p className='text-red-400 text-xs md:text-sm mt-1 flex items-center gap-1'>
-        <AlertCircle className='w-3 h-3 md:w-4 md:h-4 flex-shrink-0' />
+      <p className='text-red-400 text-xs md:text-sm 2xl:text-xs mt-1 flex items-center gap-1'>
+        <AlertCircle className='w-3 h-3 md:w-4 md:h-4 2xl:w-3 2xl:h-3 flex-shrink-0' />
         {error}
       </p>
     )}
@@ -169,37 +169,26 @@ const Register = () => {
   };
 
   return (
-    <div className='flex items-center justify-center w-full min-h-screen px-2 py-4 md:py-0'>
+    <div className='flex items-start justify-center w-full min-h-screen px-2 py-2  md:py-0'>
       <motion.div
         variants={containerVariants}
         initial='hidden'
         animate='visible'
-        className='relative w-full max-w-md md:max-w-lg bg-gradient-to-br from-purple-900/50 via-purple-800/60 to-indigo-900/60 backdrop-blur-sm rounded-2xl md:rounded-3xl p-4 md:p-8 border border-purple-500/30 shadow-2xl overflow-hidden'
+        className='relative w-full max-w-md md:max-w-lg  bg-gradient-to-br from-purple-900/50 via-purple-800/60 to-indigo-900/60 backdrop-blur-sm rounded-2xl md:rounded-3xl p-4 md:p-4 2xl:p-3 border border-purple-500/30 shadow-2xl overflow-hidden'
       >
-        <motion.div variants={itemVariants} className='text-center mb-6 md:mb-8'>
-          <div className='flex flex-wrap items-center justify-center mb-4 gap-2'>
-            <Gamepad2 className='w-8 h-8 md:w-10 md:h-10 text-purple-400' />
-            <h2 className='text-2xl  sm:text-3xl md:text-3xl font-black bg-gradient-to-r from-pink-400 via-purple-400 to-cyan-400 text-transparent bg-clip-text'>
+        <motion.div variants={itemVariants} className='text-center  mb-4 md:mb-6 2xl:mb-2'>
+          <div className='flex flex-wrap items-center justify-center mb-3 2xl:mb-2 gap-2'>
+            <Gamepad2 className='w-8 h-8 md:w-10 md:h-10 2xl:w-8 2xl:h-8 text-purple-400' />
+            <h2 className='text-2xl sm:text-3xl md:text-3xl 2xl:text-2xl font-black bg-gradient-to-r from-pink-400 via-purple-400 to-cyan-400 text-transparent bg-clip-text'>
               {t('completeRegister')}
             </h2>
-            <Gamepad2 className='w-8 h-8 md:w-10 md:h-10 text-pink-400' />
+            <Gamepad2 className='w-8 h-8 md:w-10 md:h-10 2xl:w-8 2xl:h-8 text-pink-400' />
           </div>
-          <p className='text-purple-200 text-xs sm:text-sm md:text-base font-medium'>
+          <p className='text-purple-200 text-xs sm:text-sm md:text-base 2xl:text-sm font-medium'>
             {t('jointComunity')}
           </p>
         </motion.div>
-
-        {mensaje && (
-          <motion.div
-            variants={itemVariants}
-            className='bg-green-500/20 border-2 border-green-500 rounded-xl p-3 md:p-4 mb-4 md:mb-6 flex items-start gap-2'
-          >
-            <CheckCircle className='w-5 h-5 md:w-6 md:h-6 text-green-400 flex-shrink-0 mt-0.5' />
-            <p className='text-green-300 text-xs md:text-sm'>{mensaje}</p>
-          </motion.div>
-        )}
-
-        <form onSubmit={handleSubmit} className='space-y-4  md:space-y-5'>
+        <form onSubmit={handleSubmit} className='space-y-3 md:space-y-4 2xl:space-y-2.5'>
           <InputField
             icon={User}
             label={t('insertUser')}
@@ -226,9 +215,9 @@ const Register = () => {
           <motion.div variants={itemVariants} className='relative'>
             <label
               htmlFor='pais'
-              className='flex items-center gap-2 text-white font-semibold text-sm md:text-base mb-2'
+              className='flex items-center gap-2 text-white font-semibold text-sm md:text-base 2xl:text-sm mb-2'
             >
-              <Globe className='w-4 h-4 md:w-5 md:h-5 flex-shrink-0 text-yellow-400' />
+              <Globe className='w-4 h-4 md:w-5 md:h-5 2xl:w-4 2xl:h-4 flex-shrink-0 text-yellow-400' />
               {t('insertCountry')}
             </label>
             <input
@@ -240,7 +229,7 @@ const Register = () => {
                 if (errores.pais) setErrores({ ...errores, pais: '' });
               }}
               placeholder={t('country') || 'Selecciona tu país'}
-              className={`w-full px-4 md:px-6 py-3 md:py-4 rounded-xl bg-white/10 border-2 backdrop-blur-sm text-white placeholder-gray-400 text-sm md:text-base focus:outline-none transition-all duration-300 ${
+              className={`w-full px-4 md:px-6 2xl:px-4 py-3 md:py-4 2xl:py-2.5 rounded-xl bg-white/10 border-2 backdrop-blur-sm text-white placeholder-gray-400 text-sm md:text-base 2xl:text-sm focus:outline-none transition-all duration-300 ${
                 errores.pais
                   ? 'border-red-500 focus:border-red-400'
                   : 'border-purple-400/50 focus:border-yellow-400 focus:bg-white/20'
@@ -252,8 +241,8 @@ const Register = () => {
               ))}
             </datalist>
             {errores.pais && (
-              <p className='text-red-400 text-xs md:text-sm mt-1 flex items-center gap-1'>
-                <AlertCircle className='w-3 h-3 md:w-4 md:h-4 flex-shrink-0' />
+              <p className='text-red-400 text-xs md:text-sm 2xl:text-xs mt-1 flex items-center gap-1'>
+                <AlertCircle className='w-3 h-3 md:w-4 md:h-4 2xl:w-3 2xl:h-3 flex-shrink-0' />
                 {errores.pais}
               </p>
             )}
@@ -286,10 +275,10 @@ const Register = () => {
           {errores.general && (
             <motion.div
               variants={itemVariants}
-              className='bg-red-500/20 border-2 border-red-500 rounded-xl p-3 md:p-4 flex items-start gap-2'
+              className='bg-red-500/20 border-2 border-red-500 rounded-xl p-3 md:p-4 2xl:p-2.5 flex items-start gap-2'
             >
-              <AlertCircle className='w-5 h-5 md:w-6 md:h-6 text-red-400 flex-shrink-0 mt-0.5' />
-              <p className='text-red-300 text-xs md:text-sm'>{errores.general}</p>
+              <AlertCircle className='w-5 h-5 md:w-6 md:h-6 2xl:w-5 2xl:h-5 text-red-400 flex-shrink-0 mt-0.5' />
+              <p className='text-red-300 text-xs md:text-sm 2xl:text-xs'>{errores.general}</p>
             </motion.div>
           )}
 
@@ -299,23 +288,32 @@ const Register = () => {
             whileTap={{ scale: 0.98 }}
             type='submit'
             disabled={isLoading}
-            className='w-full py-3 cursor-pointer md:py-4 mt-6 md:mt-8 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-400 hover:via-purple-400 hover:to-pink-400 disabled:from-gray-600 disabled:via-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed text-white font-bold text-base md:text-lg rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 flex items-center justify-center gap-2'
+            className='w-full py-3 cursor-pointer md:py-4 2xl:py-3 mt-2 md:mt-4 2xl:mt-2 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-400 hover:via-purple-400 hover:to-pink-400 disabled:from-gray-600 disabled:via-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed text-white font-bold text-base md:text-lg 2xl:text-base rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 flex items-center justify-center gap-2'
           >
             {isLoading ? (
               <>
-                <div className='w-4 h-4 md:w-5 md:h-5 border-2 border-white border-t-transparent rounded-full animate-spin' />
+                <div className='w-4 h-4 md:w-5 md:h-5 2xl:w-4 2xl:h-4 border-2 border-white border-t-transparent rounded-full animate-spin' />
                 {t('registering')}
               </>
             ) : (
               <>{t('register')}</>
             )}
           </motion.button>
+          {mensaje && (
+          <motion.div
+            variants={itemVariants}
+            className='bg-green-500/20 border-2 border-green-500 rounded-xl p-3 md:p-4 2xl:p-2.5 mb-4 md:mb-6 2xl:mb-3 flex items-start gap-2'
+          >
+            <CheckCircle className='w-5 h-5 md:w-6 md:h-6 2xl:w-5 2xl:h-5 text-green-400 flex-shrink-0 mt-0.5' />
+            <p className='text-green-300 text-xs md:text-sm 2xl:text-xs'>{mensaje}</p>
+          </motion.div>
+        )}
 
           <motion.div
             variants={itemVariants}
-            className='text-center pt-4 md:pt-6 border-t border-purple-500/30'
+            className='text-center pt-3 md:pt-4 2xl:pt-3 border-t border-purple-500/30'
           >
-            <p className='text-gray-300 text-xs sm:text-sm md:text-base'>
+            <p className='text-gray-300 text-xs sm:text-sm md:text-base 2xl:text-sm'>
               {t('aReadyLogin')}{' '}
               <Link
                 to='/login'

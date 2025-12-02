@@ -154,7 +154,7 @@ const Home = () => {
         whileTap={{ scale: 0.95 }}
         className='fixed bottom-6 right-4
             xs320:bottom-[200px]
-            sm:bottom-6 lg:bottom-[90px] sm:right-6
+            sm:bottom-6 lg:bottom-[90px] sm:right-6 2xl:bottom-25
             bg-gradient-to-br from-blue-500 to-blue-700 hover:from-blue-400 hover:to-blue-600
             text-white p-3 xl:p-4 cursor-pointer rounded-full shadow-2xl transition
             z-[60] border-2 border-blue-400'
@@ -185,11 +185,11 @@ const Home = () => {
             transition={{ type: 'spring', stiffness: 200, damping: 25 }}
             className=' fixed z-[55] rounded-lg w-fit               
               xs320:bottom-64 xs320:h-60           
-              lg:bottom-44 right-2 lg:h-52           
+              lg:bottom-44 right-2 lg:h-52  2xl:bottom-90         
               '                                
           >
             
-            <div className='lex flex-col w-full bg-white shadow-2xl rounded-2xl overflow-hidden f'>
+            <div className='flex-col w-full bg-white shadow-2xl rounded-2xl overflow-hidden f'>
               <ChatGlobal />
             </div>
 
