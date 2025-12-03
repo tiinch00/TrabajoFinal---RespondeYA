@@ -264,7 +264,7 @@
   "waitingPlayer": "Esperando jugador 2...",
   "readyToStart": "Listo para empezar",
   "gameStartAt": "El juego comenzará en...",
-  "hasWon": "¡ha ganado esta partida!",
+  "hasWon": "ha ganado esta partida!",
   "calculatingWinner": "Calculando ganador...",
   "matchDraw": "¡La partida es un empate!",
   "playerGone": "El otro jugador se fue. Esperando jugador 2...",

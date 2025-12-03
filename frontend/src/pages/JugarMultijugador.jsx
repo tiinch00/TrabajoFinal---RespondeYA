@@ -1256,7 +1256,7 @@ export default function JugarMultijugador() {
 
                     <div className='bg-black/50 mt-5 rounded-full w-full max-w-md text-center mx-auto'>
                       <p className='text-lg sm:text-xl font-bold text-gray-200 p-3 sm:p-4'>
-                        {ganador ? `${ganador?.nombre} ` + t('hasWon') : t('calculatingWinner')}
+                        {ganador ? `🏆¡${ganador?.nombre} ` + t('hasWon') : t('calculatingWinner')}
                       </p>
                     </div>
                   </>
@@ -1672,7 +1672,7 @@ export default function JugarMultijugador() {
                       {mostrarEspera ? (
                         <>
                           {/* siguiente pregunta... */}
-                        <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-8 lg:p-4 xl:p-6 2xl:p-8 w-140 h-95 shadow-2xl flex items-center justify-center'>
+                        <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-8 lg:p-4 xl:p-6 2xl:p-8 w-150 h-95 shadow-2xl flex items-center justify-center'>
 
                             <div className='flex flex-col items-center justify-center gap-4 text-center'>
                               <div className='flex justify-center gap-2'>
@@ -1693,7 +1693,7 @@ export default function JugarMultijugador() {
                           </div>
                         </>
                       ) : (
-                        <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-8 lg:p-4 xl:p-6 2xl:p-8 w-140 h-95  max-w-2xl  shadow-2xl'>
+                        <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-4 lg:p-4 xl:p-4 2xl:p-4 max-w-2xl shadow-2xl'>
                           {/* numero de preguntas realizadas */}
                           <div className='mb-6 lg:mb-2 xl:text-lg 2xl:text-xl'>
                             <span className='text-sm font-bold text-yellow-300'>
@@ -1702,7 +1702,7 @@ export default function JugarMultijugador() {
                           </div>
 
                           {/* pregunta */}
-                          <p className='text-xs lg:text-mb xl:text-lg 2xl:text-xl font-bold text-white mb-8 lg:mb-4 leading-relaxed'>
+                          <p className='text-3xl lg:text-mb xl:text-lg 2xl:text-3xl text-center font-bold text-white mb-4 leading-relaxed'>
                             {idioma === 'en'
                               ? preguntaActual.enunciado_en
                               : preguntaActual.enunciado}
