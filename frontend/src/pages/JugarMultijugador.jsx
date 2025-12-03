@@ -1,9 +1,8 @@
 // src/pages/JugarMultijugador.jsx
 
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
-import { Link } from 'react-router-dom';
 import axios from 'axios';
 import cine from '/sounds/cine.mp3';
 import confetti from 'canvas-confetti';
@@ -21,15 +20,14 @@ import { resolveFotoAjena } from '../utils/resolveFotoAjena.js';
 import { useAuth } from '../context/auth-context.jsx';
 import { useGame } from '../context/ContextJuego.jsx';
 import { useMusic } from '../context/MusicContext.jsx';
+import useNavigationGuard from '../context/useNavigationGuard.jsx';
 import useSound from 'use-sound';
 import { useTranslation } from 'react-i18next';
-import useNavigationGuard from '../context/useNavigationGuard.jsx';
 
 function formatearTimestampParaMySQL(timestampEnMilisegundos) {
   const MS_3HS = 3 * 60 * 60 * 1000;
   const fecha = new Date(Number(timestampEnMilisegundos) - MS_3HS);
 
-  // Usamos métodos para construir el string en formato 'YYYY-MM-DD HH:MM:SS'
   const anio = fecha.getFullYear();
   const mes = String(fecha.getMonth() + 1).padStart(2, '0');
   const dia = String(fecha.getDate()).padStart(2, '0');
@@ -40,7 +38,7 @@ function formatearTimestampParaMySQL(timestampEnMilisegundos) {
   return `${anio}-${mes}-${dia} ${horas}:${minutos}:${segundos}`;
 }
 
-// ===== util: PRNG determinístico y shuffle con seed (para que ambos vean lo mismo)
+// ===== util: PRNG determinístico y shuffle con seed
 function mulberry32(a) {
   return function () {
     let t = (a += 0x6d2b79f5);
@@ -49,6 +47,7 @@ function mulberry32(a) {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
+
 function shuffleSeeded(arr, seed) {
   const rnd = mulberry32(seed);
   const a = arr.slice();
@@ -66,6 +65,7 @@ function traducirDificultad(d) {
   if (x === 'hard' || x === 'difícil' || x === 'dificil') return 'dificil';
   return 'normal';
 }
+
 function tiempoPorPregunta(t) {
   const x = String(t || '').toLowerCase();
   if (x === 'facíl' || x === 'facil' || x === 'easy') return 15;
@@ -81,6 +81,7 @@ export default function JugarMultijugador() {
     if (!fp) return true;
     return fp === '/uploads/default.png' || fp === `${API_URL}/uploads/default.png`;
   };
+
   const navigate = useNavigate();
   const location = useLocation();
   const { id: salaId } = useParams(); // salaId
@@ -96,11 +97,9 @@ export default function JugarMultijugador() {
     };
   }, []);
 
-  //console.log("useParams(): ", useParams());
-
   const musicStartedRef = useRef(false);
   const timerRef = useRef(null);
-  const finPartidaProcesadaRef = useRef(false); // para que no se ejecute 2 vece el ultimo useEffect (guadar_partida)
+  const finPartidaProcesadaRef = useRef(false);
 
   const [jugadores, setJugadores] = useState([]); // [{userId, nombre, foto_perfil, esCreador}]
   const abs = (p) =>
@@ -110,8 +109,8 @@ export default function JugarMultijugador() {
   const [playCorrect] = useSound(correcta, { volume: 0.3 });
   const [playWrong] = useSound(incorrecta, { volume: 0.3 });
   const [playTimeout] = useSound(finalDeJuego, { volume: 0.5 });
-  //const [fiveSecondsSound, { stop: stopFiveSeconds }] = useSound(fiveSeconds, { volume: 0.4 });
-  // MÚSICA DE FONDO POR CATEGORÍA
+
+  // música de fondo por categoría
   const [playing, { stop }] = useSound(musicaPreguntasDefault, { volume: 0.5 });
   const [playingCine, { stop: cineStop }] = useSound(cine, { volume: 0.7 });
   const [playingHistoria, { stop: historiaStop }] = useSound(historia, { volume: 0.3 });
@@ -122,7 +121,7 @@ export default function JugarMultijugador() {
   });
 
   // estado del juego
-  const [config, setConfig] = useState(null); // {categoria, dificultad, tiempo}
+  const [config, setConfig] = useState(null); // {categoria, dificultad, tiempo, partida_id}
   const [preguntas, setPreguntas] = useState([]);
   const [preguntaActual, setPreguntaActual] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -145,7 +144,7 @@ export default function JugarMultijugador() {
   useEffect(() => {
     const handler = (e) => {
       e.preventDefault();
-      e.returnValue = ''; // necesario para que el navegador muestre la alerta
+      e.returnValue = '';
     };
 
     window.addEventListener('beforeunload', handler);
@@ -154,9 +153,10 @@ export default function JugarMultijugador() {
       window.removeEventListener('beforeunload', handler);
     };
   }, []);
+
   useNavigationGuard(t('exit'), !juegoTerminado);
 
-  // confeti
+  // confeti canvas
   const canvasRef = useRef(null);
   const confettiInstanceRef = useRef(null);
 
@@ -168,10 +168,10 @@ export default function JugarMultijugador() {
     informatica: t('informatic'),
   };
   const rawCategory = String(config?.categoria || '').toLowerCase();
-
   const translatedCategory = categoryTranslations[rawCategory] || rawCategory;
 
   const { audioRef } = useMusic();
+
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.pause();
@@ -179,15 +179,16 @@ export default function JugarMultijugador() {
     }
     return () => {
       if (audioRef.current) {
-        audioRef.current.play().catch(() => {});
+        audioRef.current.play().catch(() => { });
       }
     };
   }, [audioRef]);
 
+  // desbloquear audio mobile
   useEffect(() => {
     const unlockAudio = () => {
       const audio = new Audio();
-      audio.play().catch(() => {});
+      audio.play().catch(() => { });
       window.removeEventListener('click', unlockAudio);
     };
 
@@ -208,7 +209,7 @@ export default function JugarMultijugador() {
     };
   }, []);
 
-  // Mapeo de iconos por categoría
+  // iconos por categoría
   const categoryIcons = {
     cine: '🎬',
     historia: '📜',
@@ -221,17 +222,16 @@ export default function JugarMultijugador() {
   const [perdedor, setPerdedor] = useState(null);
   const [esperandoResultado, setEsperandoResultado] = useState(false);
 
-  // === NUEVO: socket y buffer de respuestas por jugador ===
+  // socket y buffer de respuestas
   const socketRef = useRef(null);
   const [respuestasPorJugador, setRespuestasPorJugador] = useState({}); // { [userId]: Respuesta[] }
-  // === NUEVO: socket dispara "crear_tablas_faltantes" una sola vez
+
+  // flags / mapeos devueltos por el server
   const crearTablasEnviadoRef = useRef(false);
-  // === NUEVO: guardar respuestas para poder guardar en la bd
   const ppIdByPreguntaIdRef = useRef({}); // { [pregunta_id]: partida_pregunta_id }
   const estadisticaIdByJugadorIdRef = useRef({}); // { [jugador_id]: estadistica_id }
 
-  // 1.1
-  // Para identificar nombre local (sólo para payload informativo)
+  // nombre local
   const currentUserName = (() => {
     try {
       const u = JSON.parse(localStorage.getItem('user') || 'null') || {};
@@ -241,7 +241,7 @@ export default function JugarMultijugador() {
     }
   })();
 
-  // cleanup de sonidos/timers
+  // cleanup sonidos al desmontar
   useEffect(() => {
     return () => {
       stop();
@@ -250,19 +250,10 @@ export default function JugarMultijugador() {
       geografiaStop();
       informaticaStop();
       conocimientoStop();
-      //stopFiveSeconds();
     };
-  }, [
-    stop,
-    cineStop,
-    historiaStop,
-    geografiaStop,
-    informaticaStop,
-    conocimientoStop,
-    //stopFiveSeconds,
-  ]);
+  }, [stop, cineStop, historiaStop, geografiaStop, informaticaStop, conocimientoStop]);
 
-  // === NEW: identificar al usuario actual (desde localStorage) ===
+  // ID del usuario actual (user.id)
   const currentUserId = (() => {
     try {
       return JSON.parse(localStorage.getItem('user') || 'null')?.id ?? null;
@@ -271,91 +262,27 @@ export default function JugarMultijugador() {
     }
   })();
 
-  //console.log("currentUserId: ", currentUserId);
+  // ordenar siempre: creador primero
+  const ordenados = [...jugadores].sort((a, b) =>
+    a?.esCreador === b?.esCreador ? 0 : a?.esCreador ? -1 : 1
+  );
+  const creador = ordenados[0] || null;
+  const invitado = ordenados[1] || null;
 
-  // 0) Inicializar config desde state o localStorage
-  useEffect(() => {
-    if (config) return;
-    const fromState = location.state?.config;
-    if (fromState?.categoria && fromState?.dificultad && fromState?.tiempo) {
-      setConfig(fromState);
-      return;
-    }
-    try {
-      const ls = JSON.parse(localStorage.getItem('ultima_config_multijugador') || 'null');
-      if (ls?.categoria && ls?.dificultad && ls?.tiempo) {
-        setConfig(ls);
-      }
-    } catch {}
-  }, [config, location.state]);
+  // quién soy yo
+  const jugadorActual = (() => {
+    if (creador?.userId === currentUserId) return creador;
+    if (invitado?.userId === currentUserId) return invitado;
+    return null;
+  })();
 
-  //console.log("config: ", config);
+  const jugadorActualId = jugadorActual ? Number(jugadorActual.jugador_id) : null;
 
-  // 2) Función pura que devuelve [ganador, perdedor] como objetos
-  function getGanadorYPerdedor(creador, invitado, statsCreador, statsInvitado) {
-    if (!creador || !invitado || !statsCreador || !statsInvitado) {
-      return [null, null];
-    }
-
-    const jugadorIdCreador = Number(creador.jugador_id) || null;
-    const jugadorIdInvitado = Number(invitado.jugador_id) || null;
-
-    const pickWinner = (A, B, idA, idB) => {
-      if (A.total_correctas > B.total_correctas) return idA;
-      if (B.total_correctas > A.total_correctas) return idB;
-
-      if (A.total_tiempo_correctas_ms < B.total_tiempo_correctas_ms) return idA;
-      if (B.total_tiempo_correctas_ms < A.total_tiempo_correctas_ms) return idB;
-
-      return null;
-    };
-
-    const ganadorId = pickWinner(statsCreador, statsInvitado, jugadorIdCreador, jugadorIdInvitado);
-
-    if (ganadorId == null) return [null, null];
-
-    const ganadorEsCreador = ganadorId === jugadorIdCreador;
-
-    const ganadorBase = ganadorEsCreador
-      ? { ...creador, ...statsCreador }
-      : { ...invitado, ...statsInvitado };
-
-    const perdedorBase = ganadorEsCreador
-      ? { ...invitado, ...statsInvitado }
-      : { ...creador, ...statsCreador };
-
-    // Puntaje base (por las dudas, fallback a 0)
-    const puntajeBaseGanador = Number(ganadorBase.puntaje_total) || 0;
-    const puntajeBasePerdedor = Number(perdedorBase.puntaje_total) || 0;
-
-    // Aplicar bonus SOLO en los objetos que devolvés al front
-    const ganador = {
-      ...ganadorBase,
-      puntaje_total: puntajeBaseGanador + 1000,
-    };
-
-    const perdedor = {
-      ...perdedorBase,
-      puntaje_total: puntajeBasePerdedor + 500,
-    };
-
-    return [ganador, perdedor];
-  }
-
-  // Ejemplo: handler async (puede ser un socket.on, un controller, etc.)
-  async function finalizarPartida(creador, invitado, statsCreador, statsInvitado, config) {
-    const [ganador, perdedor] = getGanadorYPerdedor(creador, invitado, statsCreador, statsInvitado);
-
-    // ⛔ ya no tocamos BD acá, solo devolvemos para UI
-    return { ganador, perdedor };
-  }
-
-  // 1) Socket: traer/escuchar jugadores (con dedupe)
+  // Socket: traer/escuchar jugadores y fin de partida
   useEffect(() => {
     const s = inicializarSocket();
     if (!s) return;
 
-    // >>> NUEVO: conservar referencia del socket
     socketRef.current = s;
 
     function dedupeJugadores(arr = []) {
@@ -370,16 +297,56 @@ export default function JugarMultijugador() {
     const onSalaActualizada = (estado) => setJugadores(dedupeJugadores(estado?.jugadores));
     const onJugadorSeFue = (estado) => setJugadores(dedupeJugadores(estado?.jugadores));
 
-    // >>> NUEVO: cuando otro jugador emite su respuesta
     const onRespuestaSala = ({ userId, nombre, indice, respuesta }) => {
       if (userId == null || typeof indice !== 'number' || !respuesta) return;
       setRespuestasPorJugador((prev) => {
         const arr = prev[userId] ? [...prev[userId]] : [];
-        arr[indice] = respuesta; // guardamos por índice de pregunta
+        arr[indice] = respuesta;
         return { ...prev, [userId]: arr };
       });
     };
 
+    const onFinPartida = async (payload) => {
+      setPartidaCompleta(payload);
+      setEsperandoResultado(false);
+      setJuegoTerminado(true);
+      setAlerta(t('gameOver'));
+
+      const ganadorId = payload?.resumen?.ganador_jugador_id ?? null;
+      const jugadoresResumen = payload?.resumen?.jugadores || [];
+
+      if (ganadorId != null) {
+        const g =
+          jugadoresResumen.find((j) => Number(j.jugador_id) === Number(ganadorId)) || null;
+        const p =
+          jugadoresResumen.find((j) => Number(j.jugador_id) !== Number(ganadorId)) || null;
+
+        setGanador(g);
+        setPerdedor(p);
+        setJugadorIdGanador(ganadorId);
+      } else {
+        const j1 = jugadoresResumen[0] || null;
+        const j2 = jugadoresResumen[1] || null;
+        setGanador(j1);
+        setPerdedor(j2);
+        setJugadorIdGanador(null);
+      }
+
+      if (jugadorActualId) {
+        try {
+          const { data } = await axios.get(`${API_URL}/jugadores/${jugadorActualId}`);
+          const nuevoPuntaje = Number(data?.puntaje ?? 0);
+          updateUser({ puntaje: nuevoPuntaje });
+        } catch (err) {
+          console.log(
+            'Error al sincronizar puntaje del jugador:',
+            err.response?.data?.error || err.message
+          );
+        }
+      }
+    };
+
+    // pedir info de la sala
     s.emit('obtener_sala', { salaId }, (estado) => {
       if (estado?.ok) setJugadores(dedupeJugadores(estado.jugadores));
       else {
@@ -392,39 +359,18 @@ export default function JugarMultijugador() {
 
     s.on('sala_actualizada', onSalaActualizada);
     s.on('jugador_se_fue', onJugadorSeFue);
-
-    // >>> NUEVO: listener para respuestas del otro jugador
     s.on('sala:respuesta', onRespuestaSala);
+    s.on('sala:fin_partida', onFinPartida);
 
     return () => {
       s.off('sala_actualizada', onSalaActualizada);
       s.off('jugador_se_fue', onJugadorSeFue);
-
-      // >>> NUEVO: cleanup del listener
       s.off('sala:respuesta', onRespuestaSala);
+      s.off('sala:fin_partida', onFinPartida);
     };
-  }, [salaId, inicializarSocket, navigate]);
+  }, [salaId, inicializarSocket, navigate, API_URL, jugadorActualId, updateUser]);
 
-  //console.log("jugadores: ", jugadores);
-
-  // ordenar siempre: creador primero
-  const ordenados = [...jugadores].sort((a, b) =>
-    a?.esCreador === b?.esCreador ? 0 : a?.esCreador ? -1 : 1
-  );
-  //console.log("ordenados: ", ordenados);
-  const creador = ordenados[0] || null;
-  const invitado = ordenados[1] || null;
-
-  // 👇 NUEVO: quién soy yo en esta partida
-  const jugadorActual = (() => {
-    if (creador?.userId === currentUserId) return creador;
-    if (invitado?.userId === currentUserId) return invitado;
-    return null;
-  })();
-
-  const jugadorActualId = jugadorActual ? Number(jugadorActual.jugador_id) : null;
-
-  // === NEW: Máximo 2 jugadores. Si el actual NO está entre los 2, redirige a SalaPartidas ===
+  // Máx 2 jugadores, resto se redirige
   useEffect(() => {
     if (!Array.isArray(jugadores) || jugadores.length === 0) return;
     const top2 = ordenados.slice(0, 2);
@@ -437,7 +383,23 @@ export default function JugarMultijugador() {
     }
   }, [jugadores, ordenados, currentUserId, navigate, salaId]);
 
-  // 2) Cargar preguntas (seed determinístico)
+  // Inicializar config desde state o localStorage
+  useEffect(() => {
+    if (config) return;
+    const fromState = location.state?.config;
+    if (fromState?.categoria && fromState?.dificultad && fromState?.tiempo) {
+      setConfig(fromState);
+      return;
+    }
+    try {
+      const ls = JSON.parse(localStorage.getItem('ultima_config_multijugador') || 'null');
+      if (ls?.categoria && ls?.dificultad && ls?.tiempo) {
+        setConfig(ls);
+      }
+    } catch { }
+  }, [config, location.state]);
+
+  // Cargar preguntas (seed determinístico)
   useEffect(() => {
     if (!config) return;
     (async () => {
@@ -476,27 +438,24 @@ export default function JugarMultijugador() {
         setLoading(false);
       }
     })();
-  }, [config, salaId]);
+  }, [config, salaId, API_URL]);
 
-  // enviar jugadores a un nuevo socket para inicializar tablas:
-  // estadisticas, partida_jugadores y partida_preguntas
+  // Enviar datos para crear tablas faltantes
   useEffect(() => {
-    if (crearTablasEnviadoRef.current) return; // ya se envió
-    if (!socketRef.current) return; // socket aún no listo
-    if (!config) return; // todavía no cargó config
-    if (!creador || !invitado) return; // esperamos a tener 2 jugadores
-    if (!Array.isArray(preguntas) || preguntas.length === 0) return; // ✅
-    // traigo la última config guardada
+    if (crearTablasEnviadoRef.current) return;
+    if (!socketRef.current) return;
+    if (!config) return;
+    if (!creador || !invitado) return;
+    if (!Array.isArray(preguntas) || preguntas.length === 0) return;
+
     let ultimaCfg = null;
     try {
       ultimaCfg = JSON.parse(localStorage.getItem('ultima_config_multijugador') || 'null');
-    } catch {}
+    } catch { }
 
-    // 1) Tomo el partida_id de la config efectiva que vas a enviar
     const cfgEfectiva = ultimaCfg || config;
     const partidaId = Number(cfgEfectiva?.partida_id) || null;
 
-    // 2) Construyo el array pedido a partir de las 10 preguntas en orden
     const partida_preguntas_tabla = (preguntas || []).map((p, idx) => {
       const opciones = Array.isArray(p.Opciones) ? p.Opciones : [];
       const correcta = opciones.find((o) => o?.es_correcta === true) || null;
@@ -504,7 +463,7 @@ export default function JugarMultijugador() {
       return {
         partida_id: partidaId,
         pregunta_id: Number(p?.id) || null,
-        orden: idx + 1, // arranca en 1 ✅
+        orden: idx + 1,
         question_text_copy: String(p?.enunciado ?? ''),
         question_text_copy_en: String(p?.enunciado_en ?? ''),
         correct_option_id_copy: correcta ? Number(correcta.id) || null : null,
@@ -517,7 +476,7 @@ export default function JugarMultijugador() {
 
     const payload = {
       salaId,
-      config: ultimaCfg || config,
+      config: cfgEfectiva,
       jugadores: [creador, invitado].map((j) => ({
         userId: j?.userId ?? null,
         jugador_id: j?.jugador_id ?? null,
@@ -525,19 +484,11 @@ export default function JugarMultijugador() {
         foto_perfil: j?.foto_perfil ?? '/uploads/default.png',
         esCreador: !!j?.esCreador,
       })),
-      partida_preguntas_tabla, // reemplazo solicitado
-      // (no enviamos `preguntas`)  // ← si querés enviar todo
-
-      //preguntas: preguntasCompactas,  // ← o este compacto
+      partida_preguntas_tabla,
     };
 
-    console.log('####payload: ', payload);
-
     socketRef.current.emit('crear_tablas_faltantes', payload, (ack) => {
-      console.log('crear_tablas_faltantes → ack:', ack);
-      // Si el server devuelve mapeos, los guardamos. Si no, no pasa nada.
       if (ack?.partida_preguntas_mapeo) {
-        // Espera algo como [{pregunta_id, partida_pregunta_id, orden}, ...]
         const map = {};
         for (const r of ack.partida_preguntas_mapeo) {
           if (Number.isFinite(r?.pregunta_id) && Number.isFinite(r?.partida_pregunta_id)) {
@@ -546,9 +497,7 @@ export default function JugarMultijugador() {
         }
         ppIdByPreguntaIdRef.current = map;
       }
-      console.log('ack: ', ack);
       if (ack?.estadisticas_map) {
-        // Espera algo como { [jugador_id]: estadistica_id }
         estadisticaIdByJugadorIdRef.current = ack.estadisticas_map || {};
       }
     });
@@ -556,22 +505,20 @@ export default function JugarMultijugador() {
     crearTablasEnviadoRef.current = true;
   }, [creador, invitado, config, salaId, preguntas]);
 
-  // 3) Contador inicial + música
-  // 3) Contador inicial + música por categoría
+  // Contador inicial + música por categoría
   useEffect(() => {
     if (!mostrarContador) return;
 
     if (contadorInicial > 0) {
       if (contadorInicial === 5) {
         fiveSecondsAudio.current.currentTime = 0;
-        fiveSecondsAudio.current.play().catch(() => {});
+        fiveSecondsAudio.current.play().catch(() => { });
       }
 
-      const t = setTimeout(() => setContadorInicial((v) => v - 1), 1000);
-      return () => clearTimeout(t);
+      const tId = setTimeout(() => setContadorInicial((v) => v - 1), 1000);
+      return () => clearTimeout(tId);
     }
 
-    // cuando llega a 0 y aún no arrancó el juego
     if (!juegoIniciado && !juegoTerminado) {
       setJuegoIniciado(true);
       setTiempoRestante(tiempoPorPregunta(config?.tiempo));
@@ -590,7 +537,6 @@ export default function JugarMultijugador() {
         } else if (cat === 'conocimiento general' || cat === 'general knowledge') {
           playingConocimiento();
         } else {
-          // default si no matchea ninguna
           playing();
         }
 
@@ -604,7 +550,6 @@ export default function JugarMultijugador() {
     juegoTerminado,
     config?.categoria,
     config?.tiempo,
-    //fiveSecondsSound,
     playing,
     playingCine,
     playingHistoria,
@@ -613,7 +558,7 @@ export default function JugarMultijugador() {
     playingConocimiento,
   ]);
 
-  // 4) Cronómetro por pregunta
+  // Cronómetro por pregunta
   useEffect(() => {
     if (!preguntaActual || !juegoIniciado || juegoTerminado || cronometroPausado) {
       if (timerRef.current) clearInterval(timerRef.current);
@@ -621,7 +566,6 @@ export default function JugarMultijugador() {
     }
     setTiempoRestante(tiempoPorPregunta(config?.tiempo));
 
-    // Inicia timepo de la pregunta
     questionStartRef.current = performance.now();
 
     timerRef.current = setInterval(() => {
@@ -638,11 +582,11 @@ export default function JugarMultijugador() {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [preguntaActual, juegoIniciado, juegoTerminado, cronometroPausado, config?.tiempo]);
 
-  // 5) Guardar respuesta y avanzar
+  // Guardar respuesta y avanzar
   const handleGuardarRespuesta = (opcion) => {
-    // ⛔ Evitar doble ejecución (timer + click) o después de terminar
     if (cronometroPausado || juegoTerminado || respuestaSeleccionada) {
       return;
     }
@@ -681,27 +625,23 @@ export default function JugarMultijugador() {
       respuesta: payloadRespuesta,
     });
 
-    // ⏳ Esperar 3s para mostrar feedback de correcta/incorrecta
     setTimeout(() => {
       const siguiente = contador + 1;
 
-      // 👉 Mostrar overlay de "siguiente pregunta"
       setMostrarEspera(true);
 
       if (siguiente < preguntas.length) {
-        // cambiamos la pregunta mientras el overlay está visible
         setContador(siguiente);
         setPreguntaActual(preguntas[siguiente]);
         setRespuestaSeleccionada(null);
         setRespuestaCorrecta(null);
 
-        // dejamos el cartelito 1 segundo más (ajustá a gusto)
         setTimeout(() => {
           setMostrarEspera(false);
-          setCronometroPausado(false); // vuelve a correr el timer
+          setCronometroPausado(false);
         }, 1000);
       } else {
-        setAlerta('Juego terminado ✅');
+        setAlerta(t('gameOver'));
         setJuegoTerminado(true);
         setJuegoIniciado(false);
         setTiempoRestante(0);
@@ -711,7 +651,7 @@ export default function JugarMultijugador() {
     }, 3000);
   };
 
-  // 6) Stop música al terminar
+  // Detener música al terminar
   useEffect(() => {
     if (juegoTerminado) {
       stop();
@@ -722,39 +662,24 @@ export default function JugarMultijugador() {
       conocimientoStop();
       musicStartedRef.current = false;
     }
-  }, [
-    juegoTerminado,
-    stop,
-    cineStop,
-    historiaStop,
-    geografiaStop,
-    informaticaStop,
-    conocimientoStop,
-  ]);
+  }, [juegoTerminado, stop, cineStop, historiaStop, geografiaStop, informaticaStop, conocimientoStop]);
 
-  // mostrar todas las respuestas despues de jugar y este terminado
+  // Mostrar todas las respuestas después de terminar
   useEffect(() => {
     if (!juegoTerminado) return;
 
-    // Identifico quién es el “otro”
     const myId = currentUserId;
     const otherId =
       creador?.userId === myId
         ? invitado?.userId
         : invitado?.userId === myId
-        ? creador?.userId
-        : null;
-
-    //console.log('▶︎ Respuestas del jugador actual:', respuestas);
+          ? creador?.userId
+          : null;
 
     if (otherId != null) {
-      // console.log('▶︎ Respuestas del otro jugador:', respuestasPorJugador[otherId] || []);
-    } else {
-      // console.log('▶︎ No se pudo identificar al otro jugador aún.');
+      // consola si querés
+      // console.log('Respuestas del otro jugador:', respuestasPorJugador[otherId] || []);
     }
-
-    // (Opcional) Si querés ver todo el buffer por userId:
-    // console.log('▶︎ Buffer de respuestas por jugador:', respuestasPorJugador);
   }, [juegoTerminado, creador, invitado, respuestas, respuestasPorJugador, currentUserId]);
 
   const calcularPuntaje = (respuestasCor, tiempo, dificultad) => {
@@ -769,13 +694,14 @@ export default function JugarMultijugador() {
 
     let puntos = 0;
     respuestasCor.forEach((respuesta) => {
-      const tiempo = respuesta.tiempo; // en segundos
-      if (tiempo <= 3) puntos += 10;
-      else if (tiempo <= 5) puntos += 7;
-      else if (tiempo <= 8) puntos += 5;
-      else if (tiempo <= 12) puntos += 3;
+      const tSeg = respuesta.tiempo;
+      if (tSeg <= 3) puntos += 10;
+      else if (tSeg <= 5) puntos += 7;
+      else if (tSeg <= 8) puntos += 5;
+      else if (tSeg <= 12) puntos += 3;
       else puntos += 1;
     });
+
     const dificult = dificultad.toLowerCase();
     let puntosDificultad = 0;
     if (dificult.includes('facíl') || dificult.includes('easy'))
@@ -784,14 +710,13 @@ export default function JugarMultijugador() {
       puntosDificultad = 10 * respuestasCor.length;
     if (dificult.includes('dificíl') || dificult.includes('hard'))
       puntosDificultad = 15 * respuestasCor.length;
-    console.log(puntos);
-    console.log(puntosDificultad);
+
     return Math.round((puntos + puntosDificultad) * multiplicador);
   };
 
   const [partidaCompleta, setPartidaCompleta] = useState(null);
-  // === NUEVO: al terminar la partida, armo las 20 respuestas (2 jugadores x 10 preguntas), calculo ganador y envío ===
-  // === NUEVO: al terminar la partida, SOLO el último jugador guarda en BD ===
+
+  // Al terminar: último jugador arma payload y guarda en BD
   useEffect(() => {
     if (!juegoTerminado) {
       finPartidaProcesadaRef.current = false;
@@ -802,7 +727,7 @@ export default function JugarMultijugador() {
     if (!Array.isArray(preguntas) || preguntas.length === 0) return;
     if (!Array.isArray(respuestas) || respuestas.length === 0) return;
     if (!socketRef.current) return;
-    if (!jugadorActualId) return; // 👈 necesitamos saber quién soy
+    if (!jugadorActualId) return;
 
     const top2 = [creador, invitado].filter(Boolean);
     if (top2.length !== 2) return;
@@ -884,20 +809,17 @@ export default function JugarMultijugador() {
       });
     };
 
-    // 👉 primero le aviso al server "yo terminé"
     socketRef.current.emit('jugador_termino', { salaId, jugador_id: jugadorActualId }, (resp) => {
       if (!resp?.ok) {
         console.log('Error en jugador_termino:', resp?.error);
         return;
       }
 
-      // si NO soy el último -> solo muestro "esperando" y no calculo nada
       if (!resp.esUltimo) {
         setEsperandoResultado(true);
         return;
       }
 
-      // 👇 SOY EL ÚLTIMO → recién acá proceso todo y guardo en BD
       if (finPartidaProcesadaRef.current) return;
       finPartidaProcesadaRef.current = true;
       setEsperandoResultado(false);
@@ -909,13 +831,6 @@ export default function JugarMultijugador() {
       const statsInvitado = buildStats(respuestasInvitado);
 
       (async () => {
-        // ⚠️ ya no usamos finalizarPartida para setear ganador/perdedor
-        const respuestasCreador = buildRespuestasPara(creador);
-        const respuestasInvitado = buildRespuestasPara(invitado);
-
-        const statsCreador = buildStats(respuestasCreador);
-        const statsInvitado = buildStats(respuestasInvitado);
-
         const payload = {
           salaId,
           partida_id: Number(config.partida_id),
@@ -927,14 +842,12 @@ export default function JugarMultijugador() {
               {
                 jugador_id: Number(creador.jugador_id),
                 ...statsCreador,
-                // el server recalcula y le suma bonus, no pasa nada
               },
               {
                 jugador_id: Number(invitado.jugador_id),
                 ...statsInvitado,
               },
             ],
-            // el server también puede recalcular ganador_jugador_id si hace falta
             ganador_jugador_id: null,
             ended_at: formatearTimestampParaMySQL(Date.now()),
           },
@@ -962,64 +875,7 @@ export default function JugarMultijugador() {
     t,
   ]);
 
-  // 👂 Escuchar cuando el server avisa que la partida terminó (para ambos jugadores)
-  useEffect(() => {
-    const s = socketRef.current;
-    if (!s) return;
-
-    const onFinPartida = async (payload) => {
-      setPartidaCompleta(payload);
-      setEsperandoResultado(false);
-      setJuegoTerminado(true);
-      setAlerta('Juego terminado ✅');
-
-      const ganadorId = payload?.resumen?.ganador_jugador_id ?? null;
-      const jugadoresResumen = payload?.resumen?.jugadores || [];
-
-      if (ganadorId != null) {
-        // hay ganador
-        const g = jugadoresResumen.find((j) => Number(j.jugador_id) === Number(ganadorId)) || null;
-
-        const p = jugadoresResumen.find((j) => Number(j.jugador_id) !== Number(ganadorId)) || null;
-
-        setGanador(g);
-        setPerdedor(p);
-        setJugadorIdGanador(ganadorId);
-      } else {
-        // empate
-        const j1 = jugadoresResumen[0] || null;
-        const j2 = jugadoresResumen[1] || null;
-        setGanador(j1);
-        setPerdedor(j2);
-        setJugadorIdGanador(null);
-      }
-
-      // ✅ Después de que el server cerró la partida y actualizó BD,
-      //    cada cliente sincroniza SU puntaje global
-      if (jugadorActualId) {
-        try {
-          const { data } = await axios.get(`${API_URL}/jugadores/${jugadorActualId}`);
-          const nuevoPuntaje = Number(data?.puntaje ?? 0);
-
-          // Esto actualiza el contexto y localStorage (igual que en Ruleta)
-          updateUser({ puntaje: nuevoPuntaje });
-        } catch (err) {
-          console.log(
-            'Error al sincronizar puntaje del jugador:',
-            err.response?.data?.error || err.message
-          );
-        }
-      }
-    };
-
-    s.on('sala:fin_partida', onFinPartida);
-
-    return () => {
-      s.off('sala:fin_partida', onFinPartida);
-    };
-  }, [API_URL, jugadorActualId, updateUser]);
-
-  // crear instancia una vez que el canvas existe
+  // crear instancia de confeti
   useEffect(() => {
     if (canvasRef.current && !confettiInstanceRef.current) {
       confettiInstanceRef.current = confetti.create(canvasRef.current, {
@@ -1045,21 +901,18 @@ export default function JugarMultijugador() {
     });
   };
 
+  // lanzar confeti cuando hay ganador en el resumen
   useEffect(() => {
-    // 👉 Solo cuando la partida terminó
     if (!juegoTerminado) return;
-
-    // 👉 Y cuando ya existe un ganador en el resumen de la partida
     const ganadorId = partidaCompleta?.resumen?.ganador_jugador_id;
     if (!ganadorId) return;
 
-    // 🎉 Esto se ejecuta en *ambos* clientes (creador e invitado)
     for (let i = 0; i < 10; i++) {
       setTimeout(confetiFinal, 500 + i * 500);
     }
   }, [juegoTerminado, partidaCompleta]);
 
-  // ============================================================= html =====================================================================
+  // ========================================= JSX =========================================
   return (
     <div className='w-full text-white pt-2 mb-10'>
       {/* Canvas SIEMPRE montado */}
@@ -1076,10 +929,9 @@ export default function JugarMultijugador() {
         }}
       />
 
-      {/* Contenedor central con ancho máximo */}
       <div className='w-full'>
         {mostrarContador && contadorInicial > 0 ? (
-          // 🧮 PANTALLA DE CONTADOR
+          // PANTALLA DE CONTADOR
           <div className='min-h-[70vh] 2xl:min-h-screen flex items-start justify-center relative overflow-hidden'>
             <div className='relative z-10 text-center flex flex-col items-center gap-6 px-3'>
               <div className='bg-gradient-to-r from-purple-600 to-purple-700 px-4 py-2 rounded-3xl text-white text-lg sm:text-xl font-bold shadow-2xl border-2 border-purple-400/50 max-w-md w-full mx-auto'>
@@ -1107,13 +959,13 @@ export default function JugarMultijugador() {
                   {t('questionTotal')}: <span className='font-bold text-green-400'>10</span>
                 </p>
               </div>
+
               <h1 className='text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white drop-shadow-lg'>
                 {t('beReady')}
               </h1>
 
-
               <div className='mb-1'>
-                <div className='text-[120px] sm:text-[160px] md:text-[180px] 2xl:text-[180px font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-400 to-yellow-300 animate-pulse drop-shadow-[0_0_60px_rgba(250,204,21,1)] leading-none'>
+                <div className='text-[120px] sm:text-[160px] md:text-[180px] 2xl:text-[180px] font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-400 to-yellow-300 animate-pulse drop-shadow-[0_0_60px_rgba(250,204,21,1)] leading-none'>
                   {contadorInicial}
                 </div>
               </div>
@@ -1124,7 +976,7 @@ export default function JugarMultijugador() {
             </div>
           </div>
         ) : (
-          // 🎮 PANTALLA PRINCIPAL (preguntas / podio / resumen)
+          // PANTALLA PRINCIPAL
           <div className='flex flex-col items-center justify-start min-h-screen'>
             {loading ? (
               <div className='text-center space-y-4 mt-10'>
@@ -1155,7 +1007,6 @@ export default function JugarMultijugador() {
                   </Link>
                 </div>
 
-                {/* muestra "juego terminado" */}
                 <div className='bg-red-500/20 border-2 border-red-500 text-red-200 p-4 sm:p-6 mt-2 rounded-2xl text-lg sm:text-xl font-bold text-center w-full max-w-xl mx-auto'>
                   {alerta}
                 </div>
@@ -1168,7 +1019,7 @@ export default function JugarMultijugador() {
                   </div>
                 )}
 
-                {/* PODIO: HAY GANADOR */}
+                {/* PODIO con ganador */}
                 {!esperandoResultado && partidaCompleta?.resumen?.ganador_jugador_id != null ? (
                   <>
                     <div className='flex flex-row md:flex-row items-center justify-center gap-0.5 mt-10 w-full'>
@@ -1185,8 +1036,8 @@ export default function JugarMultijugador() {
                                 {ganador ? (
                                   <>
                                     {ganador?.foto_perfil &&
-                                    ganador?.foto_perfil !== `${API_URL}/uploads/default.png` &&
-                                    ganador?.foto_perfil !== `/uploads/default.png` ? (
+                                      ganador?.foto_perfil !== `${API_URL}/uploads/default.png` &&
+                                      ganador?.foto_perfil !== `/uploads/default.png` ? (
                                       <img
                                         src={resolveFotoAjena(ganador?.foto_perfil)}
                                         alt='ganador'
@@ -1226,11 +1077,11 @@ export default function JugarMultijugador() {
                                 {perdedor ? (
                                   <>
                                     {perdedor?.foto_perfil &&
-                                    perdedor?.foto_perfil !== `/uploads/default.png` ? (
+                                      perdedor?.foto_perfil !== `/uploads/default.png` ? (
                                       <img
                                         src={resolveFotoAjena(perdedor.foto_perfil)}
                                         alt='perdedor'
-                                        className='w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-4 border-blue-800/10 bg-gradient-to-br group-hover:scale-105 transition-transform duration-300 shadow-lg mb-4'
+                                        className='w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-4 border-blue-800/10 bg-gradient-to-br group-hover:scale-105 transition-transform duración-300 shadow-lg mb-4'
                                       />
                                     ) : (
                                       <div className='w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-3xl sm:text-4xl mb-4 shadow-lg'>
@@ -1273,9 +1124,9 @@ export default function JugarMultijugador() {
                                 {jugadores[0] ? (
                                   <>
                                     {jugadores[0]?.foto_perfil &&
-                                    jugadores[0]?.foto_perfil !==
+                                      jugadores[0]?.foto_perfil !==
                                       `${API_URL}/uploads/default.png` &&
-                                    jugadores[0]?.foto_perfil !== `/uploads/default.png` ? (
+                                      jugadores[0]?.foto_perfil !== `/uploads/default.png` ? (
                                       <img
                                         src={resolveFotoAjena(jugadores[0]?.foto_perfil)}
                                         alt='jugador creador'
@@ -1308,7 +1159,7 @@ export default function JugarMultijugador() {
                                 {jugadores[1] ? (
                                   <>
                                     {jugadores[1]?.foto_perfil &&
-                                    jugadores[1]?.foto_perfil !== `/uploads/default.png` ? (
+                                      jugadores[1]?.foto_perfil !== `/uploads/default.png` ? (
                                       <img
                                         src={resolveFotoAjena(jugadores[1].foto_perfil)}
                                         alt='jugador invitado'
@@ -1341,7 +1192,7 @@ export default function JugarMultijugador() {
                   </>
                 ) : null}
 
-                {/*=====================  Resumen de Respuestas =====================*/}
+                {/* Resumen de respuestas propias */}
                 {juegoTerminado && (
                   <div className='bg-black/50 rounded-2xl p-6 sm:p-8 mt-8 w-full max-w-2xl mx-auto'>
                     <h2 className='text-xl sm:text-2xl font-bold text-yellow-300 mb-4 sm:mb-6'>
@@ -1357,9 +1208,8 @@ export default function JugarMultijugador() {
                             <span className='font-bold text-yellow-300'>P{index + 1}:</span>{' '}
                             {respuesta.texto}
                             <span
-                              className={`ml-2 font-bold ${
-                                respuesta.es_correcta ? 'text-green-400' : 'text-red-400'
-                              }`}
+                              className={`ml-2 font-bold ${respuesta.es_correcta ? 'text-green-400' : 'text-red-400'
+                                }`}
                             >
                               {respuesta.es_correcta ? '✓' : '✗'}
                             </span>
@@ -1372,20 +1222,18 @@ export default function JugarMultijugador() {
               </>
             ) : preguntaActual && juegoIniciado ? (
               <>
-                {/* ============= MOBILE: categoría + tiempo + jugadores arriba, preguntas abajo ============= */}
+                {/* ==================== MOBILE ==================== */}
                 <div className='w-full block lg:hidden mt-4 space-y-2'>
-                  {/* GRID: 2 columnas para formar el bloque superior */}
                   <div className='grid grid-cols-3 gap-3 w-full'>
-                    {/* JUGADOR CREADOR - fila 3, columna 1 */}
+                    {/* Jugador creador */}
                     <div className='flex justify-center'>
-                      {/* 🔹 Versión "chica" de la tarjeta del creador */}
                       <div className='bg-gradient-to-b from-black/40 to-blue-800/10 rounded-2xl p-3 shadow-xl border-2 border-blue-400/30 w-full max-w-[8.5rem]'>
                         <div className='flex flex-col items-center'>
                           {creador ? (
                             <>
                               {creador?.foto_perfil &&
-                              creador?.foto_perfil !== `${API_URL}/uploads/default.png` &&
-                              creador?.foto_perfil !== `/uploads/default.png` ? (
+                                creador?.foto_perfil !== `${API_URL}/uploads/default.png` &&
+                                creador?.foto_perfil !== `/uploads/default.png` ? (
                                 <img
                                   src={resolveFotoAjena(creador?.foto_perfil)}
                                   alt='Creador'
@@ -1408,9 +1256,9 @@ export default function JugarMultijugador() {
                       </div>
                     </div>
 
-                    {/* CATEGORÍA - fila 1, ocupa las 2 columnas */}
+                    {/* Categoría + reloj */}
                     <div className='col-span-1 flex flex-col items-center justify-center'>
-                      {/* 🔹 PEGÁ ACÁ TU BLOQUE DE CATEGORÍA (el div "relative group" que ya tenías) */}
+                      {/* Categoría */}
                       <div className='relative group w-full flex items-center justify-center'>
                         <div className='absolute inset-0 bg-gradient-to-r from-orange-400 via-pink-400 to-orange-400 rounded-full blur-xl opacity-50 group-hover:opacity-70 transition-opacity duration-300 animate-pulse w-10 xs320:w-20 xs420:w-32 xs480:w-full' />
 
@@ -1427,38 +1275,32 @@ export default function JugarMultijugador() {
                         </div>
                       </div>
 
-                      {/* RELOJ - fila 2, ocupa las 1 columna */}
+                      {/* Reloj */}
                       <div className='flex w-full items-center justify-center mt-2'>
-                        {/* 🔹 PEGÁ ACÁ TU RELOJ (el cuadrito con el ⏱️) */}
                         <div
                           className={`rounded-2xl px-4 text-center flex flex-col items-center justify-center shadow-2xl 
-                            w-10           /* < 320px */
-                            xs320:w-20     /* ≥ 320px */
-                            xs420:w-32     /* ≥ 420px */
-                            xs480:w-full     /* ≥ 480px */
+                            w-10
+                            xs320:w-20
+                            xs420:w-32
+                            xs480:w-full
                             xs320:h-18 xs480:h-20
                             border-2                             
-                            ${
-                              tiempoRestante <= 5 && tiempoRestante > 0
-                                ? 'border-red-500/80 animate-pulse'
-                                : 'border-blue-400/30'
+                            ${tiempoRestante <= 5 && tiempoRestante > 0
+                              ? 'border-red-500/80 animate-pulse'
+                              : 'border-blue-400/30'
                             }`}
                         >
-                          {/* icono del reloj */}
                           <p className='text-[12px] xs480:text-base font-bold text-gray-800 mb-1'>
                             ⏱️
                           </p>
 
-                          {/* tiempo */}
                           <p
-                            className={`text-[12px] xs480:text-sm font-black ${
-                              tiempoRestante > 5 ? 'text-white' : 'text-red-600'
-                            }`}
+                            className={`text-[12px] xs480:text-sm font-black ${tiempoRestante > 5 ? 'text-white' : 'text-red-600'
+                              }`}
                           >
                             {tiempoRestante}
                           </p>
 
-                          {/* segundos */}
                           <p className='text-[12px] xs480:text-sm font-bold mt-1 text-white'>
                             {t('seconds')}
                           </p>
@@ -1466,15 +1308,14 @@ export default function JugarMultijugador() {
                       </div>
                     </div>
 
-                    {/* JUGADOR INVITADO - fila 2, columna 2 */}
+                    {/* Jugador invitado */}
                     <div className='flex justify-center'>
-                      {/* 🔹 Versión "chica" de la tarjeta del invitado */}
                       <div className='bg-gradient-to-b from-black/40 to-blue-800/10 rounded-2xl p-3 shadow-xl border-2 border-blue-400/30 w-full max-w-[8.5rem]'>
                         <div className='flex flex-col items-center'>
                           {invitado ? (
                             <>
                               {invitado?.foto_perfil &&
-                              invitado?.foto_perfil !== `/uploads/default.png` ? (
+                                invitado?.foto_perfil !== `/uploads/default.png` ? (
                                 <img
                                   src={resolveFotoAjena(invitado.foto_perfil)}
                                   alt='Invitado'
@@ -1498,7 +1339,7 @@ export default function JugarMultijugador() {
                     </div>
                   </div>
 
-                  {/* siguienete pregunta*/}
+                  {/* siguiente pregunta o enunciado + opciones */}
                   <div className='flex justify-center mt-3'>
                     {mostrarEspera ? (
                       <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-4 sm:p-6 w-full max-w-2xl shadow-2xl text-center'>
@@ -1520,66 +1361,57 @@ export default function JugarMultijugador() {
                         </div>
                       </div>
                     ) : (
-                      <>
-                        {/* preguntas y opciones de respuestas */}
-                        <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-1 xs320:p-2 xs420:p-2 xs480:p-4 sm:p-6 w-full max-w-2xl shadow-2xl'>
-                          {/* cantidad de preguntas */}
-                          <div className='mb-1'>
-                            <span className='text-[12px] font-bold text-yellow-300'>
-                              {t('question')} {contador + 1}/10
-                            </span>
-                          </div>
+                      <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-1 xs320:p-2 xs420:p-2 xs480:p-4 sm:p-6 w-full max-w-2xl shadow-2xl'>
+                        <div className='mb-1'>
+                          <span className='text-[12px] font-bold text-yellow-300'>
+                            {t('question')} {contador + 1}/10
+                          </span>
+                        </div>
 
-                          {/* pregunta */}
-                          <p className='text-[12px] font-bold text-white mb-4 sm:mb-6 leading-relaxed'>
-                            {idioma === 'en'
-                              ? preguntaActual.enunciado_en
-                              : preguntaActual.enunciado}
-                          </p>
+                        <p className='text-[12px] font-bold text-white mb-4 sm:mb-6 leading-relaxed'>
+                          {idioma === 'en' ? preguntaActual.enunciado_en : preguntaActual.enunciado}
+                        </p>
 
-                          {/* opciones de respuestas */}
-                          <div className='space-y-2 sm:space-y-3'>
-                            {preguntaActual.Opciones.map((opcion, index) => {
-                              let colorClase =
-                                'bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600';
+                        <div className='space-y-2 sm:space-y-3'>
+                          {preguntaActual.Opciones.map((opcion, index) => {
+                            let colorClase =
+                              'bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600';
 
-                              if (respuestaSeleccionada === opcion) {
-                                colorClase = respuestaCorrecta
-                                  ? 'bg-gradient-to-r from-green-500 to-emerald-500 scale-105'
-                                  : 'bg-gradient-to-r from-red-500 to-pink-500 scale-105';
-                              }
+                            if (respuestaSeleccionada === opcion) {
+                              colorClase = respuestaCorrecta
+                                ? 'bg-gradient-to-r from-green-500 to-emerald-500 scale-105'
+                                : 'bg-gradient-to-r from-red-500 to-pink-500 scale-105';
+                            }
 
-                              return (
-                                <button
-                                  key={index}
-                                  className={`rounded-xl w-full  
+                            return (
+                              <button
+                                key={index}
+                                className={`rounded-xl w-full  
                                     py-0.5 xs320:py-1 xs420:py-1.5 xs480:py-2 sm:py-3.5 px-3 sm:px-5 
                                     text-[12px] text-sm sm:text-lg text-white font-bold
                                     cursor-pointer transition-all shadow-lg border-2 border-transparent hover:border-yellow-300 disabled:opacity-50 ${colorClase}`}
-                                  onClick={() => handleGuardarRespuesta(opcion)}
-                                  disabled={
-                                    !!respuestaSeleccionada ||
-                                    cronometroPausado ||
-                                    tiempoRestante <= 0
-                                  }
-                                >
-                                  {idioma === 'en' ? opcion.texto_en : opcion.texto}
-                                </button>
-                              );
-                            })}
-                          </div>
+                                onClick={() => handleGuardarRespuesta(opcion)}
+                                disabled={
+                                  !!respuestaSeleccionada ||
+                                  cronometroPausado ||
+                                  tiempoRestante <= 0
+                                }
+                              >
+                                {idioma === 'en' ? opcion.texto_en : opcion.texto}
+                              </button>
+                            );
+                          })}
                         </div>
-                      </>
+                      </div>
                     )}
                   </div>
                 </div>
 
-                {/* ============= DESKTOP: categoría fila 1, tiempo fila 2, fila 3 con 3 columnas ============= */}
+                {/* ==================== DESKTOP ==================== */}
                 <div className='w-full hidden lg:block pt-6'>
                   <div className='grid grid-cols-3 gap-6 lg:gap-2 items-start'>
-                    {/* Fila 1: categoría - col-span-3 (ocupa 3 columnas) */}
+                    {/* categoría + reloj */}
                     <div className='col-span-3 flex flex-col justify-center items-center gap-2'>
-                      {/* 🔹 tu misma categoría, versión grande */}
                       <div className='relative group'>
                         <div className='absolute inset-0 bg-gradient-to-r from-orange-400 via-pink-400 to-orange-400 rounded-full blur-xl opacity-50 group-hover:opacity-70 transition-opacity duration-300 animate-pulse lg:w-40 xl:w-52 2xl:w-60' />
 
@@ -1594,52 +1426,44 @@ export default function JugarMultijugador() {
                         </div>
                       </div>
 
-                     <div
-  className={`rounded-3xl text-center flex flex-row gap-2 items-center justify-center shadow-2xl 
+                      <div
+                        className={`rounded-3xl text-center flex flex-row gap-2 items-center justify-center shadow-2xl 
     w-36 h-16
     md:w-48 md:h-20
     lg:w-52 lg:h-12
     xl:w-56 xl:h-14
     2xl:w-60 2xl:h-16
-    border-2 ${
-    tiempoRestante <= 5 && tiempoRestante > 0
-      ? 'border-red-500/80 animate-pulse'
-      : 'border-blue-400/30'
-  }`}
->
-  {/* icono reloj */}
-  <p className='text-3xl md:text-4xl lg:text-2xl xl:text-3xl 2xl:text-4xl font-bold text-gray-800'>
-    ⏱️
-  </p>
+    border-2 ${tiempoRestante <= 5 && tiempoRestante > 0
+                            ? 'border-red-500/80 animate-pulse'
+                            : 'border-blue-400/30'
+                          }`}
+                      >
+                        <p className='text-3xl md:text-4xl lg:text-2xl xl:text-3xl 2xl:text-4xl font-bold text-gray-800'>
+                          ⏱️
+                        </p>
 
-  {/* tiempo contando */}
-  <p
-    className={`text-4xl md:text-5xl lg:text-3xl xl:text-4xl 2xl:text-4xl font-black ${
-      tiempoRestante > 5 ? 'text-white' : 'text-red-600'
-    }`}
-  >
-    {tiempoRestante}
-  </p>
+                        <p
+                          className={`text-4xl md:text-5xl lg:text-3xl xl:text-4xl 2xl:text-4xl font-black ${tiempoRestante > 5 ? 'text-white' : 'text-red-600'
+                            }`}
+                        >
+                          {tiempoRestante}
+                        </p>
 
-  {/* segundos */}
-  <p className='text-xl md:text-2xl lg:text-xl xl:text-2xl 2xl:text-2xl font-bold text-white'>
-    {t('seconds')}
-  </p>
-</div>
+                        <p className='text-xl md:text-2xl lg:text-xl xl:text-2xl 2xl:text-2xl font-bold text-white'>
+                          {t('seconds')}
+                        </p>
+                      </div>
                     </div>
 
-                    {/* Fila 2: creador - preguntas - invitado */}
-                    {/* Columna 1: creador */}
+                    {/* creador */}
                     <div className='flex justify-center'>
-                      {/* 🔹 tu tarjeta grande de creador */}
                       <div className='bg-gradient-to-b from-black/40 to-blue-800/10 rounded-2xl p-6 shadow-xl border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20 w-full max-w-[13rem]'>
                         <div className='flex flex-col items-center'>
                           {creador ? (
                             <>
-                              {/* imagen */}
                               {creador?.foto_perfil &&
-                              creador?.foto_perfil !== `${API_URL}/uploads/default.png` &&
-                              creador?.foto_perfil !== `/uploads/default.png` ? (
+                                creador?.foto_perfil !== `${API_URL}/uploads/default.png` &&
+                                creador?.foto_perfil !== `/uploads/default.png` ? (
                                 <img
                                   src={resolveFotoAjena(creador?.foto_perfil)}
                                   alt='Creador'
@@ -1651,64 +1475,53 @@ export default function JugarMultijugador() {
                                 </div>
                               )}
 
-                              {/* datos del jugador */}
                               <span className='bg-blue-800 px-4 py-2 rounded-full text-sm font-bold text-center text-white'>
                                 {creador?.nombre || 'Creador'}
                               </span>
                               <span className='text-xs mt-2 opacity-70'>{t('creator')}</span>
                             </>
                           ) : (
-                            <>
-                              {/* cuando se va el jugador, quedal el fondo gris  */}
-                              <div className='w-24 h-24 rounded-full bg-white/20' />
-                            </>
+                            <div className='w-24 h-24 rounded-full bg-white/20' />
                           )}
                         </div>
                       </div>
                     </div>
 
-                    {/* Columna 2: preguntas */}
+                    {/* pregunta + opciones */}
                     <div className='flex justify-center pt-6'>
                       {mostrarEspera ? (
-                        <>
-                          {/* siguiente pregunta... */}
                         <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-8 lg:p-4 xl:p-6 2xl:p-8 w-150 h-95 shadow-2xl flex items-center justify-center'>
-
-                            <div className='flex flex-col items-center justify-center gap-4 text-center'>
-                              <div className='flex justify-center gap-2'>
-                                <div className='w-3 h-3 bg-yellow-300 rounded-full animate-bounce' />
-                                <div
-                                  className='w-3 h-3 bg-yellow-300 rounded-full animate-bounce'
-                                  style={{ animationDelay: '0.2s' }}
-                                />
-                                <div
-                                  className='w-3 h-3 bg-yellow-300 rounded-full animate-bounce'
-                                  style={{ animationDelay: '0.4s' }}
-                                />
-                              </div>
-                              <p className='text-2xl font-bold text-yellow-300 animate-pulse'>
-                                {t('nextQuestion')}
-                              </p>
+                          <div className='flex flex-col items-center justify-center gap-4 text-center'>
+                            <div className='flex justify-center gap-2'>
+                              <div className='w-3 h-3 bg-yellow-300 rounded-full animate-bounce' />
+                              <div
+                                className='w-3 h-3 bg-yellow-300 rounded-full animate-bounce'
+                                style={{ animationDelay: '0.2s' }}
+                              />
+                              <div
+                                className='w-3 h-3 bg-yellow-300 rounded-full animate-bounce'
+                                style={{ animationDelay: '0.4s' }}
+                              />
                             </div>
+                            <p className='text-2xl font-bold text-yellow-300 animate-pulse'>
+                              {t('nextQuestion')}
+                            </p>
                           </div>
-                        </>
+                        </div>
                       ) : (
                         <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-4 lg:p-4 xl:p-4 2xl:p-4 max-w-2xl shadow-2xl'>
-                          {/* numero de preguntas realizadas */}
                           <div className='mb-6 lg:mb-2 xl:text-lg 2xl:text-xl'>
                             <span className='text-sm font-bold text-yellow-300'>
                               {t('question')} {contador + 1}/10
                             </span>
                           </div>
 
-                          {/* pregunta */}
                           <p className='text-3xl lg:text-mb xl:text-lg 2xl:text-3xl text-center font-bold text-white mb-4 leading-relaxed'>
                             {idioma === 'en'
                               ? preguntaActual.enunciado_en
                               : preguntaActual.enunciado}
                           </p>
 
-                          {/* opciones de respuestas */}
                           <div className='space-y-4'>
                             {preguntaActual.Opciones.map((opcion, index) => {
                               let colorClase =
@@ -1721,7 +1534,6 @@ export default function JugarMultijugador() {
                               }
 
                               return (
-                                // boton de respuesta
                                 <button
                                   key={index}
                                   className={`w-full rounded-xl py-4 lg:py-1 px-6 cursor-pointer transition-all font-bold text-lg lg:text-sm xl:text-md 2xl:text-lg text-white shadow-lg border-2 border-transparent hover:border-yellow-300 disabled:opacity-50 ${colorClase}`}
@@ -1741,15 +1553,14 @@ export default function JugarMultijugador() {
                       )}
                     </div>
 
-                    {/* Columna 3: invitado */}
+                    {/* invitado */}
                     <div className='flex justify-center'>
-                      {/* 🔹 tu tarjeta grande de invitado */}
                       <div className='bg-gradient-to-b from-black/40 to-blue-800/10 rounded-2xl p-6 shadow-xl border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20 w-full max-w-[13rem]'>
                         <div className='flex flex-col items-center'>
                           {invitado ? (
                             <>
                               {invitado?.foto_perfil &&
-                              invitado?.foto_perfil !== `/uploads/default.png` ? (
+                                invitado?.foto_perfil !== `/uploads/default.png` ? (
                                 <img
                                   src={resolveFotoAjena(invitado.foto_perfil)}
                                   alt='Invitado'
