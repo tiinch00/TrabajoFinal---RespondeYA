@@ -1,8 +1,9 @@
 // src/pages/JugarMultijugador.jsx
 
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 import cine from '/sounds/cine.mp3';
 import confetti from 'canvas-confetti';
@@ -81,7 +82,6 @@ export default function JugarMultijugador() {
     if (!fp) return true;
     return fp === '/uploads/default.png' || fp === `${API_URL}/uploads/default.png`;
   };
-
   const navigate = useNavigate();
   const location = useLocation();
   const { id: salaId } = useParams(); // salaId
@@ -109,8 +109,6 @@ export default function JugarMultijugador() {
   const [playCorrect] = useSound(correcta, { volume: 0.3 });
   const [playWrong] = useSound(incorrecta, { volume: 0.3 });
   const [playTimeout] = useSound(finalDeJuego, { volume: 0.5 });
-
-  // música de fondo por categoría
   const [playing, { stop }] = useSound(musicaPreguntasDefault, { volume: 0.5 });
   const [playingCine, { stop: cineStop }] = useSound(cine, { volume: 0.7 });
   const [playingHistoria, { stop: historiaStop }] = useSound(historia, { volume: 0.3 });
@@ -121,7 +119,7 @@ export default function JugarMultijugador() {
   });
 
   // estado del juego
-  const [config, setConfig] = useState(null); // {categoria, dificultad, tiempo, partida_id}
+  const [config, setConfig] = useState(null); // {categoria, dificultad, tiempo}
   const [preguntas, setPreguntas] = useState([]);
   const [preguntaActual, setPreguntaActual] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -136,10 +134,10 @@ export default function JugarMultijugador() {
   const [juegoIniciado, setJuegoIniciado] = useState(false);
   const [mostrarContador, setMostrarContador] = useState(true);
   const [cronometroPausado, setCronometroPausado] = useState(false);
-  const questionStartRef = useRef(null); // tiempo en responder por respuesta
+  const questionStartRef = useRef(null); // tiempo en responder
   const [partidasPreguntasDeLaPartida, setPartidasPreguntasDeLaPartida] = useState([]);
   const [jugadorIdGanador, setJugadorIdGanador] = useState(null);
-  const [mostrarEspera, setMostrarEspera] = useState(false); // siguiete pregunta msg...
+  const [mostrarEspera, setMostrarEspera] = useState(false);
 
   useEffect(() => {
     const handler = (e) => {
@@ -153,10 +151,9 @@ export default function JugarMultijugador() {
       window.removeEventListener('beforeunload', handler);
     };
   }, []);
-
   useNavigationGuard(t('exit'), !juegoTerminado);
 
-  // confeti canvas
+  // confeti
   const canvasRef = useRef(null);
   const confettiInstanceRef = useRef(null);
 
@@ -171,7 +168,6 @@ export default function JugarMultijugador() {
   const translatedCategory = categoryTranslations[rawCategory] || rawCategory;
 
   const { audioRef } = useMusic();
-
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.pause();
@@ -184,18 +180,44 @@ export default function JugarMultijugador() {
     };
   }, [audioRef]);
 
-  // desbloquear audio mobile
   useEffect(() => {
-    const unlockAudio = () => {
-      const audio = new Audio();
-      audio.play().catch(() => { });
-      window.removeEventListener('click', unlockAudio);
+    const handleFirstClick = () => {
+      if (musicStartedRef.current) return;
+
+      const cat = String(config?.categoria || '').toLowerCase();
+
+      if (cat === 'cine' || cat === 'cinema') {
+        playingCine();
+      } else if (cat === 'historia' || cat === 'history') {
+        playingHistoria();
+      } else if (cat === 'geografía' || cat === 'geografia' || cat === 'geografhy') {
+        playingGeografia();
+      } else if (cat === 'informatica' || cat === 'informatic') {
+        playingInformatica();
+      } else if (cat === 'conocimiento general' || cat === 'general knowledge') {
+        playingConocimiento();
+      } else {
+        // música por defecto
+        playing();
+      }
+
+      musicStartedRef.current = true;
+      window.removeEventListener('click', handleFirstClick);
     };
 
-    window.addEventListener('click', unlockAudio);
+    window.addEventListener('click', handleFirstClick);
 
-    return () => window.removeEventListener('click', unlockAudio);
-  }, []);
+    return () => window.removeEventListener('click', handleFirstClick);
+  }, [
+    config,
+    playing,
+    playingCine,
+    playingHistoria,
+    playingGeografia,
+    playingInformatica,
+    playingConocimiento,
+  ]);
+
 
   const fiveSecondsAudio = useRef(null);
 
@@ -222,11 +244,9 @@ export default function JugarMultijugador() {
   const [perdedor, setPerdedor] = useState(null);
   const [esperandoResultado, setEsperandoResultado] = useState(false);
 
-  // socket y buffer de respuestas
+  // socket y buffers
   const socketRef = useRef(null);
   const [respuestasPorJugador, setRespuestasPorJugador] = useState({}); // { [userId]: Respuesta[] }
-
-  // flags / mapeos devueltos por el server
   const crearTablasEnviadoRef = useRef(false);
   const ppIdByPreguntaIdRef = useRef({}); // { [pregunta_id]: partida_pregunta_id }
   const estadisticaIdByJugadorIdRef = useRef({}); // { [jugador_id]: estadistica_id }
@@ -241,7 +261,7 @@ export default function JugarMultijugador() {
     }
   })();
 
-  // cleanup sonidos al desmontar
+  // cleanup sonidos
   useEffect(() => {
     return () => {
       stop();
@@ -253,7 +273,7 @@ export default function JugarMultijugador() {
     };
   }, [stop, cineStop, historiaStop, geografiaStop, informaticaStop, conocimientoStop]);
 
-  // ID del usuario actual (user.id)
+  // userId actual
   const currentUserId = (() => {
     try {
       return JSON.parse(localStorage.getItem('user') || 'null')?.id ?? null;
@@ -262,14 +282,13 @@ export default function JugarMultijugador() {
     }
   })();
 
-  // ordenar siempre: creador primero
+  // ordenar jugadores SIEMPRE acá (antes de los efectos que lo usan)
   const ordenados = [...jugadores].sort((a, b) =>
     a?.esCreador === b?.esCreador ? 0 : a?.esCreador ? -1 : 1
   );
   const creador = ordenados[0] || null;
   const invitado = ordenados[1] || null;
 
-  // quién soy yo
   const jugadorActual = (() => {
     if (creador?.userId === currentUserId) return creador;
     if (invitado?.userId === currentUserId) return invitado;
@@ -278,7 +297,80 @@ export default function JugarMultijugador() {
 
   const jugadorActualId = jugadorActual ? Number(jugadorActual.jugador_id) : null;
 
-  // Socket: traer/escuchar jugadores y fin de partida
+  // bandera: solo mostrar contador cuando hay config + preguntas
+  const readyForCountdown = !!(config && config.categoria && preguntas.length > 0);
+
+  // 0) Inicializar config desde state o localStorage
+  useEffect(() => {
+    if (config) return;
+    const fromState = location.state?.config;
+    if (fromState?.categoria && fromState?.dificultad && fromState?.tiempo) {
+      setConfig(fromState);
+      return;
+    }
+    try {
+      const ls = JSON.parse(localStorage.getItem('ultima_config_multijugador') || 'null');
+      if (ls?.categoria && ls?.dificultad && ls?.tiempo) {
+        setConfig(ls);
+      }
+    } catch { }
+  }, [config, location.state]);
+
+  // 2) Función para ganador/perdedor (solo UI)
+  function getGanadorYPerdedor(creador, invitado, statsCreador, statsInvitado) {
+    if (!creador || !invitado || !statsCreador || !statsInvitado) {
+      return [null, null];
+    }
+
+    const jugadorIdCreador = Number(creador.jugador_id) || null;
+    const jugadorIdInvitado = Number(invitado.jugador_id) || null;
+
+    const pickWinner = (A, B, idA, idB) => {
+      if (A.total_correctas > B.total_correctas) return idA;
+      if (B.total_correctas > A.total_correctas) return idB;
+
+      if (A.total_tiempo_correctas_ms < B.total_tiempo_correctas_ms) return idA;
+      if (B.total_tiempo_correctas_ms < A.total_tiempo_correctas_ms) return idB;
+
+      return null;
+    };
+
+    const ganadorId = pickWinner(statsCreador, statsInvitado, jugadorIdCreador, jugadorIdInvitado);
+
+    if (ganadorId == null) return [null, null];
+
+    const ganadorEsCreador = ganadorId === jugadorIdCreador;
+
+    const ganadorBase = ganadorEsCreador
+      ? { ...creador, ...statsCreador }
+      : { ...invitado, ...statsInvitado };
+
+    const perdedorBase = ganadorEsCreador
+      ? { ...invitado, ...statsInvitado }
+      : { ...creador, ...statsCreador };
+
+    const puntajeBaseGanador = Number(ganadorBase.puntaje_total) || 0;
+    const puntajeBasePerdedor = Number(perdedorBase.puntaje_total) || 0;
+
+    const ganador = {
+      ...ganadorBase,
+      puntaje_total: puntajeBaseGanador + 1000,
+    };
+
+    const perdedor = {
+      ...perdedorBase,
+      puntaje_total: puntajeBasePerdedor + 500,
+    };
+
+    return [ganador, perdedor];
+  }
+
+  async function finalizarPartida(creador, invitado, statsCreador, statsInvitado, config) {
+    const [ganador, perdedor] = getGanadorYPerdedor(creador, invitado, statsCreador, statsInvitado);
+    return { ganador, perdedor };
+  }
+
+  // 1) Socket: traer/escuchar jugadores (con dedupe + fin de partida)
   useEffect(() => {
     const s = inicializarSocket();
     if (!s) return;
@@ -310,7 +402,7 @@ export default function JugarMultijugador() {
       setPartidaCompleta(payload);
       setEsperandoResultado(false);
       setJuegoTerminado(true);
-      setAlerta(t('gameOver'));
+      setAlerta('Juego terminado ✅');
 
       const ganadorId = payload?.resumen?.ganador_jugador_id ?? null;
       const jugadoresResumen = payload?.resumen?.jugadores || [];
@@ -346,7 +438,6 @@ export default function JugarMultijugador() {
       }
     };
 
-    // pedir info de la sala
     s.emit('obtener_sala', { salaId }, (estado) => {
       if (estado?.ok) setJugadores(dedupeJugadores(estado.jugadores));
       else {
@@ -370,7 +461,7 @@ export default function JugarMultijugador() {
     };
   }, [salaId, inicializarSocket, navigate, API_URL, jugadorActualId, updateUser]);
 
-  // Máx 2 jugadores, resto se redirige
+  // Máximo 2 jugadores: si el actual no está entre ellos, redirige
   useEffect(() => {
     if (!Array.isArray(jugadores) || jugadores.length === 0) return;
     const top2 = ordenados.slice(0, 2);
@@ -383,23 +474,7 @@ export default function JugarMultijugador() {
     }
   }, [jugadores, ordenados, currentUserId, navigate, salaId]);
 
-  // Inicializar config desde state o localStorage
-  useEffect(() => {
-    if (config) return;
-    const fromState = location.state?.config;
-    if (fromState?.categoria && fromState?.dificultad && fromState?.tiempo) {
-      setConfig(fromState);
-      return;
-    }
-    try {
-      const ls = JSON.parse(localStorage.getItem('ultima_config_multijugador') || 'null');
-      if (ls?.categoria && ls?.dificultad && ls?.tiempo) {
-        setConfig(ls);
-      }
-    } catch { }
-  }, [config, location.state]);
-
-  // Cargar preguntas (seed determinístico)
+  // 2) Cargar preguntas (seed determinístico)
   useEffect(() => {
     if (!config) return;
     (async () => {
@@ -440,7 +515,7 @@ export default function JugarMultijugador() {
     })();
   }, [config, salaId, API_URL]);
 
-  // Enviar datos para crear tablas faltantes
+  // enviar jugadores para inicializar tablas
   useEffect(() => {
     if (crearTablasEnviadoRef.current) return;
     if (!socketRef.current) return;
@@ -487,7 +562,10 @@ export default function JugarMultijugador() {
       partida_preguntas_tabla,
     };
 
+    console.log('####payload: ', payload);
+
     socketRef.current.emit('crear_tablas_faltantes', payload, (ack) => {
+      console.log('crear_tablas_faltantes → ack:', ack);
       if (ack?.partida_preguntas_mapeo) {
         const map = {};
         for (const r of ack.partida_preguntas_mapeo) {
@@ -505,14 +583,16 @@ export default function JugarMultijugador() {
     crearTablasEnviadoRef.current = true;
   }, [creador, invitado, config, salaId, preguntas]);
 
-  // Contador inicial + música por categoría
+  // 3) Contador inicial (sin iniciar música acá)
   useEffect(() => {
     if (!mostrarContador) return;
 
     if (contadorInicial > 0) {
       if (contadorInicial === 5) {
-        fiveSecondsAudio.current.currentTime = 0;
-        fiveSecondsAudio.current.play().catch(() => { });
+        if (fiveSecondsAudio.current) {
+          fiveSecondsAudio.current.currentTime = 0;
+          fiveSecondsAudio.current.play().catch(() => { });
+        }
       }
 
       const tId = setTimeout(() => setContadorInicial((v) => v - 1), 1000);
@@ -522,43 +602,11 @@ export default function JugarMultijugador() {
     if (!juegoIniciado && !juegoTerminado) {
       setJuegoIniciado(true);
       setTiempoRestante(tiempoPorPregunta(config?.tiempo));
-
-      if (!musicStartedRef.current) {
-        const cat = String(config?.categoria || '').toLowerCase();
-
-        if (cat === 'cine' || cat === 'cinema') {
-          playingCine();
-        } else if (cat === 'historia' || cat === 'history') {
-          playingHistoria();
-        } else if (cat === 'geografía' || cat === 'geografia' || cat === 'geografhy') {
-          playingGeografia();
-        } else if (cat === 'informatica' || cat === 'informatic') {
-          playingInformatica();
-        } else if (cat === 'conocimiento general' || cat === 'general knowledge') {
-          playingConocimiento();
-        } else {
-          playing();
-        }
-
-        musicStartedRef.current = true;
-      }
     }
-  }, [
-    mostrarContador,
-    contadorInicial,
-    juegoIniciado,
-    juegoTerminado,
-    config?.categoria,
-    config?.tiempo,
-    playing,
-    playingCine,
-    playingHistoria,
-    playingGeografia,
-    playingInformatica,
-    playingConocimiento,
-  ]);
+  }, [mostrarContador, contadorInicial, juegoIniciado, juegoTerminado, config?.tiempo]);
 
-  // Cronómetro por pregunta
+
+  // 4) Cronómetro por pregunta
   useEffect(() => {
     if (!preguntaActual || !juegoIniciado || juegoTerminado || cronometroPausado) {
       if (timerRef.current) clearInterval(timerRef.current);
@@ -582,10 +630,9 @@ export default function JugarMultijugador() {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [preguntaActual, juegoIniciado, juegoTerminado, cronometroPausado, config?.tiempo]);
 
-  // Guardar respuesta y avanzar
+  // 5) Guardar respuesta y avanzar
   const handleGuardarRespuesta = (opcion) => {
     if (cronometroPausado || juegoTerminado || respuestaSeleccionada) {
       return;
@@ -641,7 +688,7 @@ export default function JugarMultijugador() {
           setCronometroPausado(false);
         }, 1000);
       } else {
-        setAlerta(t('gameOver'));
+        setAlerta('Juego terminado ✅');
         setJuegoTerminado(true);
         setJuegoIniciado(false);
         setTiempoRestante(0);
@@ -651,7 +698,7 @@ export default function JugarMultijugador() {
     }, 3000);
   };
 
-  // Detener música al terminar
+  // 6) Stop música al terminar
   useEffect(() => {
     if (juegoTerminado) {
       stop();
@@ -662,9 +709,17 @@ export default function JugarMultijugador() {
       conocimientoStop();
       musicStartedRef.current = false;
     }
-  }, [juegoTerminado, stop, cineStop, historiaStop, geografiaStop, informaticaStop, conocimientoStop]);
+  }, [
+    juegoTerminado,
+    stop,
+    cineStop,
+    historiaStop,
+    geografiaStop,
+    informaticaStop,
+    conocimientoStop,
+  ]);
 
-  // Mostrar todas las respuestas después de terminar
+  // mostrar respuestas después de terminar
   useEffect(() => {
     if (!juegoTerminado) return;
 
@@ -677,8 +732,7 @@ export default function JugarMultijugador() {
           : null;
 
     if (otherId != null) {
-      // consola si querés
-      // console.log('Respuestas del otro jugador:', respuestasPorJugador[otherId] || []);
+      // acá podrías loguear respuestasPorJugador[otherId]
     }
   }, [juegoTerminado, creador, invitado, respuestas, respuestasPorJugador, currentUserId]);
 
@@ -694,14 +748,13 @@ export default function JugarMultijugador() {
 
     let puntos = 0;
     respuestasCor.forEach((respuesta) => {
-      const tSeg = respuesta.tiempo;
-      if (tSeg <= 3) puntos += 10;
-      else if (tSeg <= 5) puntos += 7;
-      else if (tSeg <= 8) puntos += 5;
-      else if (tSeg <= 12) puntos += 3;
+      const tiempo = respuesta.tiempo;
+      if (tiempo <= 3) puntos += 10;
+      else if (tiempo <= 5) puntos += 7;
+      else if (tiempo <= 8) puntos += 5;
+      else if (tiempo <= 12) puntos += 3;
       else puntos += 1;
     });
-
     const dificult = dificultad.toLowerCase();
     let puntosDificultad = 0;
     if (dificult.includes('facíl') || dificult.includes('easy'))
@@ -710,13 +763,14 @@ export default function JugarMultijugador() {
       puntosDificultad = 10 * respuestasCor.length;
     if (dificult.includes('dificíl') || dificult.includes('hard'))
       puntosDificultad = 15 * respuestasCor.length;
-
+    console.log(puntos);
+    console.log(puntosDificultad);
     return Math.round((puntos + puntosDificultad) * multiplicador);
   };
 
   const [partidaCompleta, setPartidaCompleta] = useState(null);
 
-  // Al terminar: último jugador arma payload y guarda en BD
+  // NUEVO: al terminar la partida, solo el último jugador guarda en BD
   useEffect(() => {
     if (!juegoTerminado) {
       finPartidaProcesadaRef.current = false;
@@ -853,8 +907,7 @@ export default function JugarMultijugador() {
           },
         };
 
-        setPartidaCompleta(payload);
-
+        // ⚠️ IMPORTANTE: NO seteamos partidaCompleta acá para evitar el "flash"
         socketRef.current.emit('guardar_respuestas', payload, (ack) => {
           console.log('guardar_respuestas → ack:', ack);
         });
@@ -875,7 +928,7 @@ export default function JugarMultijugador() {
     t,
   ]);
 
-  // crear instancia de confeti
+  // confetti instancia
   useEffect(() => {
     if (canvasRef.current && !confettiInstanceRef.current) {
       confettiInstanceRef.current = confetti.create(canvasRef.current, {
@@ -901,9 +954,9 @@ export default function JugarMultijugador() {
     });
   };
 
-  // lanzar confeti cuando hay ganador en el resumen
   useEffect(() => {
     if (!juegoTerminado) return;
+
     const ganadorId = partidaCompleta?.resumen?.ganador_jugador_id;
     if (!ganadorId) return;
 
@@ -912,7 +965,7 @@ export default function JugarMultijugador() {
     }
   }, [juegoTerminado, partidaCompleta]);
 
-  // ========================================= JSX =========================================
+  // ============================================================= html =====================================================================
   return (
     <div className='w-full text-white pt-2 mb-10'>
       {/* Canvas SIEMPRE montado */}
@@ -929,14 +982,17 @@ export default function JugarMultijugador() {
         }}
       />
 
+      {/* Contenedor central con ancho máximo */}
       <div className='w-full'>
-        {mostrarContador && contadorInicial > 0 ? (
+        {readyForCountdown && mostrarContador && contadorInicial > 0 ? (
           // PANTALLA DE CONTADOR
           <div className='min-h-[70vh] 2xl:min-h-screen flex items-start justify-center relative overflow-hidden'>
             <div className='relative z-10 text-center flex flex-col items-center gap-6 px-3'>
               <div className='bg-gradient-to-r from-purple-600 to-purple-700 px-4 py-2 rounded-3xl text-white text-lg sm:text-xl font-bold shadow-2xl border-2 border-purple-400/50 max-w-md w-full mx-auto'>
                 🎮 {t('category')}:{' '}
-                <span className='text-yellow-300'>{translatedCategory.toUpperCase()}</span>
+                <span className='text-yellow-300'>
+                  {translatedCategory ? translatedCategory.toUpperCase() : ''}
+                </span>
               </div>
 
               <div className='space-y-1 bg-black/30 p-4 rounded-2xl backdrop-blur-sm border border-purple-400/50 max-w-md w-full'>
@@ -976,7 +1032,7 @@ export default function JugarMultijugador() {
             </div>
           </div>
         ) : (
-          // PANTALLA PRINCIPAL
+          // PANTALLA PRINCIPAL (preguntas / podio / resumen)
           <div className='flex flex-col items-center justify-start min-h-screen'>
             {loading ? (
               <div className='text-center space-y-4 mt-10'>
@@ -1019,7 +1075,7 @@ export default function JugarMultijugador() {
                   </div>
                 )}
 
-                {/* PODIO con ganador */}
+                {/* PODIO: HAY GANADOR */}
                 {!esperandoResultado && partidaCompleta?.resumen?.ganador_jugador_id != null ? (
                   <>
                     <div className='flex flex-row md:flex-row items-center justify-center gap-0.5 mt-10 w-full'>
@@ -1081,7 +1137,7 @@ export default function JugarMultijugador() {
                                       <img
                                         src={resolveFotoAjena(perdedor.foto_perfil)}
                                         alt='perdedor'
-                                        className='w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-4 border-blue-800/10 bg-gradient-to-br group-hover:scale-105 transition-transform duración-300 shadow-lg mb-4'
+                                        className='w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-4 border-blue-800/10 bg-gradient-to-br group-hover:scale-105 transition-transform duration-300 shadow-lg mb-4'
                                       />
                                     ) : (
                                       <div className='w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-3xl sm:text-4xl mb-4 shadow-lg'>
@@ -1192,7 +1248,7 @@ export default function JugarMultijugador() {
                   </>
                 ) : null}
 
-                {/* Resumen de respuestas propias */}
+                {/* Resumen de respuestas */}
                 {juegoTerminado && (
                   <div className='bg-black/50 rounded-2xl p-6 sm:p-8 mt-8 w-full max-w-2xl mx-auto'>
                     <h2 className='text-xl sm:text-2xl font-bold text-yellow-300 mb-4 sm:mb-6'>
@@ -1222,10 +1278,10 @@ export default function JugarMultijugador() {
               </>
             ) : preguntaActual && juegoIniciado ? (
               <>
-                {/* ==================== MOBILE ==================== */}
+                {/* MOBILE */}
                 <div className='w-full block lg:hidden mt-4 space-y-2'>
                   <div className='grid grid-cols-3 gap-3 w-full'>
-                    {/* Jugador creador */}
+                    {/* Creador */}
                     <div className='flex justify-center'>
                       <div className='bg-gradient-to-b from-black/40 to-blue-800/10 rounded-2xl p-3 shadow-xl border-2 border-blue-400/30 w-full max-w-[8.5rem]'>
                         <div className='flex flex-col items-center'>
@@ -1258,7 +1314,6 @@ export default function JugarMultijugador() {
 
                     {/* Categoría + reloj */}
                     <div className='col-span-1 flex flex-col items-center justify-center'>
-                      {/* Categoría */}
                       <div className='relative group w-full flex items-center justify-center'>
                         <div className='absolute inset-0 bg-gradient-to-r from-orange-400 via-pink-400 to-orange-400 rounded-full blur-xl opacity-50 group-hover:opacity-70 transition-opacity duration-300 animate-pulse w-10 xs320:w-20 xs420:w-32 xs480:w-full' />
 
@@ -1275,7 +1330,6 @@ export default function JugarMultijugador() {
                         </div>
                       </div>
 
-                      {/* Reloj */}
                       <div className='flex w-full items-center justify-center mt-2'>
                         <div
                           className={`rounded-2xl px-4 text-center flex flex-col items-center justify-center shadow-2xl 
@@ -1308,7 +1362,7 @@ export default function JugarMultijugador() {
                       </div>
                     </div>
 
-                    {/* Jugador invitado */}
+                    {/* Invitado */}
                     <div className='flex justify-center'>
                       <div className='bg-gradient-to-b from-black/40 to-blue-800/10 rounded-2xl p-3 shadow-xl border-2 border-blue-400/30 w-full max-w-[8.5rem]'>
                         <div className='flex flex-col items-center'>
@@ -1339,7 +1393,7 @@ export default function JugarMultijugador() {
                     </div>
                   </div>
 
-                  {/* siguiente pregunta o enunciado + opciones */}
+                  {/* siguiente pregunta */}
                   <div className='flex justify-center mt-3'>
                     {mostrarEspera ? (
                       <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-4 sm:p-6 w-full max-w-2xl shadow-2xl text-center'>
@@ -1369,7 +1423,9 @@ export default function JugarMultijugador() {
                         </div>
 
                         <p className='text-[12px] font-bold text-white mb-4 sm:mb-6 leading-relaxed'>
-                          {idioma === 'en' ? preguntaActual.enunciado_en : preguntaActual.enunciado}
+                          {idioma === 'en'
+                            ? preguntaActual.enunciado_en
+                            : preguntaActual.enunciado}
                         </p>
 
                         <div className='space-y-2 sm:space-y-3'>
@@ -1407,7 +1463,7 @@ export default function JugarMultijugador() {
                   </div>
                 </div>
 
-                {/* ==================== DESKTOP ==================== */}
+                {/* DESKTOP */}
                 <div className='w-full hidden lg:block pt-6'>
                   <div className='grid grid-cols-3 gap-6 lg:gap-2 items-start'>
                     {/* categoría + reloj */}
@@ -1455,7 +1511,7 @@ export default function JugarMultijugador() {
                       </div>
                     </div>
 
-                    {/* creador */}
+                    {/* Creador */}
                     <div className='flex justify-center'>
                       <div className='bg-gradient-to-b from-black/40 to-blue-800/10 rounded-2xl p-6 shadow-xl border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20 w-full max-w-[13rem]'>
                         <div className='flex flex-col items-center'>
@@ -1487,7 +1543,7 @@ export default function JugarMultijugador() {
                       </div>
                     </div>
 
-                    {/* pregunta + opciones */}
+                    {/* Preguntas */}
                     <div className='flex justify-center pt-6'>
                       {mostrarEspera ? (
                         <div className='bg-black/40 border-2 border-purple-400 rounded-2xl p-8 lg:p-4 xl:p-6 2xl:p-8 w-150 h-95 shadow-2xl flex items-center justify-center'>
@@ -1553,7 +1609,7 @@ export default function JugarMultijugador() {
                       )}
                     </div>
 
-                    {/* invitado */}
+                    {/* Invitado */}
                     <div className='flex justify-center'>
                       <div className='bg-gradient-to-b from-black/40 to-blue-800/10 rounded-2xl p-6 shadow-xl border-2 border-blue-400/30 hover:border-cyan-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-400/20 w-full max-w-[13rem]'>
                         <div className='flex flex-col items-center'>
